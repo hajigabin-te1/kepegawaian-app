@@ -139,3 +139,20 @@ Use only these semantic tokens (60-30-10 palette, see docs/design/design-decisio
 - Before creating a new component, check whether a similar component already exists.
 - Do not print entire files in the response unless asked.
 - Summarize completed work briefly.
+
+## Frontend design skill rules
+
+When using the built-in frontend-design skill:
+
+1. `CLAUDE.md` and `docs/design/design-decisions.md` always take priority.
+2. Do not change the approved 60-30-10 palette:
+   - 60% base: `#F8F8FF`
+   - 30% primary: `#191970`
+   - 10% accent: `#87CEFA`
+3. Use `frontend-design` to improve hierarchy, composition, spacing, typography, interaction states, and avoid generic AI aesthetics.
+4. Do not introduce a new primary color, display font, gradient style, or visual identity.
+5. This is an internal employee-management dashboard, not a marketing landing page.
+6. Motion must be subtle and functional: hover, focus, loading, and state feedback only.
+7. Avoid heavy scroll-triggered animations, dramatic transitions, asymmetric experimental layouts, and visual effects that reduce usability.
+8. Preserve accessibility, readability, and consistent admin-dashboard density.
+9. If the skill suggests a direction that conflicts with `design-decisions.md`, follow `design-decisions.md`.
