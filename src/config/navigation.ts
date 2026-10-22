@@ -1,4 +1,4 @@
-import { LayoutDashboardIcon, UsersIcon, type LucideIcon } from "lucide-react";
+import { LayoutDashboardIcon, UserPlusIcon, UsersIcon, type LucideIcon } from "lucide-react";
 
 import { routes } from "@/config/routes";
 
@@ -16,9 +16,25 @@ export type NavGroup = {
 export const mainNavigation: NavGroup[] = [
   {
     title: "Menu Utama",
+    items: [{ title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon }],
+  },
+  {
+    title: "Kepegawaian",
     items: [
-      { title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon },
-      { title: "Pegawai", href: routes.employees.list, icon: UsersIcon },
+      { title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon },
+      { title: "Tambah Pegawai", href: routes.employees.create, icon: UserPlusIcon },
     ],
   },
 ];
+
+function matchesPath(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** Returns the most specific navigation item matching the pathname. */
+export function findActiveNavItem(pathname: string): NavItem | undefined {
+  return mainNavigation
+    .flatMap((group) => group.items)
+    .filter((item) => matchesPath(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+}

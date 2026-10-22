@@ -53,6 +53,7 @@ export function LoginForm() {
           id="username"
           autoComplete="username"
           placeholder="Masukkan username"
+          className="h-10 bg-card"
           aria-invalid={errors.username ? true : undefined}
           aria-describedby={errors.username ? "username-error" : undefined}
           {...register("username")}
@@ -72,7 +73,7 @@ export function LoginForm() {
             type={isPasswordVisible ? "text" : "password"}
             autoComplete="current-password"
             placeholder="Masukkan password"
-            className="pr-10"
+            className="h-10 bg-card pr-10"
             aria-invalid={errors.password ? true : undefined}
             aria-describedby={errors.password ? "password-error" : undefined}
             {...register("password")}

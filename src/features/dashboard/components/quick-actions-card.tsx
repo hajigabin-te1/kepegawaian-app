@@ -19,7 +19,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: UserPlusIcon,
   },
   {
-    title: "Daftar Pegawai",
+    title: "Data Pegawai",
     description: "Lihat dan kelola data pegawai.",
     href: routes.employees.list,
     icon: UsersIcon,
@@ -40,16 +40,16 @@ export function QuickActionsCard() {
             <Link
               key={action.href}
               href={action.href}
-              className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              className="group flex items-center gap-3 rounded-lg border bg-background p-3 transition-colors hover:border-accent hover:bg-accent/15 focus-visible:ring-3 focus-visible:ring-ring/60 focus-visible:outline-none"
             >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Icon className="size-4" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium">{action.title}</span>
+                <span className="block text-sm font-semibold">{action.title}</span>
                 <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
               </span>
-              <ChevronRightIcon className="size-4 text-muted-foreground" />
+              <ChevronRightIcon className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
             </Link>
           );
         })}

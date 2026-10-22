@@ -13,18 +13,16 @@ const numberFormatter = new Intl.NumberFormat("id-ID");
 
 export function StatCard({ title, value, description, icon: Icon }: StatCardProps) {
   return (
-    <Card size="sm">
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted text-primary">
+    <Card size="sm" className="relative transition-colors hover:border-accent">
+      <CardContent className="space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</p>
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent/25 text-primary">
             <Icon className="size-4" />
           </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{title}</p>
-            <p className="truncate text-xs text-muted-foreground">{description}</p>
-          </div>
         </div>
         <p className="text-3xl font-semibold tracking-tight tabular-nums">{numberFormatter.format(value)}</p>
+        <p className="border-t pt-3 text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
   );

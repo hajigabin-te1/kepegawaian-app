@@ -15,6 +15,7 @@ export type RecentEmployeeStatus = "active" | "onLeave" | "inactive";
 
 export type RecentEmployee = {
   id: string;
+  employeeNumber: string;
   name: string;
   position: string;
   unit: string;
@@ -33,6 +34,7 @@ export const mockDashboardStats: DashboardStats = {
 export const mockRecentEmployees: RecentEmployee[] = [
   {
     id: "mock-1",
+    employeeNumber: "198903142015032001",
     name: "Siti Rahmawati",
     position: "Analis Kepegawaian",
     unit: "Bagian Umum",
@@ -41,6 +43,7 @@ export const mockRecentEmployees: RecentEmployee[] = [
   },
   {
     id: "mock-2",
+    employeeNumber: "199107222016041002",
     name: "Budi Santoso",
     position: "Pranata Komputer",
     unit: "Bagian Teknologi Informasi",
@@ -49,6 +52,7 @@ export const mockRecentEmployees: RecentEmployee[] = [
   },
   {
     id: "mock-3",
+    employeeNumber: "198812052014032003",
     name: "Dewi Lestari",
     position: "Bendahara",
     unit: "Bagian Keuangan",
@@ -57,6 +61,7 @@ export const mockRecentEmployees: RecentEmployee[] = [
   },
   {
     id: "mock-4",
+    employeeNumber: "199304182019031004",
     name: "Agus Prasetyo",
     position: "Arsiparis",
     unit: "Bagian Umum",
@@ -65,6 +70,7 @@ export const mockRecentEmployees: RecentEmployee[] = [
   },
   {
     id: "mock-5",
+    employeeNumber: "199501302020122005",
     name: "Rina Kurniawati",
     position: "Staf Perencanaan",
     unit: "Bagian Perencanaan",
