@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleAlertIcon, EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CircleAlertIcon,
+  EyeIcon,
+  EyeOffIcon,
+  Loader2Icon,
+  LockKeyholeIcon,
+  UserRoundIcon,
+} from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -49,15 +57,18 @@ export function LoginForm() {
 
       <div className="space-y-2">
         <Label htmlFor="username">Username</Label>
-        <Input
-          id="username"
-          autoComplete="username"
-          placeholder="Masukkan username"
-          className="h-10 bg-card"
-          aria-invalid={errors.username ? true : undefined}
-          aria-describedby={errors.username ? "username-error" : undefined}
-          {...register("username")}
-        />
+        <div className="relative">
+          <UserRoundIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="username"
+            autoComplete="username"
+            placeholder="Masukkan username"
+            className="h-11 bg-background pl-9"
+            aria-invalid={errors.username ? true : undefined}
+            aria-describedby={errors.username ? "username-error" : undefined}
+            {...register("username")}
+          />
+        </div>
         {errors.username ? (
           <p id="username-error" className="text-sm text-destructive">
             {errors.username.message}
@@ -68,12 +79,13 @@ export function LoginForm() {
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
         <div className="relative">
+          <LockKeyholeIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="password"
             type={isPasswordVisible ? "text" : "password"}
             autoComplete="current-password"
             placeholder="Masukkan password"
-            className="h-10 bg-card pr-10"
+            className="h-11 bg-background pr-10 pl-9"
             aria-invalid={errors.password ? true : undefined}
             aria-describedby={errors.password ? "password-error" : undefined}
             {...register("password")}
@@ -97,9 +109,10 @@ export function LoginForm() {
         ) : null}
       </div>
 
-      <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" size="lg" className="h-11 w-full" disabled={isSubmitting}>
         {isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
         {isSubmitting ? "Memproses..." : "Masuk"}
+        {isSubmitting ? null : <ArrowRightIcon />}
       </Button>
     </form>
   );

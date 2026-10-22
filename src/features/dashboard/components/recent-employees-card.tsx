@@ -1,14 +1,22 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRightIcon, UserPlusIcon, UsersIcon } from "lucide-react";
+import { ArrowRightIcon, EyeIcon, SearchXIcon, UserPlusIcon, UsersIcon } from "lucide-react";
+import { cn } from "cn";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { routes } from "@/config/routes";
-import type { RecentEmployee, RecentEmployeeStatus } from "@/features/dashboard/data/mock-dashboard";
+import type {
+  EmployeeCategory,
+  RecentEmployee,
+  RecentEmployeeStatus,
+} from "@/features/dashboard/data/mock-dashboard";
 import { getInitials } from "@/lib/utils";
 
 const STATUS_BADGES: Record<RecentEmployeeStatus, { label: string; variant: "success" | "warning" | "destructive" }> = {
@@ -17,6 +25,20 @@ const STATUS_BADGES: Record<RecentEmployeeStatus, { label: string; variant: "suc
   inactive: { label: "Nonaktif", variant: "destructive" },
 };
 
+const CATEGORY_LABELS: Record<EmployeeCategory, string> = {
+  lecturer: "Dosen",
+  staff: "Tendik",
+};
+
+type StatusFilter = "all" | RecentEmployeeStatus;
+
+const FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "Semua" },
+  { value: "active", label: "Aktif" },
+  { value: "onLeave", label: "Cuti" },
+  { value: "inactive", label: "Nonaktif" },
+];
+
 const dateFormatter = new Intl.DateTimeFormat("id-ID", {
   day: "numeric",
   month: "short",
@@ -24,91 +46,145 @@ const dateFormatter = new Intl.DateTimeFormat("id-ID", {
   timeZone: "Asia/Jakarta",
 });
 
+const HEAD_CLASS = "h-11 text-xs font-semibold tracking-wide text-secondary-foreground uppercase";
+
 type RecentEmployeesCardProps = {
   employees: RecentEmployee[];
+  totalEmployees: number;
 };
 
-export function RecentEmployeesCard({ employees }: RecentEmployeesCardProps) {
+export function RecentEmployeesCard({ employees, totalEmployees }: RecentEmployeesCardProps) {
+  const [filter, setFilter] = useState<StatusFilter>("all");
+  const visibleEmployees = filter === "all" ? employees : employees.filter((employee) => employee.status === filter);
+
   return (
-    <Card className="gap-4">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <UsersIcon className="size-4" />
-          </span>
-          <div className="space-y-0.5">
-            <CardTitle className="text-lg font-semibold">Pegawai Terbaru</CardTitle>
-            <CardDescription>Pegawai yang terakhir ditambahkan ke sistem.</CardDescription>
+    <Card className="gap-0 pb-0">
+      <CardHeader className="gap-4 pb-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <UsersIcon className="size-5" />
+            </span>
+            <div className="space-y-0.5">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                Pegawai Terbaru
+                <Badge variant="accent" className="tabular-nums">
+                  {employees.length}
+                </Badge>
+              </CardTitle>
+              <CardDescription>Pegawai yang terakhir ditambahkan ke sistem.</CardDescription>
+            </div>
           </div>
-        </div>
-        <CardAction>
           <Button variant="outline" size="sm" nativeButton={false} render={<Link href={routes.employees.list} />}>
             Lihat semua
             <ArrowRightIcon />
           </Button>
-        </CardAction>
+        </div>
+        <div role="group" aria-label="Filter status" className="flex flex-wrap gap-2">
+          {FILTERS.map((option) => {
+            const selected = option.value === filter;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setFilter(option.value)}
+                className={cn(
+                  "h-8 rounded-lg border px-3 text-xs font-medium transition-colors focus-visible:ring-3 focus-visible:ring-ring/60 focus-visible:outline-none",
+                  selected
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:border-accent hover:text-foreground",
+                )}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
       </CardHeader>
+
       <CardContent className="px-0">
-        {employees.length === 0 ? (
+        {visibleEmployees.length === 0 ? (
           <EmptyState
-            icon={UsersIcon}
-            title="Belum ada pegawai"
-            description="Data pegawai yang baru ditambahkan akan muncul di sini."
-            action={
-              <Button size="sm" nativeButton={false} render={<Link href={routes.employees.create} />}>
-                <UserPlusIcon />
-                Tambah Pegawai
-              </Button>
+            icon={employees.length === 0 ? UsersIcon : SearchXIcon}
+            title={employees.length === 0 ? "Belum ada pegawai" : "Tidak ada pegawai dengan status ini"}
+            description={
+              employees.length === 0
+                ? "Data pegawai yang baru ditambahkan akan muncul di sini."
+                : "Coba pilih filter status lain."
             }
+            action={
+              employees.length === 0 ? (
+                <Button size="sm" nativeButton={false} render={<Link href={routes.employees.create} />}>
+                  <UserPlusIcon />
+                  Tambah Pegawai
+                </Button>
+              ) : undefined
+            }
+            className="border-t"
           />
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="border-y bg-secondary hover:bg-secondary">
-                <TableHead className="pl-6 text-xs font-medium tracking-wide text-secondary-foreground uppercase">
-                  Pegawai
-                </TableHead>
-                <TableHead className="hidden text-xs font-medium tracking-wide text-secondary-foreground uppercase md:table-cell">
-                  NIP
-                </TableHead>
-                <TableHead className="hidden text-xs font-medium tracking-wide text-secondary-foreground uppercase 2xl:table-cell">
-                  Unit Kerja
-                </TableHead>
-                <TableHead className="hidden text-xs font-medium tracking-wide text-secondary-foreground uppercase sm:table-cell">
-                  Tanggal Masuk
-                </TableHead>
-                <TableHead className="pr-6 text-xs font-medium tracking-wide text-secondary-foreground uppercase">
-                  Status
+                <TableHead className={cn(HEAD_CLASS, "w-12 pl-6")}>No</TableHead>
+                <TableHead className={HEAD_CLASS}>Pegawai</TableHead>
+                <TableHead className={cn(HEAD_CLASS, "hidden md:table-cell")}>Jabatan / Unit</TableHead>
+                <TableHead className={cn(HEAD_CLASS, "hidden 2xl:table-cell")}>Kategori</TableHead>
+                <TableHead className={cn(HEAD_CLASS, "hidden sm:table-cell")}>Tgl. Masuk</TableHead>
+                <TableHead className={HEAD_CLASS}>Status</TableHead>
+                <TableHead className={cn(HEAD_CLASS, "w-14 pr-6 text-right")}>
+                  <span className="sr-only">Aksi</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees.map((employee) => {
+              {visibleEmployees.map((employee, index) => {
                 const status = STATUS_BADGES[employee.status];
                 return (
                   <TableRow key={employee.id} className="hover:bg-accent/15">
-                    <TableCell className="py-3 pl-6">
+                    <TableCell className="pl-6 text-muted-foreground tabular-nums">{index + 1}</TableCell>
+                    <TableCell className="py-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="size-9">
                           <AvatarFallback className="bg-accent/30 text-xs font-semibold text-accent-foreground">
-                            {getInitials(employee.name)}
+                            {getInitials(employee.name.replace(/^(Dr|Prof)\.\s*/, ""))}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 leading-tight">
                           <p className="truncate font-medium">{employee.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">{employee.position}</p>
+                          <p className="truncate text-xs text-muted-foreground tabular-nums">
+                            NIP {employee.employeeNumber}
+                          </p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground tabular-nums md:table-cell">
-                      {employee.employeeNumber}
+                    <TableCell className="hidden md:table-cell">
+                      <div className="leading-tight">
+                        <p className="truncate">{employee.position}</p>
+                        <p className="truncate text-xs text-muted-foreground">{employee.unit}</p>
+                      </div>
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground 2xl:table-cell">{employee.unit}</TableCell>
+                    <TableCell className="hidden 2xl:table-cell">
+                      <Badge variant="outline">{CATEGORY_LABELS[employee.category]}</Badge>
+                    </TableCell>
                     <TableCell className="hidden text-muted-foreground tabular-nums sm:table-cell">
                       {dateFormatter.format(new Date(employee.joinedAt))}
                     </TableCell>
-                    <TableCell className="pr-6">
+                    <TableCell>
                       <Badge variant={status.variant}>{status.label}</Badge>
+                    </TableCell>
+                    <TableCell className="pr-6 text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        nativeButton={false}
+                        render={<Link href={routes.employees.detail(employee.id)} />}
+                        aria-label={`Lihat detail ${employee.name}`}
+                        title="Lihat detail"
+                      >
+                        <EyeIcon />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -117,6 +193,13 @@ export function RecentEmployeesCard({ employees }: RecentEmployeesCardProps) {
           </Table>
         )}
       </CardContent>
+
+      <CardFooter className="justify-between gap-2 border-t bg-background px-6 py-3 text-xs text-muted-foreground [.border-t]:pt-3">
+        <span className="tabular-nums">
+          Menampilkan {visibleEmployees.length} dari {new Intl.NumberFormat("id-ID").format(totalEmployees)} pegawai
+        </span>
+        <span>Data contoh</span>
+      </CardFooter>
     </Card>
   );
 }
