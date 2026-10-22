@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  ArrowRightIcon,
   CircleAlertIcon,
   EyeIcon,
   EyeOffIcon,
@@ -63,7 +62,7 @@ export function LoginForm() {
             id="username"
             autoComplete="username"
             placeholder="Masukkan username"
-            className="h-11 bg-background pl-9"
+            className="h-11 bg-card pl-9 transition-colors hover:border-primary/40"
             aria-invalid={errors.username ? true : undefined}
             aria-describedby={errors.username ? "username-error" : undefined}
             {...register("username")}
@@ -85,7 +84,7 @@ export function LoginForm() {
             type={isPasswordVisible ? "text" : "password"}
             autoComplete="current-password"
             placeholder="Masukkan password"
-            className="h-11 bg-background pr-10 pl-9"
+            className="h-11 bg-card pr-10 pl-9 transition-colors hover:border-primary/40"
             aria-invalid={errors.password ? true : undefined}
             aria-describedby={errors.password ? "password-error" : undefined}
             {...register("password")}
@@ -94,7 +93,7 @@ export function LoginForm() {
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground"
+            className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground hover:bg-secondary hover:text-primary"
             onClick={() => setPasswordVisible((visible) => !visible)}
             aria-label={isPasswordVisible ? "Sembunyikan password" : "Tampilkan password"}
             aria-pressed={isPasswordVisible}
@@ -109,10 +108,9 @@ export function LoginForm() {
         ) : null}
       </div>
 
-      <Button type="submit" size="lg" className="h-11 w-full" disabled={isSubmitting}>
+      <Button type="submit" size="lg" className="h-11 w-full hover:bg-primary/90" disabled={isSubmitting}>
         {isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
         {isSubmitting ? "Memproses..." : "Masuk"}
-        {isSubmitting ? null : <ArrowRightIcon />}
       </Button>
     </form>
   );

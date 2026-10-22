@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeftIcon } from "lucide-react";
+import { PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 import { cn } from "cn";
 
 import { AppBrand } from "@/components/layout/app-brand";
@@ -17,12 +17,14 @@ type AppSidebarProps = {
 export function AppSidebar({ user }: AppSidebarProps) {
   const collapsed = useUiStore((state) => state.isSidebarCollapsed);
   const toggleCollapsed = useUiStore((state) => state.toggleSidebarCollapsed);
+  const toggleLabel = collapsed ? "Perluas sidebar" : "Ciutkan sidebar";
+  const ToggleIcon = collapsed ? PanelLeftOpenIcon : PanelLeftCloseIcon;
 
   return (
     <aside
       data-collapsed={collapsed}
       className={cn(
-        "sticky top-0 z-30 hidden h-svh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out lg:flex",
+        "sticky top-0 z-30 hidden h-svh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out motion-reduce:transition-none lg:flex",
         collapsed ? "w-20" : "w-72",
       )}
     >
@@ -30,16 +32,16 @@ export function AppSidebar({ user }: AppSidebarProps) {
         <AppBrand tone="inverse" compact={collapsed} />
       </div>
 
-      {/* Toggle sits on the sidebar edge and follows its width. */}
+      {/* Toggle sits on the corner where the brand row meets the sidebar edge, clear of the monogram in both widths. */}
       <button
         type="button"
         onClick={toggleCollapsed}
-        aria-label={collapsed ? "Perluas sidebar" : "Ciutkan sidebar"}
+        aria-label={toggleLabel}
         aria-expanded={!collapsed}
-        title={collapsed ? "Perluas sidebar" : "Ciutkan sidebar"}
-        className="absolute top-7 -right-3.5 z-40 flex size-7 items-center justify-center rounded-full border-2 border-background bg-sidebar-primary text-sidebar-primary-foreground transition-colors hover:bg-card focus-visible:ring-3 focus-visible:ring-ring/60 focus-visible:outline-none"
+        title={toggleLabel}
+        className="group/toggle absolute top-[62px] -right-[18px] z-40 flex size-9 items-center justify-center rounded-lg border border-border bg-card text-primary shadow-xs transition-colors hover:border-accent hover:bg-secondary focus-visible:border-accent focus-visible:ring-3 focus-visible:ring-ring/60 focus-visible:outline-none active:bg-accent/30"
       >
-        <ChevronLeftIcon className={cn("size-4 transition-transform duration-200", collapsed && "rotate-180")} />
+        <ToggleIcon className="size-[18px] transition-transform duration-150 group-hover/toggle:-translate-x-px motion-reduce:transition-none" />
       </button>
 
       <div className="flex-1 overflow-x-hidden overflow-y-auto">

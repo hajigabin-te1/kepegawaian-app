@@ -15,7 +15,7 @@ export type NavGroup = {
 
 export const mainNavigation: NavGroup[] = [
   {
-    title: "Menu Utama",
+    title: "Menu utama",
     items: [{ title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon }],
   },
   {
