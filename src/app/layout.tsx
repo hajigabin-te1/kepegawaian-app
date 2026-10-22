@@ -13,10 +13,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Aplikasi Kepegawaian",
-    template: "%s | Aplikasi Kepegawaian",
+    default: "SIMPEG STIA Amuntai",
+    template: "%s | SIMPEG STIA Amuntai",
   },
-  description: "Aplikasi pengelolaan data pegawai",
+  description: "Sistem Informasi Kepegawaian Sekolah Tinggi Ilmu Administrasi Amuntai",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

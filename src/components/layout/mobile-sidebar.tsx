@@ -29,9 +29,9 @@ export function MobileSidebar({ user }: MobileSidebarProps) {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="w-72 gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground [&_[data-slot=sheet-close]]:text-sidebar-foreground [&_[data-slot=sheet-close]]:hover:bg-sidebar-accent"
+        className="w-80 gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground [&_[data-slot=sheet-close]]:text-sidebar-foreground [&_[data-slot=sheet-close]]:hover:bg-sidebar-accent"
       >
-        <SheetHeader className="h-16 justify-center border-b border-sidebar-border px-5">
+        <SheetHeader className="min-h-20 justify-center border-b border-sidebar-border px-5 py-4 pr-12">
           <SheetTitle className="sr-only">Menu navigasi</SheetTitle>
           <AppBrand tone="inverse" />
         </SheetHeader>

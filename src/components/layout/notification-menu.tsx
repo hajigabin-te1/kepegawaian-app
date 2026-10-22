@@ -18,7 +18,7 @@ export function NotificationMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" />}
+        render={<Button variant="outline" size="icon" className="relative size-10 text-muted-foreground hover:text-foreground" />}
         aria-label="Notifikasi"
       >
         <BellIcon />
