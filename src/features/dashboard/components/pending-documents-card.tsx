@@ -13,10 +13,10 @@ type PendingDocumentsCardProps = {
 
 export function PendingDocumentsCard({ documents }: PendingDocumentsCardProps) {
   return (
-    <Card>
+    <Card size="sm">
       <CardHeader>
-        <CardTitle className="text-base font-semibold">Dokumen Menunggu Verifikasi</CardTitle>
-        <CardDescription>Berkas terbaru yang perlu diperiksa.</CardDescription>
+        <CardTitle className="text-base font-semibold">Dokumen menunggu verifikasi</CardTitle>
+        <CardDescription>Contoh berkas yang perlu diperiksa.</CardDescription>
       </CardHeader>
       <CardContent className="px-0">
         <ul className="divide-y">
