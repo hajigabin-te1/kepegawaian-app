@@ -8,7 +8,17 @@ export type NavItem = {
   icon: LucideIcon;
 };
 
-export const mainNavigation: NavItem[] = [
-  { title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon },
-  { title: "Pegawai", href: routes.employees.list, icon: UsersIcon },
+export type NavGroup = {
+  title: string;
+  items: NavItem[];
+};
+
+export const mainNavigation: NavGroup[] = [
+  {
+    title: "Menu Utama",
+    items: [
+      { title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon },
+      { title: "Pegawai", href: routes.employees.list, icon: UsersIcon },
+    ],
+  },
 ];
