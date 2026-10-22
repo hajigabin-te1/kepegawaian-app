@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useSyncExternalStore } from "react";
 import { PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 import { cn } from "cn";
 
@@ -7,7 +8,7 @@ import { AppBrand } from "@/components/layout/app-brand";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { SidebarUser } from "@/components/layout/sidebar-user";
 import type { SessionUser } from "@/features/auth/types/auth";
-import { useUiStore } from "@/stores/ui-store";
+import { hasUiStoreHydrated, rehydrateUiStore, subscribeUiStoreHydration, useUiStore } from "@/stores/ui-store";
 
 type AppSidebarProps = {
   user: SessionUser;
@@ -17,6 +18,11 @@ type AppSidebarProps = {
 export function AppSidebar({ user }: AppSidebarProps) {
   const collapsed = useUiStore((state) => state.isSidebarCollapsed);
   const toggleCollapsed = useUiStore((state) => state.toggleSidebarCollapsed);
+  const hasHydrated = useSyncExternalStore(subscribeUiStoreHydration, hasUiStoreHydrated, () => false);
+
+  useEffect(() => {
+    rehydrateUiStore();
+  }, []);
   const toggleLabel = collapsed ? "Perluas sidebar" : "Ciutkan sidebar";
   const ToggleIcon = collapsed ? PanelLeftOpenIcon : PanelLeftCloseIcon;
 
@@ -24,7 +30,9 @@ export function AppSidebar({ user }: AppSidebarProps) {
     <aside
       data-collapsed={collapsed}
       className={cn(
-        "sticky top-0 z-30 hidden h-svh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out motion-reduce:transition-none lg:flex",
+        "sticky top-0 z-30 hidden h-svh shrink-0 flex-col bg-sidebar text-sidebar-foreground lg:flex",
+        // Animate only user toggles, not the jump to the stored width on load.
+        hasHydrated && "transition-[width] duration-200 ease-out motion-reduce:transition-none",
         collapsed ? "w-20" : "w-72",
       )}
     >
