@@ -15,20 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logoutAction } from "@/features/auth/actions";
-import type { SessionUser, UserRole } from "@/features/auth/types/auth";
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  admin: "Admin",
-};
-
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
+import type { SessionUser } from "@/features/auth/types/auth";
+import { ROLE_LABELS } from "@/features/auth/user-display";
+import { getInitials } from "@/lib/utils";
 
 type UserMenuProps = {
   user: SessionUser;
@@ -44,7 +33,7 @@ export function UserMenu({ user }: UserMenuProps) {
         aria-label="Menu pengguna"
       >
         <Avatar className="size-8">
-          <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+          <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
             {getInitials(user.name)}
           </AvatarFallback>
         </Avatar>

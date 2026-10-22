@@ -71,17 +71,18 @@ src/
 - Prefer: flat surfaces, clear hierarchy, subtle borders, generous whitespace, functional density.
 
 ### Colors
-Use only these semantic tokens. Do not introduce random Tailwind colors such as blue-500, purple-600, or emerald-400 in components.
+Use only these semantic tokens (60-30-10 palette, see docs/design/design-decisions.md). Do not introduce random Tailwind colors such as blue-500, purple-600, or emerald-400 in components.
 
-- Primary: deep teal, used for primary actions and active navigation.
-- Background: warm off-white.
+- Base (60%): #F8F8FF — page background, form background, light sections.
+- Primary (30%): navy #191970 — sidebar, primary buttons, active navigation, important headings. Text on navy: #F8F8FF or white.
+- Accent (10%): #87CEFA — indicators, focus ring, selected states, subtle borders, badges with navy text. Never use it as text on light backgrounds or as the main button color.
 - Surface/card: white.
-- Muted: soft warm gray for secondary text and inactive elements.
-- Border: subtle warm gray.
+- Muted: desaturated navy-gray for secondary text and inactive elements.
+- Border: subtle navy-gray.
 - Success: muted green.
 - Warning: amber.
 - Danger: restrained red.
-- Focus ring: primary color.
+- Focus ring: accent color.
 
 ### Typography
 - UI font: Inter.
