@@ -1,5 +1,9 @@
 import { isAuthApiError } from "@supabase/supabase-js";
 
+import { redirect } from "next/navigation";
+
+import { routes } from "@/config/routes";
+import type { PermissionCode } from "@/config/permissions";
 import { ApiError } from "@/lib/api-error";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ROLE_CODES, type LoginInput, type RoleCode, type SessionUser } from "@/features/auth/types/auth";
@@ -18,7 +22,7 @@ function isRoleCode(value: string): value is RoleCode {
 async function loadSessionUser(supabase: SupabaseServerClient, userId: string, email: string): Promise<SessionUser | null> {
   const { data, error } = await supabase
     .from("user_accounts")
-    .select("is_active, employee_id, role:roles(code, name), employee:employees(full_name)")
+    .select("is_active, employee_id, role:roles(code, name, role_permissions(permission:permissions(code))), employee:employees(full_name)")
     .eq("id", userId)
     .maybeSingle();
 
@@ -36,6 +40,7 @@ async function loadSessionUser(supabase: SupabaseServerClient, userId: string, e
     roleCode: data.role.code,
     roleName: data.role.name,
     employeeId: data.employee_id,
+    permissions: data.role.role_permissions.flatMap((grant) => (grant.permission ? [grant.permission.code] : [])),
   };
 }
 
@@ -79,4 +84,12 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     return null;
   }
   return loadSessionUser(supabase, claims.sub, typeof claims.email === "string" ? claims.email : "");
+}
+
+/** Current user, redirecting to login when signed out and to the dashboard when the permission is missing. */
+export async function requirePermission(permission: PermissionCode): Promise<SessionUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect(`${routes.login}?reason=session`);
+  if (!user.permissions.includes(permission)) redirect(routes.dashboard);
+  return user;
 }

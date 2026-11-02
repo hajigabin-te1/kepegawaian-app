@@ -242,7 +242,9 @@ Arti nama-nama yang paling sering muncul. Kalau menemukan nama yang belum ada di
 - **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` (Next.js tidak membaca `.env.example`).
 - **Dashboard** masih memakai data contoh; data asli dari Supabase menyusul per modul.
 - **Halaman pegawai** (daftar/tambah/detail/ubah) masih placeholder. Ini fase berikutnya (lihat `docs/requirements.md`).
-- **Menu per peran** belum dibedakan: semua akun melihat menu yang sama.
+- **Hak akses (RBAC):** menu disaring dari `permissions` milik peran (`config/navigation.ts`), proxy memblokir
+  halaman yang butuh izin (`config/permissions.ts`), dan halaman memanggil `requirePermission(...)`.
+- **Pembuatan akun baru** belum ada di aplikasi; sementara lewat dashboard Supabase (Authentication → Add user).
 - **Pencarian & notifikasi** baru tampilan saja.
 
 ---

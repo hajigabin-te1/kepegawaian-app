@@ -9,6 +9,8 @@ export type SessionUser = {
   roleCode: RoleCode;
   roleName: string;
   employeeId: string | null;
+  /** Permission codes granted to the user's role (e.g. "master.manage"). */
+  permissions: string[];
 };
 
 export type LoginInput = {

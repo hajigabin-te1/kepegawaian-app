@@ -1837,6 +1837,21 @@ export type Database = {
       }
       has_permission: { Args: { permission_code: string }; Returns: boolean }
       has_report_access: { Args: { report_name: string }; Returns: boolean }
+      list_user_accounts: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          employee_id: string
+          employee_name: string
+          id: string
+          is_active: boolean
+          last_sign_in_at: string
+          role_code: string
+          role_id: number
+          role_name: string
+        }[]
+      }
       log_audit_event: {
         Args: {
           description?: string

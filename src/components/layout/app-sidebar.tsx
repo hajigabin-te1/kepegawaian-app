@@ -53,7 +53,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
       </button>
 
       <div className="flex-1 overflow-x-hidden overflow-y-auto">
-        <SidebarNav collapsed={collapsed} />
+        <SidebarNav permissions={user.permissions} collapsed={collapsed} />
       </div>
 
       <SidebarUser user={user} collapsed={collapsed} />
