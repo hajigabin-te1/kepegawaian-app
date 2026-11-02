@@ -1,6 +1,6 @@
 -- =============================================================================
--- Reference data. Only values stated in the requirement documents are seeded;
--- anything still unconfirmed (leave quotas, working hours, GPS locations) is left for HR to fill in.
+-- Reference data. Only values stated in the requirement documents or confirmed decisions
+-- (docs/requirements.md section 6) are seeded; unconfirmed rules such as leave quotas stay unset.
 -- =============================================================================
 
 insert into public.roles (code, name) values
