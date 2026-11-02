@@ -10,6 +10,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261102000004_performance_appraisal.sql` | Periode penilaian, form penilaian, indikator, rekap per unit |
 | `migrations/20261102000005_training_mutation_promotion.sql` | Diklat, pendaftaran diklat, mutasi, kenaikan pangkat/jabatan |
 | `migrations/20261102000006_announcements_reports_storage.sql` | Pengumuman, rekap pegawai per unit, bucket Storage |
+| `migrations/20261103000001_restrict_function_execute.sql` | Membatasi fungsi yang bisa dipanggil lewat API: `anon` tidak bisa memanggil fungsi apa pun; pengguna login hanya bisa memanggil RPC aplikasi dan helper RLS |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -42,6 +43,17 @@ File SQL ada di `supabase/`:
    NEXT_PUBLIC_SUPABASE_URL=...
    NEXT_PUBLIC_SUPABASE_ANON_KEY=...
    ```
+
+**Jika `db push` gagal dengan `... already exists`**
+
+Artinya SQL pernah dijalankan manual (SQL Editor), sehingga tabelnya ada tetapi riwayat migrasi CLI kosong.
+Tandai migrasi yang sudah terpasang, lalu push sisanya:
+
+```bash
+npx supabase migration repair --status applied 20261102000001 20261102000002 20261102000003 20261102000004 20261102000005 20261102000006
+npx supabase db push
+npx supabase migration list   # kolom Local dan Remote harus sama
+```
 
 **Lewat Supabase CLI**
 
@@ -170,7 +182,7 @@ di `audit_logs` lewat trigger.
 ## Pengujian
 
 Skema sudah diuji dengan PGlite (Postgres di Node) memakai stub `auth` & `storage`:
-seluruh migrasi + seed berjalan, dan 45 skenario lolos. Skenario mencakup: visibilitas per peran
+seluruh migrasi + seed berjalan, dan 51 skenario lolos (termasuk hak eksekusi fungsi untuk `anon` dan pengguna login). Skenario mencakup: visibilitas per peran
 (pimpinan hanya statistik; cakupan Ketua, Wakil Ketua bidang, dan LPM), cuti diajukan → HR setuju → kuota & notifikasi, presensi GPS di titik kampus
 (65 m diterima, 150 m ditolak, presensi ganda ditolak, terlambat, pulang awal tendik, pulang bebas dosen), koreksi HR, penilaian kinerja oleh HR, diklat → riwayat,
 mutasi, dan akses file Storage. Tetap jalankan di project Supabase uji coba sebelum dipakai.
