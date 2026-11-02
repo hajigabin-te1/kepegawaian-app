@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { APP_TIME_ZONE } from "@/config/locale";
 import { routes } from "@/config/routes";
 import type {
   EmployeeCategory,
@@ -43,7 +44,7 @@ const dateFormatter = new Intl.DateTimeFormat("id-ID", {
   day: "numeric",
   month: "short",
   year: "numeric",
-  timeZone: "Asia/Jakarta",
+  timeZone: APP_TIME_ZONE,
 });
 
 const HEAD_CLASS = "h-10 text-xs font-medium text-muted-foreground";

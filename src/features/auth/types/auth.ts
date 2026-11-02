@@ -1,17 +1,17 @@
-export type UserRole = "admin";
+export const ROLE_CODES = ["superadmin", "hr_admin", "chair", "vice_chair", "quality_assurance", "employee"] as const;
+
+export type RoleCode = (typeof ROLE_CODES)[number];
 
 export type SessionUser = {
-  username: string;
-  name: string;
-  role: UserRole;
+  id: string;
+  email: string;
+  displayName: string;
+  roleCode: RoleCode;
+  roleName: string;
+  employeeId: string | null;
 };
 
 export type LoginInput = {
-  username: string;
+  email: string;
   password: string;
-};
-
-export type AuthResult = {
-  user: SessionUser;
-  sessionToken: string;
 };

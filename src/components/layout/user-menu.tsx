@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { logoutAction } from "@/features/auth/actions";
 import type { SessionUser } from "@/features/auth/types/auth";
-import { ROLE_LABELS } from "@/features/auth/user-display";
 import { getInitials } from "@/lib/utils";
 
 type UserMenuProps = {
@@ -34,20 +33,20 @@ export function UserMenu({ user }: UserMenuProps) {
       >
         <Avatar className="size-8">
           <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
-            {getInitials(user.name)}
+            {getInitials(user.displayName)}
           </AvatarFallback>
         </Avatar>
         <span className="hidden text-left leading-tight sm:block">
-          <span className="block text-sm font-medium">{user.name}</span>
-          <span className="block text-xs text-muted-foreground">{ROLE_LABELS[user.role]}</span>
+          <span className="block text-sm font-medium">{user.displayName}</span>
+          <span className="block text-xs text-muted-foreground">{user.roleName}</span>
         </span>
         <ChevronDownIcon className="hidden size-4 text-muted-foreground sm:block" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuGroup>
           <DropdownMenuLabel>
-            <span className="block text-sm font-medium text-foreground">{user.name}</span>
-            <span className="block text-xs font-normal">@{user.username}</span>
+            <span className="block text-sm font-medium text-foreground">{user.displayName}</span>
+            <span className="block text-xs font-normal">{user.email}</span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

@@ -1,6 +1,5 @@
-import { useId } from "react";
+import { Suspense, useId } from "react";
 import type { Metadata } from "next";
-import { KeyRoundIcon } from "lucide-react";
 
 import { BrandMonogram, INSTITUTION_NAME } from "@/components/layout/app-brand";
 import { LoginForm } from "@/features/auth/components/login-form";
@@ -112,16 +111,10 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <LoginForm />
+            <Suspense>
+              <LoginForm />
+            </Suspense>
 
-            <div className="flex gap-3 border-l-2 border-accent py-1 pl-4 text-xs leading-relaxed text-muted-foreground">
-              <KeyRoundIcon className="mt-0.5 size-4 shrink-0 text-primary" />
-              <p>
-                <span className="font-medium text-foreground">Akun demo sementara.</span> Autentikasi belum terhubung ke
-                API. Masuk dengan <span className="font-medium text-foreground tabular-nums">admin</span> dan password{" "}
-                <span className="font-medium text-foreground tabular-nums">admin123</span>.
-              </p>
-            </div>
           </div>
         </div>
 

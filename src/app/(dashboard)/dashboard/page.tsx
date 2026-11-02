@@ -4,6 +4,7 @@ import { CalendarDaysIcon, FlaskConicalIcon, UserPlusIcon, UsersIcon } from "luc
 
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
+import { APP_TIME_ZONE } from "@/config/locale";
 import { routes } from "@/config/routes";
 import { KpiStrip } from "@/features/dashboard/components/kpi-strip";
 import { PendingDocumentsCard } from "@/features/dashboard/components/pending-documents-card";
@@ -23,7 +24,7 @@ const dateFormatter = new Intl.DateTimeFormat("id-ID", {
   day: "numeric",
   month: "long",
   year: "numeric",
-  timeZone: "Asia/Jakarta",
+  timeZone: APP_TIME_ZONE,
 });
 
 export default function DashboardPage() {
