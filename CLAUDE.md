@@ -5,13 +5,16 @@
 - Tailwind CSS + shadcn/ui
 - Zustand untuk client state
 - TanStack Query untuk server state
-- Axios untuk HTTP client
+- Supabase (Postgres, Auth, Storage) sebagai backend, diakses dengan `@supabase/supabase-js` + `@supabase/ssr`
+- Axios hanya untuk HTTP client ke API pihak ketiga (bukan Supabase)
 - React Hook Form + Zod untuk form validation
 
 ## Aturan utama
-- API pegawai sudah disediakan. Jangan membuat backend atau database baru.
-- Jangan mengarang endpoint, field, response, atau aturan bisnis.
-- Jika detail API belum jelas, buat `docs/api-contract.md` berisi pertanyaan dan asumsi, lalu tunggu konfirmasi.
+- Backend adalah Supabase. Jangan membuat backend, API route, atau database lain.
+- Kebutuhan sistem ada di `docs/requirements.md`; skema database di `supabase/migrations` (penjelasan: `docs/database-schema.md`).
+- Perubahan skema dibuat sebagai file migrasi baru di `supabase/migrations`, jangan mengedit migrasi yang sudah dijalankan.
+- Jangan mengarang tabel, kolom, atau aturan bisnis di luar dokumen kebutuhan. Hal yang belum jelas dicatat di `docs/requirements.md` (bagian pertanyaan) lalu tunggu konfirmasi.
+- Akses data dibatasi lewat Row Level Security; jangan memakai service role key di kode frontend.
 - Kerjakan fitur secara bertahap. Jangan membuat seluruh aplikasi sekaligus.
 - Semua pemanggilan API harus melalui service layer.
 - Gunakan TanStack Query untuk data server.
@@ -35,13 +38,25 @@ src/
       services/
       types/
     auth/
+    (modul lain mengikuti pola employees: attendance, leave, performance, training, mutation)
   lib/
   stores/
   types/
   config/
+supabase/
+  migrations/
+  seed.sql
+
+## Supabase
+- Buat client terpusat di `src/lib/supabase/` (browser client dan server client via `@supabase/ssr`).
+- Service layer (`features/*/services`) membungkus query dan RPC Supabase; komponen tidak memanggil Supabase langsung.
+- Normalisasi error Supabase menjadi `ApiError` di service layer.
+- Sesi login dikelola cookie `@supabase/ssr`; `src/proxy.ts` menyegarkan sesi dan melindungi route.
+- Persetujuan (cuti, koreksi presensi, penilaian, diklat, mutasi) memakai fungsi RPC di skema, bukan update langsung.
+- Jangan hardcode URL atau key; gunakan `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
 ## Axios
-- Buat `src/lib/axios.ts` sebagai Axios instance terpusat.
+- `src/lib/axios.ts` hanya untuk API pihak ketiga (mis. integrasi Keuangan/SIAKAD nanti).
 - Gunakan interceptor untuk base URL, Authorization header, normalisasi error, dan handling 401.
 - Jangan hardcode URL API atau credential; gunakan environment variable.
 
