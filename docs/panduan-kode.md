@@ -15,12 +15,13 @@ API pegawai yang asli belum dikonfirmasi, jadi:
 
 | Bagian | Kondisi sekarang |
 |---|---|
-| Login & sesi | **Mock** (palsu, sementara): user `admin` / `admin123`, sesi disimpan di cookie httpOnly |
+| Login & sesi | **Supabase Auth**: login dengan email + password, sesi di cookie yang dikelola `@supabase/ssr` |
 | Proteksi halaman | **Sudah jalan** lewat `src/proxy.ts` |
 | Tampilan (sidebar, header, login, dashboard) | **Sudah jadi** |
 | Dashboard | Isinya **data contoh** (`mock-dashboard.ts`) |
 | Halaman pegawai (daftar, tambah, detail, ubah) | Masih **placeholder** |
-| Axios, TanStack Query | Sudah disiapkan, **belum dipakai** memanggil API |
+| Database | **Supabase** (skema di `supabase/migrations`, penjelasan di `docs/database-schema.md`) |
+| TanStack Query | Sudah disiapkan, belum dipakai (dipakai mulai modul data pegawai) |
 
 Daftar pertanyaan ke tim API ada di `docs/api-contract.md`.
 
@@ -71,11 +72,9 @@ src/
     auth/                      Semua hal tentang login
       types/auth.ts            Bentuk data: SessionUser, LoginInput, AuthResult
       schemas/login-schema.ts  Aturan validasi form login (Zod)
-      services/mock-auth.ts    Pengecekan username/password PALSU — nanti diganti API asli
-      services/session.ts      Baca/tulis/hapus cookie sesi
+      services/auth-service.ts Login/logout Supabase + baca akun yang sedang login (getCurrentUser)
       actions.ts               Server Action: loginAction, logoutAction
       components/login-form.tsx Form login (React Hook Form)
-      user-display.ts          Label peran ("admin" → "Administrator")
     dashboard/
       data/mock-dashboard.ts   Data contoh dashboard
       components/              KpiStrip, RecentEmployeesCard, PendingDocumentsCard
@@ -87,7 +86,7 @@ src/
     utils.ts                   cn() (gabung class) + getInitials() (inisial nama)
   stores/
     ui-store.ts                State tampilan (Zustand): sidebar diciutkan / drawer mobile
-    auth-store.ts              Token di memori (belum dipakai; lihat bagian 9)
+    auth-store.ts              Token di memori untuk Axios (API pihak ketiga; belum dipakai)
   config/
     env.ts                     Membaca environment variable
     routes.ts                  Daftar URL aplikasi
@@ -100,20 +99,24 @@ src/
 
 1. Pengguna membuka `/login` → `src/app/(auth)/login/page.tsx` menampilkan `LoginForm`.
 2. `LoginForm` (`features/auth/components/login-form.tsx`):
-   - `useForm(...)` membuat form dengan aturan dari `loginSchema` (username & password wajib diisi).
-   - Saat tombol **Masuk** ditekan, `handleSubmit(onSubmit)` memvalidasi dulu. Kalau kosong, pesan
+   - `useForm(...)` membuat form dengan aturan dari `loginSchema` (email valid & password wajib diisi).
+   - Saat tombol **Masuk** ditekan, `handleSubmit(onSubmit)` memvalidasi dulu. Kalau salah, pesan
      error muncul di bawah field dan `onSubmit` tidak dijalankan.
    - `onSubmit` memanggil `loginAction(values)`.
 3. `loginAction` (`features/auth/actions.ts`) berjalan **di server**:
    - Memvalidasi ulang dengan `loginSchema.safeParse` (jangan percaya data dari browser).
-   - `verifyCredentials` (`mock-auth.ts`) mencocokkan dengan user palsu. Salah → mengembalikan
-     `{ error: "Username atau password salah." }` → ditampilkan sebagai Alert merah.
-   - Benar → `createSession` (`session.ts`) menyimpan cookie `kp_session` (httpOnly, 8 jam),
-     lalu `redirect("/dashboard")`.
-4. Logout: tombol di bawah sidebar atau menu avatar → `logoutAction` → `deleteSession` → `/login`.
+   - `signInWithEmail` (`auth-service.ts`) memanggil `supabase.auth.signInWithPassword`.
+     Salah → "Email atau password salah." (Alert merah).
+   - Login berhasil, tetapi akunnya tidak ada di `user_accounts` atau nonaktif → langsung logout lagi,
+     pesan "Akun belum terdaftar … atau sedang nonaktif".
+   - Berhasil → kejadian `login` dicatat di `audit_logs`, cookie sesi Supabase tersimpan, lalu `redirect("/dashboard")`.
+4. Logout: tombol di bawah sidebar atau menu avatar → `logoutAction` → `signOut` → `/login`.
+   Ganti password: menu avatar → **Ganti Password** (`/profile/password`) → `changePasswordAction`
+   → `changePassword` (cek password lama dulu, lalu `supabase.auth.updateUser`).
+5. Siapa yang sedang login dibaca `getCurrentUser()`: klaim JWT Supabase → baris `user_accounts`
+   (role, status aktif) → nama dari `employees` (kalau akun terhubung ke pegawai), atau nama role.
 
-**httpOnly** artinya cookie tidak bisa dibaca JavaScript di browser, jadi lebih aman dari pencurian
-lewat script.
+Cookie sesi dikelola `@supabase/ssr` dan disegarkan otomatis oleh `src/proxy.ts`.
 
 ---
 
@@ -145,7 +148,7 @@ halaman tetap di-redirect ke `/login`.
 - **`SidebarNav`**: daftar menu dari `config/navigation.ts`. `findActiveNavItem` mencari menu yang
   paling cocok dengan URL sekarang (yang `href`-nya paling panjang menang), lalu menu itu diberi
   latar lebih terang + bar biru muda di kiri.
-- **`SidebarUser`**: avatar, nama, username, tombol keluar.
+- **`SidebarUser`**: avatar, nama, peran, tombol keluar.
 - **`MobileSidebar`**: versi drawer (laci) untuk layar kecil, dibuka dari tombol ☰ di header.
 - **`AppHeader`**: breadcrumb + judul (`HeaderBreadcrumb`), pencarian (`HeaderSearch`),
   notifikasi (`NotificationMenu`), menu avatar (`UserMenu`).
@@ -192,21 +195,20 @@ Arti nama-nama yang paling sering muncul. Kalau menemukan nama yang belum ada di
 ### Auth (login)
 | Nama | Arti |
 |---|---|
-| `SessionUser` | Data pengguna yang sedang login: `username`, `name`, `role` |
-| `LoginInput` | Isi form login: `username`, `password` |
-| `AuthResult` | Hasil login berhasil: `user` + `sessionToken` |
+| `SessionUser` | Data pengguna yang sedang login: `email`, `displayName`, `roleCode`, `roleName`, `employeeId` |
+| `RoleCode` | Kode peran: `superadmin`, `hr_admin`, `chair`, `vice_chair`, `quality_assurance`, `employee` |
+| `LoginInput` | Isi form login: `email`, `password` |
 | `loginSchema` | Aturan validasi form login |
-| `verifyCredentials` | Cek username + password (sekarang palsu) |
-| `getUserBySessionToken` | Ubah isi cookie sesi menjadi data user (atau `null`) |
-| `SESSION_COOKIE_NAME` | Nama cookie sesi: `kp_session` |
-| `createSession` / `deleteSession` / `getSession` | Simpan / hapus / baca cookie sesi |
+| `signInWithEmail` / `signOut` | Masuk / keluar lewat Supabase Auth |
+| `getCurrentUser` | Data akun yang sedang login (atau `null`) |
+| `createSupabaseServerClient` | Client Supabase untuk kode server (`lib/supabase/server.ts`) |
+| `updateSession` | Menyegarkan cookie sesi di proxy (`lib/supabase/proxy.ts`) |
 | `loginAction` / `logoutAction` | Aksi server untuk masuk / keluar |
 | `isPasswordVisible` | `true` jika password sedang ditampilkan (ikon mata) |
 | `register` | Menghubungkan sebuah input ke React Hook Form |
 | `handleSubmit` | Validasi dulu, baru panggil `onSubmit` |
-| `errors` | Pesan error per field (`errors.username`, `errors.root` untuk error umum) |
+| `errors` | Pesan error per field (`errors.email`, `errors.root` untuk error umum) |
 | `isSubmitting` | `true` selama proses login berjalan (tombol jadi "Memproses...") |
-| `ROLE_LABELS` | Label peran untuk ditampilkan (`admin` → "Administrator") |
 
 ### Tampilan (UI state)
 | Nama | Arti |
@@ -239,13 +241,13 @@ Arti nama-nama yang paling sering muncul. Kalau menemukan nama yang belum ada di
 
 ## 9. Yang belum dikerjakan & catatan penting
 
-- **API asli belum terhubung.** Semua pertanyaan ada di `docs/api-contract.md`.
-- **Auth masih mock.** Saat API auth tersedia, cukup ganti isi `features/auth/services/mock-auth.ts`.
-  Akun demo `admin` / `admin123` yang tampil di halaman login juga harus dihapus.
-- **Axios vs cookie.** `lib/axios.ts` mengirim token dari `auth-store.ts` (memori), padahal sesi
-  sekarang ada di cookie httpOnly. Ini perlu diputuskan bersama tim API.
-- **Halaman pegawai** (daftar/tambah/detail/ubah) masih placeholder. Ini tahap berikutnya,
-  setelah field dan endpoint pegawai dikonfirmasi.
+- **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` (Next.js tidak membaca `.env.example`).
+- **Dashboard** masih memakai data contoh; data asli dari Supabase menyusul per modul.
+- **Halaman pegawai** (daftar/tambah/detail/ubah) masih placeholder. Ini fase berikutnya (lihat `docs/requirements.md`).
+- **Hak akses (RBAC):** menu disaring dari `permissions` milik peran (`config/navigation.ts`), proxy memblokir
+  halaman yang butuh izin (`config/permissions.ts`), dan halaman memanggil `requirePermission(...)`.
+- **Pembuatan akun baru:** halaman Akun Pengguna → "Tambah Akun" memanggil Edge Function `admin-create-user`
+  (`supabase/functions/`), karena membuat user Supabase Auth butuh secret key yang tidak boleh ada di browser.
 - **Pencarian & notifikasi** baru tampilan saja.
 
 ---

@@ -1,11 +1,22 @@
-import { LayoutDashboardIcon, UserPlusIcon, UsersIcon, type LucideIcon } from "lucide-react";
+import {
+  Building2Icon,
+  BriefcaseIcon,
+  LayoutDashboardIcon,
+  UserCogIcon,
+  UserPlusIcon,
+  UsersIcon,
+  type LucideIcon,
+} from "lucide-react";
 
+import { PERMISSIONS, type PermissionCode } from "@/config/permissions";
 import { routes } from "@/config/routes";
 
 export type NavItem = {
   title: string;
   href: string;
   icon: LucideIcon;
+  /** Shown only to users holding this permission; omitted = every signed-in user. */
+  permission?: PermissionCode;
 };
 
 export type NavGroup = {
@@ -21,11 +32,32 @@ export const mainNavigation: NavGroup[] = [
   {
     title: "Kepegawaian",
     items: [
-      { title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon },
-      { title: "Tambah Pegawai", href: routes.employees.create, icon: UserPlusIcon },
+      { title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon, permission: PERMISSIONS.employeeView },
+      { title: "Tambah Pegawai", href: routes.employees.create, icon: UserPlusIcon, permission: PERMISSIONS.employeeManage },
     ],
   },
+  {
+    title: "Master data",
+    items: [
+      { title: "Unit Kerja", href: routes.masterData.workUnits, icon: Building2Icon, permission: PERMISSIONS.masterManage },
+      { title: "Jabatan", href: routes.masterData.positions, icon: BriefcaseIcon, permission: PERMISSIONS.masterManage },
+    ],
+  },
+  {
+    title: "Administrasi",
+    items: [{ title: "Akun Pengguna", href: routes.accounts, icon: UserCogIcon, permission: PERMISSIONS.userManage }],
+  },
 ];
+
+/** Navigation groups the user may see; empty groups are dropped. */
+export function navigationFor(permissions: readonly string[]): NavGroup[] {
+  return mainNavigation
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.permission || permissions.includes(item.permission)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
 
 function matchesPath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);

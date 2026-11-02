@@ -41,3 +41,26 @@ export function toApiError(error: unknown): ApiError {
 
   return new ApiError(DEFAULT_ERROR_MESSAGE, null, null);
 }
+
+type PostgrestLikeError = {
+  code?: string;
+  message: string;
+  details?: string | null;
+  hint?: string | null;
+};
+
+const POSTGREST_MESSAGES: Record<string, string> = {
+  "23505": "Data dengan nama tersebut sudah ada.",
+  "23503": "Data masih dipakai oleh data lain sehingga tidak dapat diubah.",
+  "23514": "Data tidak memenuhi aturan validasi.",
+  "42501": "Anda tidak memiliki akses untuk tindakan ini.",
+  // .single() after an update/insert that RLS filtered out returns no row.
+  PGRST116: "Data tidak ditemukan atau Anda tidak memiliki akses.",
+};
+
+/** Normalizes a Supabase/PostgREST error into an ApiError with an Indonesian message. */
+export function fromSupabaseError(error: PostgrestLikeError, overrides: Record<string, string> = {}): ApiError {
+  const byHint = error.hint ? overrides[error.hint] : undefined;
+  const byCode = error.code ? (overrides[error.code] ?? POSTGREST_MESSAGES[error.code]) : undefined;
+  return new ApiError(byHint ?? byCode ?? DEFAULT_ERROR_MESSAGE, null, error);
+}

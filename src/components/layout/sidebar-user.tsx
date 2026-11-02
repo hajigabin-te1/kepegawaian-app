@@ -27,15 +27,15 @@ export function SidebarUser({ user, collapsed = false }: SidebarUserProps) {
           collapsed && "flex-col gap-2 border-transparent bg-transparent p-0",
         )}
       >
-        <Avatar className="size-9 after:border-sidebar-primary/40" title={collapsed ? user.name : undefined}>
+        <Avatar className="size-9 after:border-sidebar-primary/40" title={collapsed ? user.displayName : undefined}>
           <AvatarFallback className="bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground">
-            {getInitials(user.name)}
+            {getInitials(user.displayName)}
           </AvatarFallback>
         </Avatar>
         {collapsed ? null : (
           <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-sm font-semibold">{user.name}</p>
-            <p className="truncate text-xs text-sidebar-foreground/65 tabular-nums">@{user.username}</p>
+            <p className="truncate text-sm font-semibold">{user.displayName}</p>
+            <p className="truncate text-xs text-sidebar-foreground/65" title={user.email}>{user.roleName}</p>
           </div>
         )}
         <Button

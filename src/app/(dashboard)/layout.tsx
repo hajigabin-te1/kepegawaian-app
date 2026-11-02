@@ -5,12 +5,12 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
-import { getSession } from "@/features/auth/services/session";
+import { getCurrentUser } from "@/features/auth/services/auth-service";
 
 async function DashboardShell({ children }: { children: ReactNode }) {
-  const user = await getSession();
-  // The proxy already guards these routes; this is a second line of defense.
-  if (!user) redirect(routes.login);
+  const user = await getCurrentUser();
+  // The proxy already guards these routes; this also catches accounts that are missing or deactivated.
+  if (!user) redirect(`${routes.login}?reason=session`);
 
   return (
     <div className="flex min-h-svh flex-1">

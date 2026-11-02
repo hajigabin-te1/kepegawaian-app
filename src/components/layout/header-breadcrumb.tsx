@@ -14,12 +14,18 @@ import {
 import { findActiveNavItem } from "@/config/navigation";
 import { routes } from "@/config/routes";
 
+/** Pages reachable from the user menu rather than the sidebar. */
+const STANDALONE_PAGE_TITLES: Record<string, string> = {
+  [routes.profile.password]: "Ganti Password",
+};
+
 /** Route-derived breadcrumb and current section title shown in the top header. */
 export function HeaderBreadcrumb() {
   const pathname = usePathname();
+  const standaloneTitle = STANDALONE_PAGE_TITLES[pathname];
   const activeItem = findActiveNavItem(pathname);
   const isNested = activeItem !== undefined && pathname !== activeItem.href;
-  const title = isNested ? "Detail" : (activeItem?.title ?? "Beranda");
+  const title = standaloneTitle ?? (isNested ? "Detail" : (activeItem?.title ?? "Beranda"));
 
   return (
     <div className="min-w-0 leading-tight">
@@ -37,6 +43,14 @@ export function HeaderBreadcrumb() {
                 ) : (
                   <BreadcrumbPage className="text-muted-foreground">{activeItem.title}</BreadcrumbPage>
                 )}
+              </BreadcrumbItem>
+            </>
+          ) : null}
+          {standaloneTitle ? (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-muted-foreground">{standaloneTitle}</BreadcrumbPage>
               </BreadcrumbItem>
             </>
           ) : null}

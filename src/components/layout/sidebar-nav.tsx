@@ -4,20 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
 
-import { findActiveNavItem, mainNavigation } from "@/config/navigation";
+import { findActiveNavItem, navigationFor } from "@/config/navigation";
 
 type SidebarNavProps = {
+  permissions: readonly string[];
   collapsed?: boolean;
   onNavigate?: () => void;
 };
 
-export function SidebarNav({ collapsed = false, onNavigate }: SidebarNavProps) {
+export function SidebarNav({ permissions, collapsed = false, onNavigate }: SidebarNavProps) {
   const pathname = usePathname();
   const activeHref = findActiveNavItem(pathname)?.href;
 
   return (
     <nav aria-label="Navigasi utama" className={cn("flex flex-col gap-6 py-5", collapsed ? "px-3" : "px-4")}>
-      {mainNavigation.map((group) => (
+      {navigationFor(permissions).map((group) => (
         <div key={group.title} className="flex flex-col gap-1">
           {collapsed ? (
             <span aria-hidden="true" className="mx-auto mb-1 h-px w-6 bg-sidebar-border" />

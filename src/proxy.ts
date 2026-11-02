@@ -1,36 +1,49 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
+import { requiredPermissionFor } from "@/config/permissions";
 import { routes } from "@/config/routes";
-import { getUserBySessionToken } from "@/features/auth/services/mock-auth";
-import { SESSION_COOKIE_NAME } from "@/features/auth/services/session";
+import { redirectWithCookies, updateSession } from "@/lib/supabase/proxy";
 
-const PROTECTED_PREFIXES = [routes.dashboard, routes.employees.list];
+const PROTECTED_PREFIXES = [routes.dashboard, routes.employees.list, "/master", routes.accounts, "/profile"];
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isAuthenticated =
-    getUserBySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value) !== null;
+  const { supabase, userId, getResponse } = await updateSession(request);
 
   if (pathname === "/") {
-    const target = isAuthenticated ? routes.dashboard : routes.login;
-    return NextResponse.redirect(new URL(target, request.url));
+    return redirectWithCookies(request, getResponse(), userId ? routes.dashboard : routes.login);
   }
 
-  if (pathname === routes.login && isAuthenticated) {
-    return NextResponse.redirect(new URL(routes.dashboard, request.url));
+  if (pathname === routes.login && userId) {
+    // Signed in to Supabase but without an active account (e.g. deactivated): end the session and stay on login.
+    const { data: account } = await supabase.from("user_accounts").select("is_active").eq("id", userId).maybeSingle();
+    if (!account?.is_active) {
+      await supabase.auth.signOut();
+      return getResponse();
+    }
+    return redirectWithCookies(request, getResponse(), routes.dashboard);
   }
 
-  if (isProtectedPath(pathname) && !isAuthenticated) {
-    return NextResponse.redirect(new URL(routes.login, request.url));
+  if (isProtectedPath(pathname) && !userId) {
+    return redirectWithCookies(request, getResponse(), routes.login);
   }
 
-  return NextResponse.next();
+  // Role-based access: pages that need a permission send other users back to the dashboard.
+  const permission = requiredPermissionFor(pathname);
+  if (permission && userId) {
+    const { data: allowed } = await supabase.rpc("has_permission", { permission_code: permission });
+    if (!allowed) {
+      return redirectWithCookies(request, getResponse(), routes.dashboard);
+    }
+  }
+
+  return getResponse();
 }
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard/:path*", "/employees/:path*"],
+  matcher: ["/", "/login", "/dashboard/:path*", "/employees/:path*", "/master/:path*", "/accounts/:path*", "/profile/:path*"],
 };

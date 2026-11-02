@@ -36,7 +36,7 @@ export function MobileSidebar({ user }: MobileSidebarProps) {
           <AppBrand tone="inverse" />
         </SheetHeader>
         <div className="flex-1 overflow-y-auto">
-          <SidebarNav onNavigate={() => setOpen(false)} />
+          <SidebarNav permissions={user.permissions} onNavigate={() => setOpen(false)} />
         </div>
         <SidebarUser user={user} />
       </SheetContent>

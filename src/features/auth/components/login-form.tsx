@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -9,7 +10,7 @@ import {
   EyeOffIcon,
   Loader2Icon,
   LockKeyholeIcon,
-  UserRoundIcon,
+  MailIcon,
 } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -22,7 +23,13 @@ import type { LoginInput } from "@/features/auth/types/auth";
 
 const GENERIC_ERROR_MESSAGE = "Terjadi kesalahan. Silakan coba lagi.";
 
+const REDIRECT_MESSAGES: Record<string, string> = {
+  session: "Sesi Anda berakhir atau akun tidak aktif. Silakan masuk kembali.",
+};
+
 export function LoginForm() {
+  const reason = useSearchParams().get("reason");
+  const redirectMessage = reason ? REDIRECT_MESSAGES[reason] : undefined;
   const [isPasswordVisible, setPasswordVisible] = useState(false);
   const {
     register,
@@ -31,7 +38,7 @@ export function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { username: "", password: "" },
+    defaultValues: { email: "", password: "" },
     mode: "onTouched",
   });
 
@@ -47,6 +54,13 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+      {!errors.root?.message && redirectMessage ? (
+        <Alert>
+          <CircleAlertIcon />
+          <AlertDescription>{redirectMessage}</AlertDescription>
+        </Alert>
+      ) : null}
+
       {errors.root?.message ? (
         <Alert variant="destructive">
           <CircleAlertIcon />
@@ -55,22 +69,24 @@ export function LoginForm() {
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
+        <Label htmlFor="email">Email</Label>
         <div className="relative">
-          <UserRoundIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <MailIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            id="username"
-            autoComplete="username"
-            placeholder="Masukkan username"
+            id="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="nama@stiaamuntai.ac.id"
             className="h-11 bg-card pl-9 transition-colors hover:border-primary/40"
-            aria-invalid={errors.username ? true : undefined}
-            aria-describedby={errors.username ? "username-error" : undefined}
-            {...register("username")}
+            aria-invalid={errors.email ? true : undefined}
+            aria-describedby={errors.email ? "email-error" : undefined}
+            {...register("email")}
           />
         </div>
-        {errors.username ? (
-          <p id="username-error" className="text-sm text-destructive">
-            {errors.username.message}
+        {errors.email ? (
+          <p id="email-error" className="text-sm text-destructive">
+            {errors.email.message}
           </p>
         ) : null}
       </div>
