@@ -11,7 +11,8 @@ create type public.employee_category as enum ('lecturer', 'staff');
 create type public.gender as enum ('male', 'female');
 create type public.marital_status as enum ('single', 'married', 'divorced', 'widowed');
 create type public.employee_active_status as enum ('active', 'inactive', 'retired');
-create type public.work_unit_type as enum ('faculty', 'study_program', 'bureau', 'section', 'technical_unit', 'other');
+-- 'field' = bidang of a vice chair (akademik, umum, kemahasiswaan); units under it use parent_id.
+create type public.work_unit_type as enum ('field', 'faculty', 'study_program', 'bureau', 'section', 'technical_unit', 'other');
 create type public.request_status as enum ('pending', 'approved', 'rejected', 'cancelled');
 
 -- ---------------------------------------------------------------------------
@@ -41,7 +42,7 @@ create table public.work_units (
   updated_at timestamptz not null default now(),
   unique (parent_id, name)
 );
-comment on table public.work_units is 'Unit kerja (fakultas, prodi, bagian, UPT). parent_id = induk unit.';
+comment on table public.work_units is 'Unit kerja (bidang, fakultas, prodi, bagian, UPT). parent_id = induk unit.';
 
 create table public.positions (
   id uuid primary key default gen_random_uuid(),
@@ -171,6 +172,92 @@ set search_path = ''
 as $$
   select target_employee_id = public.current_employee_id()
       or public.has_permission(permission_code)
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Leadership statistics scopes (aggregated reports only, never individual rows)
+-- ---------------------------------------------------------------------------
+-- One account may hold several scopes. Examples:
+--   Ketua, LPM            : work_unit_id null (whole campus), all categories, all reports
+--   Wakil Ketua bidang    : the bidang unit (type 'field'); every unit below it is included
+--   Kaprodi               : their study program, employee_category 'lecturer', reports {attendance}
+create table public.report_scopes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.user_accounts (id) on delete cascade,
+  work_unit_id uuid references public.work_units (id) on delete cascade,   -- null = whole campus
+  employee_category public.employee_category,                              -- null = dosen & tendik
+  reports text[] not null default array['employees', 'attendance', 'leave', 'appraisal'],
+  created_at timestamptz not null default now(),
+  check (cardinality(reports) > 0 and reports <@ array['employees', 'attendance', 'leave', 'appraisal'])
+);
+create index report_scopes_user_idx on public.report_scopes (user_id);
+
+-- True when target_unit is scope_unit itself or any unit below it.
+create or replace function public.unit_is_within(target_unit uuid, scope_unit uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with recursive chain (id, parent_id) as (
+    select w.id, w.parent_id from public.work_units w where w.id = target_unit
+    union all
+    select w.id, w.parent_id from public.work_units w join chain c on w.id = c.parent_id
+  ) cycle id set is_cycle using path
+  select exists (select 1 from chain where id = scope_unit)
+$$;
+
+-- Permission that gives HR full access to a report area.
+create or replace function public.report_full_access_permission(report_name text)
+returns text
+language sql
+immutable
+set search_path = ''
+as $$
+  select case report_name
+    when 'employees' then 'employee.view'
+    when 'attendance' then 'attendance.view'
+    when 'leave' then 'leave.view'
+    when 'appraisal' then 'appraisal.manage'
+  end
+$$;
+
+-- May the current user see aggregated report_name figures for employees of this unit and category?
+create or replace function public.can_report_on(report_name text, target_unit uuid, target_category public.employee_category)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select public.has_permission(public.report_full_access_permission(report_name))
+      or (
+        public.has_permission('report.view')
+        and exists (
+          select 1
+          from public.report_scopes s
+          where s.user_id = auth.uid()
+            and report_name = any (s.reports)
+            and (s.employee_category is null or s.employee_category = target_category)
+            and (s.work_unit_id is null or (target_unit is not null and public.unit_is_within(target_unit, s.work_unit_id)))
+        )
+      )
+$$;
+
+-- Does the current user have any access to report_name? Used to reject callers outright.
+create or replace function public.has_report_access(report_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select public.has_permission(public.report_full_access_permission(report_name))
+      or (
+        public.has_permission('report.view')
+        and exists (select 1 from public.report_scopes s where s.user_id = auth.uid() and report_name = any (s.reports))
+      )
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -395,6 +482,7 @@ create trigger set_updated_at before update on public.app_settings for each row 
 create trigger audit_row_change after insert or update or delete on public.employees for each row execute function public.audit_row_change();
 create trigger audit_row_change after insert or update or delete on public.user_accounts for each row execute function public.audit_row_change();
 create trigger audit_row_change after insert or update or delete on public.role_permissions for each row execute function public.audit_row_change();
+create trigger audit_row_change after insert or update or delete on public.report_scopes for each row execute function public.audit_row_change();
 create trigger audit_row_change after insert or update or delete on public.profile_change_requests for each row execute function public.audit_row_change();
 create trigger audit_row_change after insert or update or delete on public.employee_documents for each row execute function public.audit_row_change();
 create trigger audit_row_change after insert or update or delete on public.app_settings for each row execute function public.audit_row_change();
@@ -410,6 +498,7 @@ alter table public.roles enable row level security;
 alter table public.permissions enable row level security;
 alter table public.role_permissions enable row level security;
 alter table public.user_accounts enable row level security;
+alter table public.report_scopes enable row level security;
 alter table public.audit_logs enable row level security;
 alter table public.education_histories enable row level security;
 alter table public.training_histories enable row level security;
@@ -445,6 +534,9 @@ create policy "rbac manage" on public.role_permissions for all to authenticated 
 
 create policy "account read" on public.user_accounts for select to authenticated using (id = auth.uid() or public.has_permission('user.manage'));
 create policy "account manage" on public.user_accounts for all to authenticated using (public.has_permission('user.manage')) with check (public.has_permission('user.manage'));
+
+create policy "scope read" on public.report_scopes for select to authenticated using (user_id = auth.uid() or public.has_permission('user.manage'));
+create policy "scope manage" on public.report_scopes for all to authenticated using (public.has_permission('user.manage')) with check (public.has_permission('user.manage'));
 
 create policy "audit read" on public.audit_logs for select to authenticated using (public.has_permission('audit.view'));
 

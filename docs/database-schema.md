@@ -27,13 +27,14 @@ File SQL ada di `supabase/`:
    insert into public.user_accounts (id, role_id)
    values ('<UUID user dari langkah 4>', (select id from public.roles where code = 'superadmin'));
    ```
-6. Isi titik presensi (radius default 100 m) dan jam kerja:
+6. Isi titik presensi kampus (radius default 100 m) dan jam kerja:
    ```sql
    insert into public.attendance_locations (name, latitude, longitude) values ('Kampus STIA Amuntai', <lat>, <lng>);
    insert into public.work_schedules (name, check_in_time, check_out_time, late_tolerance_minutes, is_default)
    values ('Jam kerja umum', '<jam masuk>', '<jam pulang>', <toleransi menit>, true);
    ```
-7. Salin **Project URL** dan **anon public key** (Settings → API) ke `.env.local`:
+7. Atur cakupan statistik pimpinan setelah akunnya dibuat (lihat bagian "Statistik untuk pimpinan").
+8. Salin **Project URL** dan **anon public key** (Settings → API) ke `.env.local`:
    ```
    NEXT_PUBLIC_SUPABASE_URL=...
    NEXT_PUBLIC_SUPABASE_ANON_KEY=...
@@ -89,16 +90,17 @@ Semua tabel memakai RLS. Aturan dasarnya:
 |---|---|
 | Pegawai | Data dirinya sendiri; presensi lewat `check_in`/`check_out`; ajukan cuti, diklat, perbaikan data |
 | HR (`hr_admin`) | Semua data kepegawaian; satu-satunya pemberi persetujuan |
-| Pimpinan (`leader`) | Hanya fungsi statistik `report_*` (agregat per unit, dosen & tendik dipisah) + data dirinya sendiri |
+| Pimpinan (`chair`, `vice_chair`, `study_program_head`, `quality_assurance`) | Hanya fungsi statistik `report_*` (agregat, sesuai `report_scopes`) + data dirinya sendiri |
 | Superadmin | Akun, role & hak akses, pengaturan, audit log |
 
-Fungsi bantu: `current_employee_id()`, `has_permission(code)`, `can_view_employee(employee_id, permission)`.
+Fungsi bantu: `current_employee_id()`, `has_permission(code)`, `can_view_employee(employee_id, permission)`,
+`can_report_on(report, unit, category)`, `has_report_access(report)`, `unit_is_within(unit, parent)`.
 
 **Presensi GPS**
 
 | Fungsi | Dipakai untuk |
 |---|---|
-| `check_in(lat, lon, accuracy)` | Pegawai presensi masuk. Ditolak jika di luar radius titik aktif (default 100 m) atau sudah presensi hari ini. Status `late` dihitung dari jam kerja default |
+| `check_in(lat, lon, accuracy)` | Tombol presensi masuk. Ditolak dengan error `Outside the attendance area` jika di luar radius (default 100 m); UI menampilkan **"Tidak bisa melakukan presensi"**. Juga menolak presensi ganda. Status `late` dihitung dari jam kerja default |
 | `check_out(lat, lon, accuracy)` | Presensi pulang di dalam radius; status `early_leave` jika sebelum jam pulang |
 | `correct_attendance(employee, date, …, reason)` | HR mengoreksi presensi; perubahan dicatat di `attendance_corrections`, pegawai mendapat notifikasi |
 
@@ -118,12 +120,38 @@ Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan 
 
 **Statistik untuk pimpinan** (juga bisa dipakai HR)
 
+Setiap fungsi hanya menghitung pegawai di dalam cakupan akun pemanggil (`report_scopes`).
+HR otomatis melihat seluruh kampus.
+
 | Fungsi | Isi |
 |---|---|
-| `report_employee_statistics()` | Jumlah dosen & tendik aktif, nonaktif, pensiun per unit kerja |
+| `report_employee_statistics()` | Jumlah pegawai aktif, nonaktif, pensiun per unit kerja & kategori (dosen/tendik) |
 | `report_attendance_by_unit(month)` | Hadir, terlambat, pulang awal, tidak hadir per unit & kategori |
 | `report_leave_by_unit(year)` | Cuti/izin disetujui & menunggu per unit, kategori, jenis |
 | `report_appraisal_by_unit(period_id)` | Rata-rata, terendah, tertinggi nilai kinerja per unit & kategori |
+
+**Mengatur cakupan (`report_scopes`)** — satu baris per cakupan, satu akun boleh punya beberapa:
+
+| Kolom | Arti |
+|---|---|
+| `work_unit_id` | Unit yang dicakup, termasuk semua unit di bawahnya. `null` = seluruh kampus |
+| `employee_category` | `lecturer`, `staff`, atau `null` (keduanya) |
+| `reports` | Dari `employees`, `attendance`, `leave`, `appraisal` (default: semua) |
+
+```sql
+-- Ketua atau LPM: seluruh kampus, semua statistik
+insert into public.report_scopes (user_id) values ('<uuid akun>');
+
+-- Wakil Ketua Bidang Akademik: unit bidang (unit_type 'field') beserta semua unit di bawahnya
+insert into public.report_scopes (user_id, work_unit_id) values ('<uuid akun>', '<uuid unit Bidang Akademik>');
+
+-- Kaprodi: hanya kehadiran dosen di prodinya
+insert into public.report_scopes (user_id, work_unit_id, employee_category, reports)
+values ('<uuid akun>', '<uuid unit prodi>', 'lecturer', array['attendance']);
+```
+
+Supaya cakupan Wakil Ketua bekerja, buat unit bertipe `field` untuk setiap bidang dan jadikan induk
+(`parent_id`) bagi unit-unit di bawahnya.
 
 **Notifikasi:** pengajuan cuti baru dikirim ke semua akun HR; hasil keputusan dikirim ke pegawai.
 Kolom `notifications.email_sent_at` disiapkan untuk pengiriman email nanti (Edge Function).
@@ -132,8 +160,9 @@ Perubahan pada tabel penting (pegawai, akun, cuti, presensi, penilaian, mutasi, 
 di `audit_logs` lewat trigger.
 
 **Belum ditangani di skema:**
-- Verifikasi sidik jari (WebAuthn) sebelum `check_in`/`check_out`. Ini dikerjakan di server aplikasi pada Fase 3.
 - Pengiriman email notifikasi (Edge Function + layanan email).
+- Lokasi GPS dikirim oleh browser, jadi bisa dipalsukan oleh pengguna yang paham teknis (fake GPS).
+  Mitigasi yang mungkin nanti: tolak akurasi GPS yang buruk, batasi presensi dari jaringan Wi-Fi kampus.
 - Pembuatan akun pegawai oleh HR (butuh service role key, dijalankan di server).
 
 ---
@@ -141,7 +170,7 @@ di `audit_logs` lewat trigger.
 ## Pengujian
 
 Skema sudah diuji dengan PGlite (Postgres di Node) memakai stub `auth` & `storage`:
-seluruh migrasi + seed berjalan, dan 37 skenario lolos. Skenario mencakup: visibilitas per peran
-(pimpinan hanya statistik), cuti diajukan → HR setuju → kuota & notifikasi, presensi GPS (65 m diterima,
+seluruh migrasi + seed berjalan, dan 45 skenario lolos. Skenario mencakup: visibilitas per peran
+(pimpinan hanya statistik; cakupan Ketua, Wakil Ketua bidang, Kaprodi, dan LPM), cuti diajukan → HR setuju → kuota & notifikasi, presensi GPS (65 m diterima,
 150 m ditolak, presensi ganda ditolak, pulang awal), koreksi HR, penilaian kinerja oleh HR, diklat → riwayat,
 mutasi, dan akses file Storage. Tetap jalankan di project Supabase uji coba sebelum dipakai.

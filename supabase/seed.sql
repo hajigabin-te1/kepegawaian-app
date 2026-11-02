@@ -6,7 +6,10 @@
 insert into public.roles (code, name) values
   ('superadmin', 'Admin Sistem / PUSKOM'),
   ('hr_admin', 'Bagian Kepegawaian'),
-  ('leader', 'Pimpinan'),
+  ('chair', 'Ketua'),
+  ('vice_chair', 'Wakil Ketua Bidang'),
+  ('study_program_head', 'Ketua Program Studi'),
+  ('quality_assurance', 'Lembaga Penjaminan Mutu (LPM)'),
   ('employee', 'Pegawai (Dosen & Tenaga Kependidikan)')
 on conflict (code) do nothing;
 
@@ -27,7 +30,7 @@ insert into public.permissions (code, description) values
   ('mutation.manage', 'Kelola usulan & eksekusi mutasi'),
   ('promotion.manage', 'Kelola kenaikan pangkat & jabatan'),
   ('announcement.manage', 'Buat & kelola pengumuman'),
-  ('report.view', 'Lihat dashboard statistik & laporan (agregat, tanpa data per pegawai)')
+  ('report.view', 'Lihat dashboard statistik (agregat, tanpa data per pegawai) sesuai report_scopes')
 on conflict (code) do nothing;
 
 -- Role -> permission mapping, following the use case diagram.
@@ -45,7 +48,10 @@ join public.permissions p on p.code = any (
       'training.manage', 'mutation.manage', 'promotion.manage',
       'announcement.manage', 'report.view'
     ]
-    when 'leader' then array['report.view']
+    when 'chair' then array['report.view']
+    when 'vice_chair' then array['report.view']
+    when 'study_program_head' then array['report.view']
+    when 'quality_assurance' then array['report.view']
     else array[]::text[]
   end
 )

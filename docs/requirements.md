@@ -19,12 +19,18 @@ dosen dan tenaga kependidikan di lingkungan STIA Amuntai.
 | Dokumen menyebut | Peran di sistem (`roles.code`) | Catatan |
 |---|---|---|
 | Admin Sistem / PUSKOM, Superadmin | `superadmin` | Akun, role & hak akses, konfigurasi, audit log |
-| Bagian Kepegawaian, Kabag Kepegawaian, HR | `hr_admin` | **Satu-satunya pemberi persetujuan** (cuti/izin, koreksi presensi, penilaian kinerja, diklat, mutasi, kenaikan pangkat) dan pengelola seluruh data kepegawaian |
-| Pimpinan dan Atasan Langsung (Kaprodi/Kabag/Manajer Unit) | `leader` | **Hanya melihat dashboard statistik** pegawai (dosen & tendik) dalam bentuk agregat per unit; tidak melihat data per pegawai dan tidak menyetujui apa pun |
+| Bagian Kepegawaian, Kabag Kepegawaian, HR | `hr_admin` | **Satu-satunya pemberi persetujuan** (cuti/izin, koreksi presensi, penilaian kinerja, diklat, mutasi, kenaikan pangkat) dan pengelola seluruh data kepegawaian. Cakupan seluruh kampus |
+| Ketua | `chair` | Dashboard statistik **seluruh kampus** |
+| Wakil Ketua Bidang (Akademik, Umum, Kemahasiswaan) | `vice_chair` | Dashboard statistik **unit-unit di bawah bidangnya** |
+| Ketua Program Studi (Kaprodi) | `study_program_head` | Statistik **kehadiran dosen** di prodinya saja |
+| Lembaga Penjaminan Mutu (LPM) | `quality_assurance` | Dashboard statistik **seluruh kampus** seperti Ketua; nanti ada menu khusus sesuai tupoksi LPM |
+
+Semua pimpinan (Ketua, Wakil Ketua, Kaprodi, LPM) **hanya melihat statistik agregat**: tidak melihat
+data per pegawai dan tidak menyetujui apa pun. Cakupannya diatur per akun lewat tabel `report_scopes`.
 | Pegawai (Dosen & Tendik) | `employee` | Data diri, presensi GPS, ajukan cuti/izin, daftar diklat, lihat hasil penilaian |
 | Sistem eksternal (Keuangan, SIAKAD, SSO) | — | Di luar cakupan tahap awal |
 
-Pimpinan yang juga dosen/tendik tetap punya data pegawai sendiri. Akunnya ber-role `leader`
+Pimpinan yang juga dosen/tendik tetap punya data pegawai sendiri. Akunnya ber-role pimpinan
 tetapi terhubung ke data pegawainya, jadi tetap bisa presensi, mengajukan cuti, dan melihat data dirinya.
 
 ## 3. Modul (kebutuhan fungsional)
@@ -32,7 +38,7 @@ tetapi terhubung ke data pegawainya, jadi tetap bisa presensi, mengajukan cuti, 
 | # | Modul | Fitur utama | Cakupan inti?* |
 |---|---|---|---|
 | 1 | Data Pegawai | Data pokok, kepegawaian, riwayat (pendidikan, diklat, jabatan, pangkat, mutasi, sanksi, penghargaan), unggah dokumen, tambah/edit/nonaktifkan, pegawai ajukan perbaikan data | Prasyarat |
-| 2 | Presensi | Presensi lewat aplikasi dengan **GPS + scan sidik jari di ponsel**, hanya di dalam **radius 100 m** dari titik yang ditentukan. Status masuk/terlambat/pulang awal dihitung otomatis. Rekap harian–bulanan per pegawai & unit, riwayat sendiri, koreksi oleh HR | ✅ |
+| 2 | Presensi | Aplikasi **web**: tombol presensi membaca lokasi GPS browser. Di dalam **radius 100 m** dari titik kampus → presensi tercatat. Di luar radius → muncul pesan **"Tidak bisa melakukan presensi"**. Dosen & tendik sama-sama presensi **jam datang dan pulang**. Status terlambat/pulang awal dihitung otomatis. Rekap harian–bulanan, riwayat sendiri, koreksi oleh HR | ✅ |
 | 3 | Cuti & Izin | Ajukan cuti (tahunan, sakit, alasan penting, besar, melahirkan) dan izin (setengah hari, penting), **HR setuju/tolak**, kuota berkurang, rekap | ✅ |
 | 4 | Penilaian Kinerja (DP3/SKP) | HR buka periode, sistem buat daftar yang dinilai, **HR isi** indikator/target/realisasi/nilai, HR verifikasi/perbaikan, rekap per unit, pegawai lihat hasil | ✅ |
 | 5 | Diklat | HR buka pendaftaran + kuota, pegawai daftar, **HR setuju/tolak**, HR tetapkan peserta & hasil, masuk riwayat | |
@@ -73,12 +79,12 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 0 | Setup Supabase: jalankan migrasi + seed, buat akun superadmin | semua |
 | 1 | Login Supabase Auth (ganti mock), RBAC di proxy & menu, kelola akun (superadmin) | `..._core` |
 | 2 | Master data (unit kerja, jabatan) + Data Pegawai CRUD + riwayat + dokumen + perbaikan data | `..._core`, `..._storage` |
-| 3 | Presensi GPS + verifikasi sidik jari (WebAuthn) + rekap + koreksi HR | `..._attendance` |
+| 3 | Presensi web GPS (radius 100 m) + rekap + koreksi HR | `..._attendance` |
 | 4 | Cuti & Izin (pengajuan → persetujuan HR → kuota → rekap) | `..._leave` |
 | 5 | Penilaian Kinerja | `..._performance_appraisal` |
-| 6 | Dashboard statistik pimpinan + laporan HR | fungsi `report_*` |
+| 6 | Dashboard statistik per jabatan (Ketua, Wakil Ketua, Kaprodi, LPM) + laporan HR | fungsi `report_*` + `report_scopes` |
 | 7 | Diklat, Mutasi, Kenaikan Pangkat, Pengumuman | `..._training_mutation_promotion`, `..._announcements` |
-| Nanti | Pengiriman notifikasi email, integrasi Keuangan, SIAKAD (BKD), SSO, backup/restore | — |
+| Nanti | Menu khusus LPM, pengiriman notifikasi email, integrasi presensi mengajar dosen, Keuangan, SIAKAD (BKD), SSO, backup/restore | — |
 
 ---
 
@@ -90,32 +96,34 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 2 Nov 2026 | Atasan & pimpinan | Hanya melihat **dashboard statistik** agregat (dosen & tendik), tanpa akses data per pegawai |
 | 2 Nov 2026 | Penilaian kinerja | Diisi dan diverifikasi oleh HR (konflik antar dokumen selesai) |
 | 2 Nov 2026 | Login | **Email** + password (Supabase Auth), agar notifikasi bisa dikirim lewat email |
-| 2 Nov 2026 | Presensi | **GPS saja + scan sidik jari** di ponsel, dalam **radius 100 m** dari titik. Mesin fingerprint/RFID tidak dipakai |
+| 2 Nov 2026 | Presensi | **Web + GPS saja**, radius **100 m** dari **satu titik** di kampus; di luar radius tampil "Tidak bisa melakukan presensi". Tanpa sidik jari, tanpa mesin fingerprint/RFID |
+| 2 Nov 2026 | Presensi dosen | Dosen cukup presensi jam datang & pulang. Presensi mengajar diurus aplikasi lain (integrasi khusus dosen menyusul) |
+| 2 Nov 2026 | Cakupan statistik | Ketua & LPM: seluruh kampus. Wakil Ketua: bidangnya. Kaprodi: kehadiran dosen prodinya. Kabag Kepegawaian (HR): seluruh kampus |
 | 2 Nov 2026 | Backend | Supabase |
 
 ## 7. Pertanyaan yang masih terbuka
 
 **Presensi**
 
-1. **Titik koordinat kampus** (latitude, longitude) dan apakah ada lebih dari satu titik (mis. kampus 1 & 2).
-2. **Jam kerja dan toleransi terlambat**, dan apakah berbeda untuk dosen dan tendik atau per hari (Jumat/Sabtu).
-3. **Scan sidik jari**: browser tidak bisa membaca sidik jari secara langsung. Caranya memakai
-   **WebAuthn/passkey**: ponsel meminta sidik jari, lalu server memverifikasi tanda tangan perangkat.
-   Konsekuensinya: (a) setiap pegawai mendaftarkan ponselnya sekali, (b) presensi harus lewat server
-   aplikasi (Server Action), bukan langsung dari browser ke Supabase. Apakah 1 pegawai hanya boleh
-   memakai 1 perangkat terdaftar?
-4. **Dosen dengan jadwal mengajar tidak tetap**: apakah wajib presensi harian seperti tendik?
+1. **Koordinat titik kampus** (latitude, longitude). Bisa diambil dari Google Maps: klik kanan titik → salin koordinat.
+2. **Jam datang, jam pulang, dan toleransi terlambat.** Apakah sama untuk dosen dan tendik, dan apakah
+   berbeda per hari (mis. Jumat)?
+3. Hari tanpa presensi sama sekali: dicatat otomatis sebagai **"tidak hadir"** di akhir hari, atau dibiarkan kosong?
+
+**Pimpinan**
+
+4. **Kaprodi melihat kehadiran dosen** dalam bentuk **angka rekap** (mis. 8 dosen hadir, 1 terlambat) atau
+   **daftar per nama dosen**? Saat ini angka rekap, sesuai keputusan "pimpinan hanya statistik".
+5. **Pembagian unit per bidang Wakil Ketua**: unit/bagian apa saja di bawah Bidang Akademik, Umum, dan
+   Kemahasiswaan? (Contoh: prodi → Akademik; Bagian Keuangan → Umum.)
 
 **Cuti & kinerja**
 
-5. Kuota tiap jenis cuti per tahun, dan apakah kuota boleh terlampaui.
-6. Cara menghitung hari cuti (hari kerja atau hari kalender, libur nasional).
-7. Rumus nilai kinerja dan skala nilai.
+6. Kuota tiap jenis cuti per tahun, dan apakah kuota boleh terlampaui.
+7. Cara menghitung hari cuti (hari kerja atau hari kalender, libur nasional).
+8. Rumus nilai kinerja dan skala nilai.
 
 **Data master**
 
-8. Kepanjangan **TTU** dan **TTK**, serta daftar lengkap status kepegawaian ("dll.").
-9. Jenis unit kerja yang dipakai (fakultas, prodi, bagian, UPT, …).
+9. Kepanjangan **TTU** dan **TTK**, serta daftar lengkap status kepegawaian ("dll.").
 10. "Neraca kebutuhan pegawai": data apa yang dibandingkan (formasi vs. jumlah pegawai)?
-11. Siapa yang termasuk role `leader` (Ketua, Wakil Ketua, Kaprodi, Kabag?) dan apakah mereka melihat
-    statistik **seluruh kampus** atau hanya **unitnya sendiri**? Saat ini: seluruh kampus.

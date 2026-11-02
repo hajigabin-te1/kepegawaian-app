@@ -106,7 +106,7 @@ begin
 end;
 $$;
 
--- Rekap nilai per unit kerja & kategori (verified forms only), for HR and the leaders' dashboard.
+-- Rekap nilai per unit kerja & kategori (verified forms only), for HR and the leaders' dashboard (scoped).
 create or replace function public.report_appraisal_by_unit(target_period_id uuid)
 returns table (
   work_unit_id uuid,
@@ -123,13 +123,18 @@ security definer
 set search_path = ''
 as $$
 begin
-  if not (public.has_permission('report.view') or public.has_permission('appraisal.manage')) then
+  if not public.has_report_access('appraisal') then
     raise exception 'Not allowed to view appraisal reports';
   end if;
   return query
+  with scoped as materialized (
+    select e.id, e.category, e.work_unit_id
+    from public.employees e
+    where public.can_report_on('appraisal', e.work_unit_id, e.category)
+  )
   select w.id, w.name, e.category, count(*), round(avg(a.performance_score), 2), min(a.performance_score), max(a.performance_score)
   from public.appraisals a
-  join public.employees e on e.id = a.employee_id
+  join scoped e on e.id = a.employee_id
   left join public.work_units w on w.id = e.work_unit_id
   where a.period_id = target_period_id and a.status = 'verified'
   group by w.id, w.name, e.category;

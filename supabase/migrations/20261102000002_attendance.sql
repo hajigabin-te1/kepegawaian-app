@@ -283,7 +283,8 @@ from public.attendance_records r
 join public.employees e on e.id = r.employee_id
 group by r.employee_id, e.work_unit_id, date_trunc('month', r.attendance_date);
 
--- Aggregated per work unit and category for the leaders' statistics dashboard (no individual rows).
+-- Aggregated per work unit and category for the leaders' statistics dashboard (no individual rows),
+-- limited to the caller's report_scopes (HR with attendance.view sees everything).
 create or replace function public.report_attendance_by_unit(target_month date)
 returns table (
   work_unit_id uuid,
@@ -301,10 +302,15 @@ security definer
 set search_path = ''
 as $$
 begin
-  if not (public.has_permission('report.view') or public.has_permission('attendance.view')) then
+  if not public.has_report_access('attendance') then
     raise exception 'Not allowed to view attendance reports';
   end if;
   return query
+  with scoped as materialized (
+    select e.id, e.category, e.work_unit_id
+    from public.employees e
+    where public.can_report_on('attendance', e.work_unit_id, e.category)
+  )
   select w.id, w.name, e.category,
          count(distinct r.employee_id),
          count(*) filter (where r.status in ('present', 'late', 'early_leave', 'late_and_early_leave')),
@@ -312,7 +318,7 @@ begin
          count(*) filter (where r.status in ('early_leave', 'late_and_early_leave')),
          count(*) filter (where r.status = 'absent')
   from public.attendance_records r
-  join public.employees e on e.id = r.employee_id
+  join scoped e on e.id = r.employee_id
   left join public.work_units w on w.id = e.work_unit_id
   where r.attendance_date >= date_trunc('month', target_month)::date
     and r.attendance_date < (date_trunc('month', target_month) + interval '1 month')::date

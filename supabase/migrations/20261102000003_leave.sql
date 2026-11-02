@@ -136,7 +136,7 @@ from public.leave_requests r
 join public.employees e on e.id = r.employee_id
 group by r.employee_id, e.work_unit_id, r.leave_type_id, extract(year from r.start_date);
 
--- Aggregated per work unit, category, and leave type for the leaders' statistics dashboard.
+-- Aggregated per work unit, category, and leave type for the leaders' statistics dashboard (scoped).
 create or replace function public.report_leave_by_unit(target_year smallint)
 returns table (
   work_unit_id uuid,
@@ -153,16 +153,21 @@ security definer
 set search_path = ''
 as $$
 begin
-  if not (public.has_permission('report.view') or public.has_permission('leave.view')) then
+  if not public.has_report_access('leave') then
     raise exception 'Not allowed to view leave reports';
   end if;
   return query
+  with scoped as materialized (
+    select e.id, e.category, e.work_unit_id
+    from public.employees e
+    where public.can_report_on('leave', e.work_unit_id, e.category)
+  )
   select w.id, w.name, e.category, t.name,
          count(*) filter (where r.status = 'approved'),
          coalesce(sum(r.total_days) filter (where r.status = 'approved'), 0),
          count(*) filter (where r.status = 'pending')
   from public.leave_requests r
-  join public.employees e on e.id = r.employee_id
+  join scoped e on e.id = r.employee_id
   join public.leave_types t on t.id = r.leave_type_id
   left join public.work_units w on w.id = e.work_unit_id
   where extract(year from r.start_date) = target_year
