@@ -3,8 +3,9 @@
 import { redirect } from "next/navigation";
 
 import { routes } from "@/config/routes";
+import { changePasswordSchema, type ChangePasswordInput } from "@/features/auth/schemas/change-password-schema";
 import { loginSchema } from "@/features/auth/schemas/login-schema";
-import { signInWithEmail, signOut } from "@/features/auth/services/auth-service";
+import { changePassword, signInWithEmail, signOut } from "@/features/auth/services/auth-service";
 import type { LoginInput } from "@/features/auth/types/auth";
 import { ApiError } from "@/lib/api-error";
 
@@ -31,4 +32,20 @@ export async function loginAction(input: LoginInput): Promise<LoginActionResult>
 export async function logoutAction(): Promise<void> {
   await signOut();
   redirect(routes.login);
+}
+
+export type ChangePasswordActionResult = { ok: true } | { ok: false; error: string };
+
+export async function changePasswordAction(input: ChangePasswordInput): Promise<ChangePasswordActionResult> {
+  const parsed = changePasswordSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Data tidak valid." };
+  }
+
+  try {
+    await changePassword(parsed.data.currentPassword, parsed.data.newPassword);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof ApiError ? error.message : "Password gagal diganti. Silakan coba lagi." };
+  }
 }

@@ -111,6 +111,8 @@ src/
      pesan "Akun belum terdaftar … atau sedang nonaktif".
    - Berhasil → kejadian `login` dicatat di `audit_logs`, cookie sesi Supabase tersimpan, lalu `redirect("/dashboard")`.
 4. Logout: tombol di bawah sidebar atau menu avatar → `logoutAction` → `signOut` → `/login`.
+   Ganti password: menu avatar → **Ganti Password** (`/profile/password`) → `changePasswordAction`
+   → `changePassword` (cek password lama dulu, lalu `supabase.auth.updateUser`).
 5. Siapa yang sedang login dibaca `getCurrentUser()`: klaim JWT Supabase → baris `user_accounts`
    (role, status aktif) → nama dari `employees` (kalau akun terhubung ke pegawai), atau nama role.
 

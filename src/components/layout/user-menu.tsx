@@ -1,7 +1,8 @@
 "use client";
 
 import { useTransition } from "react";
-import { ChevronDownIcon, LogOutIcon } from "lucide-react";
+import Link from "next/link";
+import { ChevronDownIcon, KeyRoundIcon, LogOutIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { routes } from "@/config/routes";
 import { logoutAction } from "@/features/auth/actions";
 import type { SessionUser } from "@/features/auth/types/auth";
 import { getInitials } from "@/lib/utils";
@@ -50,6 +52,10 @@ export function UserMenu({ user }: UserMenuProps) {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link href={routes.profile.password} />}>
+          <KeyRoundIcon />
+          Ganti Password
+        </DropdownMenuItem>
         <DropdownMenuItem
           disabled={isLoggingOut}
           onClick={() => startLogout(() => logoutAction())}

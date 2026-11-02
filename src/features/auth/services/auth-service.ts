@@ -11,6 +11,7 @@ import { ROLE_CODES, type LoginInput, type RoleCode, type SessionUser } from "@/
 const INVALID_CREDENTIALS_MESSAGE = "Email atau password salah.";
 const ACCOUNT_UNAVAILABLE_MESSAGE = "Akun belum terdaftar di sistem kepegawaian atau sedang nonaktif. Hubungi Bagian Kepegawaian.";
 const GENERIC_MESSAGE = "Tidak dapat masuk saat ini. Silakan coba lagi.";
+const CHANGE_PASSWORD_FAILED_MESSAGE = "Password gagal diganti. Silakan coba lagi.";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -92,4 +93,34 @@ export async function requirePermission(permission: PermissionCode): Promise<Ses
   if (!user) redirect(`${routes.login}?reason=session`);
   if (!user.permissions.includes(permission)) redirect(routes.dashboard);
   return user;
+}
+
+/** Changes the signed-in user's password after re-checking the current one. Throws ApiError on failure. */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new ApiError("Sesi Anda berakhir. Silakan masuk kembali.", 401, null);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error: verifyError } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword });
+  if (verifyError) {
+    if (isAuthApiError(verifyError) && verifyError.code === "invalid_credentials") {
+      throw new ApiError("Password lama salah.", verifyError.status, verifyError);
+    }
+    throw new ApiError(CHANGE_PASSWORD_FAILED_MESSAGE, verifyError.status ?? null, verifyError);
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    if (isAuthApiError(error) && error.code === "same_password") {
+      throw new ApiError("Password baru harus berbeda dari password lama.", error.status, error);
+    }
+    if (isAuthApiError(error) && error.code === "weak_password") {
+      throw new ApiError("Password terlalu lemah. Gunakan kombinasi huruf dan angka.", error.status, error);
+    }
+    throw new ApiError(CHANGE_PASSWORD_FAILED_MESSAGE, error.status ?? null, error);
+  }
+
+  await supabase.rpc("log_audit_event", { event_action: "change_password", event_entity: "auth", event_entity_id: user.id });
 }

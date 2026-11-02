@@ -12,4 +12,7 @@ export const routes = {
     positions: "/master/positions",
   },
   accounts: "/accounts",
+  profile: {
+    password: "/profile/password",
+  },
 } as const;
