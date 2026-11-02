@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PencilIcon, UserCogIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, UserCogIcon } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryErrorState } from "@/components/common/query-error-state";
@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { APP_TIME_ZONE } from "@/config/locale";
 import { routes } from "@/config/routes";
 import { AccountFormDialog } from "@/features/accounts/components/account-form-dialog";
+import { CreateAccountDialog } from "@/features/accounts/components/create-account-dialog";
 import { useAccounts, useRoles } from "@/features/accounts/hooks/use-accounts";
 import type { UserAccount } from "@/features/accounts/types/accounts";
 
@@ -35,6 +36,7 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
   const accounts = useAccounts();
   const roles = useRoles();
   const [editing, setEditing] = useState<UserAccount | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const rows = accounts.data ?? [];
 
@@ -42,8 +44,14 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
     <>
       <PageHeader
         title="Akun Pengguna"
-        description="Atur peran dan status akun yang dapat masuk ke aplikasi."
+        description="Buat akun, lalu atur peran dan status akun yang dapat masuk ke aplikasi."
         breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Administrasi" }, { label: "Akun Pengguna" }]}
+        actions={
+          <Button onClick={() => setCreating(true)} disabled={roles.isPending || roles.isError}>
+            <PlusIcon />
+            Tambah Akun
+          </Button>
+        }
       />
 
       <Card className="gap-0 py-0">
@@ -107,6 +115,8 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
           </Table>
         )}
       </Card>
+
+      <CreateAccountDialog open={creating} onOpenChange={setCreating} roles={roles.data ?? []} />
 
       <AccountFormDialog
         account={editing}

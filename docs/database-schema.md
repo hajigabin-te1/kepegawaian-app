@@ -66,6 +66,24 @@ psql "<connection string>" -f supabase/seed.sql
 
 ---
 
+## Edge Function
+
+| Function | Dipakai untuk |
+|---|---|
+| `admin-create-user` (`supabase/functions/admin-create-user`) | Superadmin membuat akun baru: membuat user di Supabase Auth (langsung terkonfirmasi) dan baris `user_accounts` dengan peran yang dipilih, lalu mencatat audit log. Hanya akun dengan izin `user.manage` yang bisa memanggilnya |
+
+Function memakai secret key bawaan Supabase (tidak pernah dikirim ke browser) dan di-deploy dengan
+`verify_jwt = false`, karena sesi pemanggil diverifikasi di dalam kode. Deploy ulang setelah mengubah kodenya:
+
+```bash
+npx supabase functions deploy admin-create-user
+```
+
+Karena akun dibuat oleh superadmin, pendaftaran publik sebaiknya dimatikan:
+**Authentication → Sign In / Providers → Allow new users to sign up = off**.
+
+---
+
 ## Pemetaan nama (dokumen → tabel/kolom)
 
 | Data Requirement | Tabel | Kolom penting |

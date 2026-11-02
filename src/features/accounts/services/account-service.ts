@@ -1,6 +1,8 @@
-import { fromSupabaseError } from "@/lib/api-error";
+import { FunctionsHttpError } from "@supabase/supabase-js";
+
+import { ApiError, fromSupabaseError } from "@/lib/api-error";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { AccountUpdate, Role, UserAccount } from "@/features/accounts/types/accounts";
+import type { AccountUpdate, NewAccount, Role, UserAccount } from "@/features/accounts/types/accounts";
 
 const SELF_LOCKOUT_MESSAGE = "Anda tidak dapat menonaktifkan atau mengubah peran akun Anda sendiri.";
 
@@ -33,4 +35,26 @@ export async function updateAccount(id: string, update: AccountUpdate): Promise<
     .select("id")
     .single();
   if (error) throw fromSupabaseError(error, { self_lockout: SELF_LOCKOUT_MESSAGE });
+}
+
+/** Reads the Indonesian message returned by the admin-create-user Edge Function. */
+async function readFunctionError(error: unknown): Promise<ApiError> {
+  if (error instanceof FunctionsHttpError) {
+    const response = error.context as Response;
+    const body: unknown = await response.json().catch(() => null);
+    const message =
+      typeof body === "object" && body !== null && "message" in body && typeof body.message === "string"
+        ? body.message
+        : "Akun gagal dibuat. Silakan coba lagi.";
+    return new ApiError(message, response.status, body);
+  }
+  return new ApiError("Tidak dapat terhubung ke server. Periksa koneksi Anda.", null, error);
+}
+
+/** Creates a confirmed sign-in account through the admin-create-user Edge Function. */
+export async function createAccount(account: NewAccount): Promise<void> {
+  const { error } = await createSupabaseBrowserClient().functions.invoke("admin-create-user", {
+    body: { email: account.email, password: account.temporaryPassword, roleCode: account.roleCode },
+  });
+  if (error) throw await readFunctionError(error);
 }

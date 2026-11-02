@@ -244,7 +244,8 @@ Arti nama-nama yang paling sering muncul. Kalau menemukan nama yang belum ada di
 - **Halaman pegawai** (daftar/tambah/detail/ubah) masih placeholder. Ini fase berikutnya (lihat `docs/requirements.md`).
 - **Hak akses (RBAC):** menu disaring dari `permissions` milik peran (`config/navigation.ts`), proxy memblokir
   halaman yang butuh izin (`config/permissions.ts`), dan halaman memanggil `requirePermission(...)`.
-- **Pembuatan akun baru** belum ada di aplikasi; sementara lewat dashboard Supabase (Authentication → Add user).
+- **Pembuatan akun baru:** halaman Akun Pengguna → "Tambah Akun" memanggil Edge Function `admin-create-user`
+  (`supabase/functions/`), karena membuat user Supabase Auth butuh secret key yang tidak boleh ada di browser.
 - **Pencarian & notifikasi** baru tampilan saja.
 
 ---

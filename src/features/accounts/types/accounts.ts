@@ -15,6 +15,12 @@ export type Role = {
   name: string;
 };
 
+export type NewAccount = {
+  email: string;
+  roleCode: string;
+  temporaryPassword: string;
+};
+
 export type AccountUpdate = {
   roleId: number;
   isActive: boolean;

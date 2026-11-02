@@ -78,7 +78,7 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | Fase | Isi | Migrasi |
 |---|---|---|
 | 0 | Setup Supabase: jalankan migrasi + seed, buat akun superadmin | semua |
-| 1 | ✅ Login Supabase Auth (ganti mock), ✅ RBAC di proxy & menu, ◐ kelola akun superadmin (ubah peran & status; pembuatan akun menunggu keputusan) | `..._core`, `..._account_management` |
+| 1 | ✅ Login Supabase Auth (ganti mock), ✅ RBAC di proxy & menu, ✅ kelola akun superadmin (buat akun lewat Edge Function `admin-create-user`, ubah peran & status) | `..._core`, `..._account_management` |
 | 2 | ✅ Master data (unit kerja, jabatan) · Data Pegawai CRUD + riwayat + dokumen + perbaikan data | `..._core`, `..._storage` |
 | 3 | Presensi web GPS (radius 100 m) + rekap + koreksi HR | `..._attendance` |
 | 4 | Cuti & Izin (pengajuan → persetujuan HR → kuota → rekap) | `..._leave` |
