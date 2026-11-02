@@ -1,5 +1,9 @@
 # API Contract — Pertanyaan & Asumsi
 
+> **Diganti (2 November 2026):** Backend sekarang memakai Supabase. Struktur data mengikuti
+> `docs/requirements.md` dan `supabase/migrations` (lihat `docs/database-schema.md`).
+> Dokumen ini disimpan sebagai arsip pertanyaan untuk API lama.
+
 Dokumen ini berisi informasi API pegawai yang **harus dikonfirmasi** sebelum
 fitur autentikasi dan CRUD pegawai diimplementasikan. Selama belum ada
 konfirmasi, tidak ada endpoint, field, atau aturan bisnis yang dikarang di kode.
