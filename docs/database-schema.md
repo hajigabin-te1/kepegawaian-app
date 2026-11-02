@@ -27,12 +27,15 @@ File SQL ada di `supabase/`:
    insert into public.user_accounts (id, role_id)
    values ('<UUID user dari langkah 4>', (select id from public.roles where code = 'superadmin'));
    ```
-6. Isi titik presensi kampus (radius default 100 m) dan jam kerja:
-   ```sql
-   insert into public.attendance_locations (name, latitude, longitude) values ('Kampus STIA Amuntai', <lat>, <lng>);
-   insert into public.work_schedules (name, check_in_time, check_out_time, late_tolerance_minutes, is_default)
-   values ('Jam kerja umum', '<jam masuk>', '<jam pulang>', <toleransi menit>, true);
-   ```
+6. Titik presensi kampus dan jam kerja **sudah diisi oleh `seed.sql`**:
+
+   | Data | Nilai |
+   |---|---|
+   | Titik presensi | Kampus STIA Amuntai, -2.422180, 115.262310, radius 100 m |
+   | Tendik | Datang 09:00 (toleransi 30 menit), pulang 16:30 |
+   | Dosen | Datang 08:30 (toleransi 30 menit), pulang 18:00, pulang bebas (`flags_early_leave = false`) |
+
+   Perubahan berikutnya cukup lewat `update` pada `attendance_locations` / `work_schedules`.
 7. Atur cakupan statistik pimpinan setelah akunnya dibuat (lihat bagian "Statistik untuk pimpinan").
 8. Salin **Project URL** dan **anon public key** (Settings → API) ke `.env.local`:
    ```
@@ -90,7 +93,7 @@ Semua tabel memakai RLS. Aturan dasarnya:
 |---|---|
 | Pegawai | Data dirinya sendiri; presensi lewat `check_in`/`check_out`; ajukan cuti, diklat, perbaikan data |
 | HR (`hr_admin`) | Semua data kepegawaian; satu-satunya pemberi persetujuan |
-| Pimpinan (`chair`, `vice_chair`, `study_program_head`, `quality_assurance`) | Hanya fungsi statistik `report_*` (agregat, sesuai `report_scopes`) + data dirinya sendiri |
+| Pimpinan (`chair`, `vice_chair`, `quality_assurance`) | Hanya fungsi statistik `report_*` (agregat, sesuai `report_scopes`) + data dirinya sendiri |
 | Superadmin | Akun, role & hak akses, pengaturan, audit log |
 
 Fungsi bantu: `current_employee_id()`, `has_permission(code)`, `can_view_employee(employee_id, permission)`,
@@ -100,12 +103,13 @@ Fungsi bantu: `current_employee_id()`, `has_permission(code)`, `can_view_employe
 
 | Fungsi | Dipakai untuk |
 |---|---|
-| `check_in(lat, lon, accuracy)` | Tombol presensi masuk. Ditolak dengan error `Outside the attendance area` jika di luar radius (default 100 m); UI menampilkan **"Tidak bisa melakukan presensi"**. Juga menolak presensi ganda. Status `late` dihitung dari jam kerja default |
-| `check_out(lat, lon, accuracy)` | Presensi pulang di dalam radius; status `early_leave` jika sebelum jam pulang |
+| `check_in(lat, lon, accuracy)` | Tombol presensi masuk. Ditolak dengan error `Outside the attendance area` jika di luar radius (100 m); UI menampilkan **"Tidak bisa melakukan presensi"**. Juga menolak presensi ganda. Status `late` jika lewat jam datang + toleransi sesuai jadwal kategori pegawai (dosen/tendik) |
+| `check_out(lat, lon, accuracy)` | Presensi pulang di dalam radius. Tendik yang pulang sebelum 16:30 ditandai `early_leave`; dosen tidak pernah ditandai pulang awal |
 | `correct_attendance(employee, date, …, reason)` | HR mengoreksi presensi; perubahan dicatat di `attendance_corrections`, pegawai mendapat notifikasi |
 
 Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan jam memakai zona waktu
-`app_settings.timezone` (`Asia/Makassar`, WITA).
+`app_settings.timezone` (`Asia/Makassar`, WITA). Hari tanpa presensi dibiarkan kosong (tidak ada catatan
+"tidak hadir" otomatis).
 
 **Persetujuan (semuanya HR)**
 
@@ -144,10 +148,6 @@ insert into public.report_scopes (user_id) values ('<uuid akun>');
 
 -- Wakil Ketua Bidang Akademik: unit bidang (unit_type 'field') beserta semua unit di bawahnya
 insert into public.report_scopes (user_id, work_unit_id) values ('<uuid akun>', '<uuid unit Bidang Akademik>');
-
--- Kaprodi: hanya kehadiran dosen di prodinya
-insert into public.report_scopes (user_id, work_unit_id, employee_category, reports)
-values ('<uuid akun>', '<uuid unit prodi>', 'lecturer', array['attendance']);
 ```
 
 Supaya cakupan Wakil Ketua bekerja, buat unit bertipe `field` untuk setiap bidang dan jadikan induk
@@ -171,6 +171,6 @@ di `audit_logs` lewat trigger.
 
 Skema sudah diuji dengan PGlite (Postgres di Node) memakai stub `auth` & `storage`:
 seluruh migrasi + seed berjalan, dan 45 skenario lolos. Skenario mencakup: visibilitas per peran
-(pimpinan hanya statistik; cakupan Ketua, Wakil Ketua bidang, Kaprodi, dan LPM), cuti diajukan → HR setuju → kuota & notifikasi, presensi GPS (65 m diterima,
-150 m ditolak, presensi ganda ditolak, pulang awal), koreksi HR, penilaian kinerja oleh HR, diklat → riwayat,
+(pimpinan hanya statistik; cakupan Ketua, Wakil Ketua bidang, dan LPM), cuti diajukan → HR setuju → kuota & notifikasi, presensi GPS di titik kampus
+(65 m diterima, 150 m ditolak, presensi ganda ditolak, terlambat, pulang awal tendik, pulang bebas dosen), koreksi HR, penilaian kinerja oleh HR, diklat → riwayat,
 mutasi, dan akses file Storage. Tetap jalankan di project Supabase uji coba sebelum dipakai.

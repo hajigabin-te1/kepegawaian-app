@@ -7,19 +7,20 @@
 create type public.attendance_status as enum ('present', 'late', 'early_leave', 'late_and_early_leave', 'absent', 'on_leave', 'on_permit');
 create type public.attendance_source as enum ('gps', 'manual');
 
--- Working hours used to classify late / early leave. Values are configured by HR, not hardcoded.
+-- Working hours per employee category (dosen/tendik), used to classify late / early leave.
+-- Values are configured by HR (seeded from the confirmed hours), not hardcoded in functions.
 create table public.work_schedules (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
+  employee_category public.employee_category not null unique,
   check_in_time time not null,
   check_out_time time not null,
   late_tolerance_minutes smallint not null default 0 check (late_tolerance_minutes >= 0),
-  is_default boolean not null default false,
+  flags_early_leave boolean not null default true,   -- false for lecturers: check-out time is flexible
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (check_out_time > check_in_time)
 );
-create unique index work_schedules_single_default_idx on public.work_schedules (is_default) where is_default;
 
 -- Attendance points. Check-in is accepted within radius_meters of a point (default 100 m).
 create table public.attendance_locations (
@@ -126,6 +127,7 @@ declare
   employee uuid := public.current_employee_id();
   location_id uuid;
   local_now timestamp := now() at time zone public.app_timezone();
+  current_category public.employee_category;
   schedule public.work_schedules;
   new_status public.attendance_status := 'present';
   record public.attendance_records;
@@ -133,7 +135,8 @@ begin
   if employee is null then
     raise exception 'No employee linked to this account';
   end if;
-  if not exists (select 1 from public.employees where id = employee and active_status = 'active') then
+  select e.category into current_category from public.employees e where e.id = employee and e.active_status = 'active';
+  if current_category is null then
     raise exception 'Employee is not active';
   end if;
 
@@ -146,7 +149,7 @@ begin
     raise exception 'Already checked in today';
   end if;
 
-  select * into schedule from public.work_schedules where is_default;
+  select * into schedule from public.work_schedules ws where ws.employee_category = current_category;
   if schedule.id is not null
      and local_now::time > schedule.check_in_time + make_interval(mins => schedule.late_tolerance_minutes) then
     new_status := 'late';
@@ -195,8 +198,11 @@ begin
   end if;
 
   new_status := record.status;
-  select * into schedule from public.work_schedules where is_default;
-  if schedule.id is not null and local_now::time < schedule.check_out_time then
+  select ws.* into schedule
+  from public.work_schedules ws
+  join public.employees e on e.category = ws.employee_category
+  where e.id = employee;
+  if schedule.id is not null and schedule.flags_early_leave and local_now::time < schedule.check_out_time then
     new_status := case when record.status = 'late' then 'late_and_early_leave'::public.attendance_status
                        else 'early_leave'::public.attendance_status end;
   end if;

@@ -8,7 +8,6 @@ insert into public.roles (code, name) values
   ('hr_admin', 'Bagian Kepegawaian'),
   ('chair', 'Ketua'),
   ('vice_chair', 'Wakil Ketua Bidang'),
-  ('study_program_head', 'Ketua Program Studi'),
   ('quality_assurance', 'Lembaga Penjaminan Mutu (LPM)'),
   ('employee', 'Pegawai (Dosen & Tenaga Kependidikan)')
 on conflict (code) do nothing;
@@ -50,7 +49,6 @@ join public.permissions p on p.code = any (
     ]
     when 'chair' then array['report.view']
     when 'vice_chair' then array['report.view']
-    when 'study_program_head' then array['report.view']
     when 'quality_assurance' then array['report.view']
     else array[]::text[]
   end
@@ -61,6 +59,16 @@ on conflict do nothing;
 insert into public.app_settings (key, value, description) values
   ('timezone', '"Asia/Makassar"', 'Zona waktu kampus untuk presensi (WITA)')
 on conflict (key) do nothing;
+
+-- Single campus attendance point; check-in is accepted within 100 m.
+insert into public.attendance_locations (name, latitude, longitude, radius_meters) values
+  ('Kampus STIA Amuntai', -2.422180, 115.262310, 100);
+
+-- Confirmed working hours. Lecturers' check-out is flexible (teaching), so it is never flagged as early leave.
+insert into public.work_schedules (name, employee_category, check_in_time, check_out_time, late_tolerance_minutes, flags_early_leave) values
+  ('Jam kerja tenaga kependidikan', 'staff', '09:00', '16:30', 30, true),
+  ('Jam kerja dosen', 'lecturer', '08:30', '18:00', 30, false)
+on conflict (employee_category) do nothing;
 
 insert into public.employment_statuses (code, name) values
   ('PNS', 'Pegawai Negeri Sipil'),

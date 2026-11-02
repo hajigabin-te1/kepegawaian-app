@@ -54,7 +54,7 @@ supabase/
 - Sesi login dikelola cookie `@supabase/ssr`; `src/proxy.ts` menyegarkan sesi dan melindungi route.
 - Persetujuan (cuti, koreksi presensi, penilaian, diklat, mutasi) hanya oleh HR dan memakai fungsi RPC di skema, bukan update langsung.
 - Presensi pegawai (web) hanya lewat RPC `check_in`/`check_out` (GPS browser, radius dari `attendance_locations`). Di luar radius tampilkan "Tidak bisa melakukan presensi".
-- Pimpinan (Ketua, Wakil Ketua, Kaprodi, LPM) hanya membaca statistik agregat lewat fungsi `report_*` sesuai `report_scopes`; jangan tampilkan data per pegawai untuk mereka.
+- Pimpinan (Ketua, Wakil Ketua, LPM) hanya membaca statistik agregat lewat fungsi `report_*` sesuai `report_scopes`; jangan tampilkan data per pegawai untuk mereka.
 - Tanggal & jam memakai zona waktu kampus (`app_settings.timezone`, WITA).
 - Jangan hardcode URL atau key; gunakan `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 

@@ -22,10 +22,11 @@ dosen dan tenaga kependidikan di lingkungan STIA Amuntai.
 | Bagian Kepegawaian, Kabag Kepegawaian, HR | `hr_admin` | **Satu-satunya pemberi persetujuan** (cuti/izin, koreksi presensi, penilaian kinerja, diklat, mutasi, kenaikan pangkat) dan pengelola seluruh data kepegawaian. Cakupan seluruh kampus |
 | Ketua | `chair` | Dashboard statistik **seluruh kampus** |
 | Wakil Ketua Bidang (Akademik, Umum, Kemahasiswaan) | `vice_chair` | Dashboard statistik **unit-unit di bawah bidangnya** |
-| Ketua Program Studi (Kaprodi) | `study_program_head` | Statistik **kehadiran dosen** di prodinya saja |
 | Lembaga Penjaminan Mutu (LPM) | `quality_assurance` | Dashboard statistik **seluruh kampus** seperti Ketua; nanti ada menu khusus sesuai tupoksi LPM |
 
-Semua pimpinan (Ketua, Wakil Ketua, Kaprodi, LPM) **hanya melihat statistik agregat**: tidak melihat
+Kaprodi **tidak** mendapat akses statistik; kehadiran dosen diurus Kepala Bagian Kepegawaian.
+
+Semua pimpinan (Ketua, Wakil Ketua, LPM) **hanya melihat statistik agregat**: tidak melihat
 data per pegawai dan tidak menyetujui apa pun. Cakupannya diatur per akun lewat tabel `report_scopes`.
 | Pegawai (Dosen & Tendik) | `employee` | Data diri, presensi GPS, ajukan cuti/izin, daftar diklat, lihat hasil penilaian |
 | Sistem eksternal (Keuangan, SIAKAD, SSO) | — | Di luar cakupan tahap awal |
@@ -82,7 +83,7 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 3 | Presensi web GPS (radius 100 m) + rekap + koreksi HR | `..._attendance` |
 | 4 | Cuti & Izin (pengajuan → persetujuan HR → kuota → rekap) | `..._leave` |
 | 5 | Penilaian Kinerja | `..._performance_appraisal` |
-| 6 | Dashboard statistik per jabatan (Ketua, Wakil Ketua, Kaprodi, LPM) + laporan HR | fungsi `report_*` + `report_scopes` |
+| 6 | Dashboard statistik per jabatan (Ketua, Wakil Ketua, LPM) + laporan HR | fungsi `report_*` + `report_scopes` |
 | 7 | Diklat, Mutasi, Kenaikan Pangkat, Pengumuman | `..._training_mutation_promotion`, `..._announcements` |
 | Nanti | Menu khusus LPM, pengiriman notifikasi email, integrasi presensi mengajar dosen, Keuangan, SIAKAD (BKD), SSO, backup/restore | — |
 
@@ -98,32 +99,31 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 2 Nov 2026 | Login | **Email** + password (Supabase Auth), agar notifikasi bisa dikirim lewat email |
 | 2 Nov 2026 | Presensi | **Web + GPS saja**, radius **100 m** dari **satu titik** di kampus; di luar radius tampil "Tidak bisa melakukan presensi". Tanpa sidik jari, tanpa mesin fingerprint/RFID |
 | 2 Nov 2026 | Presensi dosen | Dosen cukup presensi jam datang & pulang. Presensi mengajar diurus aplikasi lain (integrasi khusus dosen menyusul) |
-| 2 Nov 2026 | Cakupan statistik | Ketua & LPM: seluruh kampus. Wakil Ketua: bidangnya. Kaprodi: kehadiran dosen prodinya. Kabag Kepegawaian (HR): seluruh kampus |
+| 2 Nov 2026 | Cakupan statistik | Ketua & LPM: seluruh kampus. Wakil Ketua: bidangnya. Kabag Kepegawaian (HR): seluruh kampus. **Kaprodi tidak melihat statistik** |
+| 2 Nov 2026 | Titik presensi | Kampus STIA Amuntai: **-2.422180, 115.262310**, radius 100 m (sudah di `seed.sql`) |
+| 2 Nov 2026 | Jam kerja tendik | Datang **09:00**, toleransi **30 menit**, pulang **16:30** |
+| 2 Nov 2026 | Jam kerja dosen | Datang **08:30**, toleransi **30 menit**, pulang **18:00**, tetapi jam pulang **bebas** (tidak pernah ditandai "pulang awal") karena faktor mengajar |
+| 2 Nov 2026 | Hari tanpa presensi | **Dibiarkan kosong**; tidak dibuat catatan "tidak hadir" otomatis |
 | 2 Nov 2026 | Backend | Supabase |
 
 ## 7. Pertanyaan yang masih terbuka
 
-**Presensi**
-
-1. **Koordinat titik kampus** (latitude, longitude). Bisa diambil dari Google Maps: klik kanan titik → salin koordinat.
-2. **Jam datang, jam pulang, dan toleransi terlambat.** Apakah sama untuk dosen dan tendik, dan apakah
-   berbeda per hari (mis. Jumat)?
-3. Hari tanpa presensi sama sekali: dicatat otomatis sebagai **"tidak hadir"** di akhir hari, atau dibiarkan kosong?
-
 **Pimpinan**
 
-4. **Kaprodi melihat kehadiran dosen** dalam bentuk **angka rekap** (mis. 8 dosen hadir, 1 terlambat) atau
-   **daftar per nama dosen**? Saat ini angka rekap, sesuai keputusan "pimpinan hanya statistik".
-5. **Pembagian unit per bidang Wakil Ketua**: unit/bagian apa saja di bawah Bidang Akademik, Umum, dan
-   Kemahasiswaan? (Contoh: prodi → Akademik; Bagian Keuangan → Umum.)
+1. **Pembagian unit per bidang Wakil Ketua** (Akademik, Umum, Kemahasiswaan): unit/bagian apa saja di
+   bawah tiap bidang? *(Ditunda, akan diisi nanti.)*
+
+**Presensi**
+
+2. Apakah jam kerja berbeda untuk hari tertentu (mis. Jumat atau Sabtu)? Saat ini sama setiap hari.
 
 **Cuti & kinerja**
 
-6. Kuota tiap jenis cuti per tahun, dan apakah kuota boleh terlampaui.
-7. Cara menghitung hari cuti (hari kerja atau hari kalender, libur nasional).
-8. Rumus nilai kinerja dan skala nilai.
+3. Kuota tiap jenis cuti per tahun, dan apakah kuota boleh terlampaui.
+4. Cara menghitung hari cuti (hari kerja atau hari kalender, libur nasional).
+5. Rumus nilai kinerja dan skala nilai.
 
 **Data master**
 
-9. Kepanjangan **TTU** dan **TTK**, serta daftar lengkap status kepegawaian ("dll.").
-10. "Neraca kebutuhan pegawai": data apa yang dibandingkan (formasi vs. jumlah pegawai)?
+6. Kepanjangan **TTU** dan **TTK**, serta daftar lengkap status kepegawaian ("dll.").
+7. "Neraca kebutuhan pegawai": data apa yang dibandingkan (formasi vs. jumlah pegawai)?

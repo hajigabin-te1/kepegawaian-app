@@ -180,7 +180,7 @@ $$;
 -- One account may hold several scopes. Examples:
 --   Ketua, LPM            : work_unit_id null (whole campus), all categories, all reports
 --   Wakil Ketua bidang    : the bidang unit (type 'field'); every unit below it is included
---   Kaprodi               : their study program, employee_category 'lecturer', reports {attendance}
+-- employee_category and reports can narrow a scope further when needed.
 create table public.report_scopes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.user_accounts (id) on delete cascade,
