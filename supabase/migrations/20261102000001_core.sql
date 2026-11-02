@@ -89,18 +89,14 @@ create table public.employees (
   rank_grade text,                      -- golongan
   service_years smallint check (service_years >= 0),
   service_months smallint check (service_months between 0 and 11),
-  supervisor_id uuid references public.employees (id) on delete set null,  -- atasan langsung
   active_status public.employee_active_status not null default 'active',
   deactivation_reason text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check (supervisor_id is distinct from id)
+  updated_at timestamptz not null default now()
 );
 comment on table public.employees is 'Data pokok + data kepegawaian dosen dan tenaga kependidikan.';
-comment on column public.employees.supervisor_id is 'Atasan langsung (Kaprodi/Kabag/Manajer Unit) yang menyetujui cuti, diklat, dan menilai kinerja.';
 
 create index employees_work_unit_idx on public.employees (work_unit_id);
-create index employees_supervisor_idx on public.employees (supervisor_id);
 create index employees_active_status_idx on public.employees (active_status);
 
 -- ---------------------------------------------------------------------------
@@ -124,11 +120,10 @@ create table public.role_permissions (
   primary key (role_id, permission_id)
 );
 
--- One row per Supabase Auth user. Passwords live in auth.users (hashed by Supabase), never here.
+-- One row per Supabase Auth user. Users sign in with email; email and the hashed password live in auth.users.
 create table public.user_accounts (
   id uuid primary key references auth.users (id) on delete cascade,
   employee_id uuid unique references public.employees (id) on delete set null,  -- null for pure admins
-  username text not null unique,
   role_id smallint not null references public.roles (id) on delete restrict,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
@@ -166,23 +161,7 @@ as $$
   )
 $$;
 
-create or replace function public.is_supervisor_of(target_employee_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select exists (
-    select 1
-    from public.employees e
-    where e.id = target_employee_id
-      and e.supervisor_id is not null
-      and e.supervisor_id = public.current_employee_id()
-  )
-$$;
-
--- Own data, a direct subordinate's data, or anyone's with the given permission.
+-- Own data, or anyone's with the given permission. Leaders only get aggregated statistics (report_* functions).
 create or replace function public.can_view_employee(target_employee_id uuid, permission_code text)
 returns boolean
 language sql
@@ -191,7 +170,6 @@ security definer
 set search_path = ''
 as $$
   select target_employee_id = public.current_employee_id()
-      or public.is_supervisor_of(target_employee_id)
       or public.has_permission(permission_code)
 $$;
 
@@ -357,6 +335,7 @@ create table public.notifications (
   body text,
   link text,
   read_at timestamptz,
+  email_sent_at timestamptz,            -- set by the future email sender (Edge Function)
   created_at timestamptz not null default now()
 );
 create index notifications_recipient_idx on public.notifications (recipient_user_id, read_at);
@@ -372,6 +351,21 @@ as $$
   select ua.id, notification_title, notification_body, notification_link
   from public.user_accounts ua
   where ua.employee_id = target_employee_id and ua.is_active
+$$;
+
+-- Sends a notification to every active account holding a permission (e.g. HR for leave.manage).
+create or replace function public.notify_permission_holders(permission_code text, notification_title text, notification_body text, notification_link text default null)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  insert into public.notifications (recipient_user_id, title, body, link)
+  select distinct ua.id, notification_title, notification_body, notification_link
+  from public.user_accounts ua
+  join public.role_permissions rp on rp.role_id = ua.role_id
+  join public.permissions p on p.id = rp.permission_id
+  where ua.is_active and p.code = permission_code
 $$;
 
 create table public.app_settings (
@@ -436,7 +430,7 @@ create policy "master manage" on public.positions for all to authenticated using
 create policy "master read" on public.employment_statuses for select to authenticated using (true);
 create policy "master manage" on public.employment_statuses for all to authenticated using (public.has_permission('master.manage')) with check (public.has_permission('master.manage'));
 
--- Employees: own data, subordinates, or employee.view; changes by employee.manage. No hard delete (deactivate instead).
+-- Employees: own data or employee.view (HR); changes by employee.manage. No hard delete (deactivate instead).
 create policy "employee read" on public.employees for select to authenticated using (public.can_view_employee(id, 'employee.view'));
 create policy "employee insert" on public.employees for insert to authenticated with check (public.has_permission('employee.manage'));
 create policy "employee update" on public.employees for update to authenticated using (public.has_permission('employee.manage')) with check (public.has_permission('employee.manage'));

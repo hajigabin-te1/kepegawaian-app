@@ -22,22 +22,39 @@ create policy "announcement read" on public.announcements for select to authenti
 create policy "announcement manage" on public.announcements for all to authenticated
   using (public.has_permission('announcement.manage')) with check (public.has_permission('announcement.manage'));
 
--- Rekap pegawai per unit kerja (fakultas, prodi, bagian), split by category and active status.
-create or replace view public.employee_unit_summary
-with (security_invoker = true)
-as
-select
-  w.id as work_unit_id,
-  w.name as work_unit_name,
-  w.unit_type,
-  w.parent_id,
-  count(e.id) filter (where e.category = 'lecturer' and e.active_status = 'active') as active_lecturers,
-  count(e.id) filter (where e.category = 'staff' and e.active_status = 'active') as active_staff,
-  count(e.id) filter (where e.active_status = 'inactive') as inactive_employees,
-  count(e.id) filter (where e.active_status = 'retired') as retired_employees
-from public.work_units w
-left join public.employees e on e.work_unit_id = w.id
-group by w.id, w.name, w.unit_type, w.parent_id;
+-- Rekap pegawai per unit kerja (fakultas, prodi, bagian), split by category and status.
+-- Aggregates only, so leaders (report.view) can see statistics without individual employee rows.
+create or replace function public.report_employee_statistics()
+returns table (
+  work_unit_id uuid,
+  work_unit_name text,
+  unit_type public.work_unit_type,
+  parent_id uuid,
+  active_lecturers bigint,
+  active_staff bigint,
+  inactive_employees bigint,
+  retired_employees bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not (public.has_permission('report.view') or public.has_permission('employee.view')) then
+    raise exception 'Not allowed to view employee statistics';
+  end if;
+  return query
+  select w.id, w.name, w.unit_type, w.parent_id,
+         count(e.id) filter (where e.category = 'lecturer' and e.active_status = 'active'),
+         count(e.id) filter (where e.category = 'staff' and e.active_status = 'active'),
+         count(e.id) filter (where e.active_status = 'inactive'),
+         count(e.id) filter (where e.active_status = 'retired')
+  from public.work_units w
+  left join public.employees e on e.work_unit_id = w.id
+  group by w.id, w.name, w.unit_type, w.parent_id;
+end;
+$$;
 
 -- ---------------------------------------------------------------------------
 -- Storage: private buckets. Object paths start with the employee id: "<employee_id>/<file name>".

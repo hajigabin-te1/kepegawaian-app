@@ -40,7 +40,7 @@ create table public.leave_requests (
   reason text not null,
   document_path text,                   -- dokumen pendukung (Storage path)
   status public.request_status not null default 'pending',
-  approver_id uuid references public.employees (id) on delete set null,   -- disetujui_oleh
+  decided_by uuid references auth.users (id) on delete set null,          -- disetujui_oleh (HR)
   decided_at timestamptz,               -- tanggal_disetujui / ditolak
   decision_note text,                   -- catatan / alasan penolakan
   created_at timestamptz not null default now(),
@@ -50,7 +50,7 @@ create table public.leave_requests (
 create index leave_requests_employee_idx on public.leave_requests (employee_id, status);
 create index leave_requests_dates_idx on public.leave_requests (start_date, end_date);
 
--- Notify the supervisor when a request is submitted (activity diagram step 9).
+-- Notify HR when a request is submitted (HR is the only approver).
 create or replace function public.notify_leave_request_submitted()
 returns trigger
 language plpgsql
@@ -58,15 +58,12 @@ security definer
 set search_path = ''
 as $$
 declare
-  supervisor uuid;
   requester_name text;
 begin
-  select e.supervisor_id, e.full_name into supervisor, requester_name from public.employees e where e.id = new.employee_id;
-  if supervisor is not null then
-    perform public.notify_employee(supervisor, 'Pengajuan cuti/izin baru',
-      requester_name || ' mengajukan cuti/izin ' || to_char(new.start_date, 'DD-MM-YYYY') || ' s.d. ' || to_char(new.end_date, 'DD-MM-YYYY') || '.',
-      '/leave/' || new.id);
-  end if;
+  select e.full_name into requester_name from public.employees e where e.id = new.employee_id;
+  perform public.notify_permission_holders('leave.manage', 'Pengajuan cuti/izin baru',
+    requester_name || ' mengajukan cuti/izin ' || to_char(new.start_date, 'DD-MM-YYYY') || ' s.d. ' || to_char(new.end_date, 'DD-MM-YYYY') || '.',
+    '/leave/' || new.id);
   return new;
 end;
 $$;
@@ -74,7 +71,7 @@ $$;
 create trigger notify_leave_request_submitted after insert on public.leave_requests
 for each row execute function public.notify_leave_request_submitted();
 
--- Supervisor (or HR with leave.approve_all) approves/rejects. Approval of a "leave" type deducts the yearly quota.
+-- HR approves/rejects. Approval of a "leave" type deducts the yearly quota.
 create or replace function public.decide_leave_request(request_id uuid, approve boolean, note text default null)
 returns void
 language plpgsql
@@ -93,7 +90,7 @@ begin
   if request.status <> 'pending' then
     raise exception 'Leave request has already been decided';
   end if;
-  if not (public.is_supervisor_of(request.employee_id) or public.has_permission('leave.approve_all')) then
+  if not public.has_permission('leave.manage') then
     raise exception 'Not allowed to decide this leave request';
   end if;
   if not approve and coalesce(trim(note), '') = '' then
@@ -102,7 +99,7 @@ begin
 
   update public.leave_requests
   set status = case when approve then 'approved'::public.request_status else 'rejected'::public.request_status end,
-      approver_id = public.current_employee_id(),
+      decided_by = auth.uid(),
       decided_at = now(),
       decision_note = note
   where id = request_id;
@@ -139,6 +136,40 @@ from public.leave_requests r
 join public.employees e on e.id = r.employee_id
 group by r.employee_id, e.work_unit_id, r.leave_type_id, extract(year from r.start_date);
 
+-- Aggregated per work unit, category, and leave type for the leaders' statistics dashboard.
+create or replace function public.report_leave_by_unit(target_year smallint)
+returns table (
+  work_unit_id uuid,
+  work_unit_name text,
+  category public.employee_category,
+  leave_type_name text,
+  approved_requests bigint,
+  approved_days numeric,
+  pending_requests bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not (public.has_permission('report.view') or public.has_permission('leave.view')) then
+    raise exception 'Not allowed to view leave reports';
+  end if;
+  return query
+  select w.id, w.name, e.category, t.name,
+         count(*) filter (where r.status = 'approved'),
+         coalesce(sum(r.total_days) filter (where r.status = 'approved'), 0),
+         count(*) filter (where r.status = 'pending')
+  from public.leave_requests r
+  join public.employees e on e.id = r.employee_id
+  join public.leave_types t on t.id = r.leave_type_id
+  left join public.work_units w on w.id = e.work_unit_id
+  where extract(year from r.start_date) = target_year
+  group by w.id, w.name, e.category, t.name;
+end;
+$$;
+
 create trigger set_updated_at before update on public.leave_types for each row execute function public.set_updated_at();
 create trigger set_updated_at before update on public.leave_balances for each row execute function public.set_updated_at();
 create trigger set_updated_at before update on public.leave_requests for each row execute function public.set_updated_at();
@@ -155,12 +186,12 @@ create policy "leave type manage" on public.leave_types for all to authenticated
 create policy "balance read" on public.leave_balances for select to authenticated using (public.can_view_employee(employee_id, 'leave.view'));
 create policy "balance manage" on public.leave_balances for all to authenticated using (public.has_permission('leave.manage')) with check (public.has_permission('leave.manage'));
 
--- Employees submit their own requests and may cancel them while pending; decisions go through decide_leave_request().
+-- Employees submit their own requests and may cancel them while pending; HR decides through decide_leave_request().
 create policy "leave read" on public.leave_requests for select to authenticated using (public.can_view_employee(employee_id, 'leave.view'));
 create policy "leave submit" on public.leave_requests for insert to authenticated
-  with check (employee_id = public.current_employee_id() and status = 'pending' and approver_id is null and decided_at is null);
+  with check (employee_id = public.current_employee_id() and status = 'pending' and decided_by is null and decided_at is null);
 create policy "leave cancel own" on public.leave_requests for update to authenticated
   using (employee_id = public.current_employee_id() and status = 'pending')
-  with check (employee_id = public.current_employee_id() and status in ('pending', 'cancelled') and approver_id is null);
+  with check (employee_id = public.current_employee_id() and status in ('pending', 'cancelled') and decided_by is null);
 create policy "leave manage" on public.leave_requests for all to authenticated
   using (public.has_permission('leave.manage')) with check (public.has_permission('leave.manage'));

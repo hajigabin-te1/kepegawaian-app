@@ -5,8 +5,8 @@
 create type public.training_status as enum ('open', 'closed', 'completed', 'cancelled');
 create type public.training_registration_status as enum (
   'pending',               -- employee applied
-  'supervisor_approved',   -- atasan setuju
-  'supervisor_rejected',   -- atasan tolak
+  'approved',              -- HR setuju
+  'rejected',              -- HR tolak
   'selected',              -- HR menetapkan sebagai peserta
   'not_selected',
   'completed'              -- hasil/sertifikat dicatat
@@ -42,9 +42,9 @@ create table public.training_registrations (
   training_id uuid not null references public.trainings (id) on delete cascade,
   employee_id uuid not null references public.employees (id) on delete cascade,
   status public.training_registration_status not null default 'pending',
-  supervisor_id uuid references public.employees (id) on delete set null,
-  supervisor_decided_at timestamptz,
-  supervisor_note text,
+  decided_by uuid references auth.users (id) on delete set null,
+  decided_at timestamptz,
+  decision_note text,
   result_note text,
   certificate_path text,
   created_at timestamptz not null default now(),
@@ -65,16 +65,20 @@ begin
   if registration.id is null or registration.status <> 'pending' then
     raise exception 'Only pending registrations can be decided';
   end if;
-  if not (public.is_supervisor_of(registration.employee_id) or public.has_permission('training.manage')) then
+  if not public.has_permission('training.manage') then
     raise exception 'Not allowed to decide this registration';
   end if;
 
   update public.training_registrations
-  set status = case when approve then 'supervisor_approved'::public.training_registration_status else 'supervisor_rejected'::public.training_registration_status end,
-      supervisor_id = public.current_employee_id(),
-      supervisor_decided_at = now(),
-      supervisor_note = note
+  set status = case when approve then 'approved'::public.training_registration_status else 'rejected'::public.training_registration_status end,
+      decided_by = auth.uid(),
+      decided_at = now(),
+      decision_note = note
   where id = registration_id;
+
+  perform public.notify_employee(registration.employee_id,
+    case when approve then 'Pendaftaran diklat disetujui' else 'Pendaftaran diklat ditolak' end,
+    note, '/training');
 end;
 $$;
 
@@ -223,15 +227,11 @@ create policy "registration apply" on public.training_registrations for insert t
 create policy "registration manage" on public.training_registrations for all to authenticated
   using (public.has_permission('training.manage')) with check (public.has_permission('training.manage'));
 
--- Supervisors and HR may propose mutations; only HR approves/executes.
+-- Mutations and promotions are proposed, approved, and executed by HR only.
 create policy "mutation read" on public.mutations for select to authenticated using (public.can_view_employee(employee_id, 'mutation.manage'));
-create policy "mutation propose" on public.mutations for insert to authenticated
-  with check (status = 'proposed' and (public.is_supervisor_of(employee_id) or public.has_permission('mutation.manage')));
-create policy "mutation manage" on public.mutations for update to authenticated
+create policy "mutation manage" on public.mutations for all to authenticated
   using (public.has_permission('mutation.manage')) with check (public.has_permission('mutation.manage'));
 
 create policy "promotion read" on public.promotion_proposals for select to authenticated using (public.can_view_employee(employee_id, 'promotion.manage'));
-create policy "promotion propose" on public.promotion_proposals for insert to authenticated
-  with check (status = 'proposed' and (public.is_supervisor_of(employee_id) or public.has_permission('promotion.manage')));
-create policy "promotion manage" on public.promotion_proposals for update to authenticated
+create policy "promotion manage" on public.promotion_proposals for all to authenticated
   using (public.has_permission('promotion.manage')) with check (public.has_permission('promotion.manage'));

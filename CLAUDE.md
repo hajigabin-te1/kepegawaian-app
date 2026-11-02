@@ -52,7 +52,10 @@ supabase/
 - Service layer (`features/*/services`) membungkus query dan RPC Supabase; komponen tidak memanggil Supabase langsung.
 - Normalisasi error Supabase menjadi `ApiError` di service layer.
 - Sesi login dikelola cookie `@supabase/ssr`; `src/proxy.ts` menyegarkan sesi dan melindungi route.
-- Persetujuan (cuti, koreksi presensi, penilaian, diklat, mutasi) memakai fungsi RPC di skema, bukan update langsung.
+- Persetujuan (cuti, koreksi presensi, penilaian, diklat, mutasi) hanya oleh HR dan memakai fungsi RPC di skema, bukan update langsung.
+- Presensi pegawai hanya lewat RPC `check_in`/`check_out` (GPS, radius dari `attendance_locations`).
+- Pimpinan/atasan hanya membaca statistik agregat lewat fungsi `report_*`; jangan tampilkan data per pegawai untuk mereka.
+- Tanggal & jam memakai zona waktu kampus (`app_settings.timezone`, WITA).
 - Jangan hardcode URL atau key; gunakan `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
 ## Axios

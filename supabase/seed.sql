@@ -13,24 +13,21 @@ on conflict (code) do nothing;
 insert into public.permissions (code, description) values
   ('user.manage', 'Kelola akun pengguna'),
   ('role.manage', 'Kelola role & hak akses'),
-  ('settings.manage', 'Konfigurasi parameter sistem (jenis cuti, aturan absen, lokasi GPS)'),
+  ('settings.manage', 'Konfigurasi parameter sistem (jenis cuti, jam kerja, titik & radius GPS)'),
   ('audit.view', 'Lihat audit log'),
   ('master.manage', 'Kelola data jabatan & unit kerja'),
   ('employee.view', 'Lihat data seluruh pegawai'),
   ('employee.manage', 'Tambah, edit, nonaktifkan data pegawai'),
   ('attendance.view', 'Lihat data presensi seluruh pegawai'),
-  ('attendance.manage', 'Impor, koreksi, rekap absensi'),
-  ('attendance.approve_all', 'Setujui koreksi absensi pegawai mana pun'),
+  ('attendance.manage', 'Koreksi & rekap absensi'),
   ('leave.view', 'Lihat data cuti & izin seluruh pegawai'),
-  ('leave.manage', 'Verifikasi, koreksi, rekap cuti & izin'),
-  ('leave.approve_all', 'Setujui/tolak cuti pegawai mana pun'),
-  ('appraisal.view', 'Lihat rekap penilaian kinerja'),
-  ('appraisal.manage', 'Kelola periode, verifikasi, rekap penilaian kinerja'),
-  ('training.manage', 'Kelola pembukaan, seleksi, dan hasil diklat'),
+  ('leave.manage', 'Setujui/tolak, koreksi, rekap cuti & izin'),
+  ('appraisal.manage', 'Kelola periode, isi, verifikasi, rekap penilaian kinerja'),
+  ('training.manage', 'Kelola pembukaan, persetujuan, seleksi, dan hasil diklat'),
   ('mutation.manage', 'Kelola usulan & eksekusi mutasi'),
   ('promotion.manage', 'Kelola kenaikan pangkat & jabatan'),
   ('announcement.manage', 'Buat & kelola pengumuman'),
-  ('report.view', 'Generate laporan kepegawaian')
+  ('report.view', 'Lihat dashboard statistik & laporan (agregat, tanpa data per pegawai)')
 on conflict (code) do nothing;
 
 -- Role -> permission mapping, following the use case diagram.
@@ -44,15 +41,20 @@ join public.permissions p on p.code = any (
       'master.manage', 'employee.view', 'employee.manage',
       'attendance.view', 'attendance.manage',
       'leave.view', 'leave.manage',
-      'appraisal.view', 'appraisal.manage',
+      'appraisal.manage',
       'training.manage', 'mutation.manage', 'promotion.manage',
       'announcement.manage', 'report.view'
     ]
-    when 'leader' then array['employee.view', 'attendance.view', 'leave.view', 'appraisal.view', 'report.view']
+    when 'leader' then array['report.view']
     else array[]::text[]
   end
 )
 on conflict do nothing;
+
+-- Amuntai (Kalimantan Selatan) uses WITA.
+insert into public.app_settings (key, value, description) values
+  ('timezone', '"Asia/Makassar"', 'Zona waktu kampus untuk presensi (WITA)')
+on conflict (key) do nothing;
 
 insert into public.employment_statuses (code, name) values
   ('PNS', 'Pegawai Negeri Sipil'),
