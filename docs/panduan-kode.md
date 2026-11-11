@@ -1,29 +1,32 @@
 # Panduan Kode — Aplikasi Kepegawaian STIA Amuntai
 
-Dokumen ini menjelaskan apa saja yang sudah dibangun, bagaimana bagian-bagiannya saling terhubung,
-dan arti nama-nama variabel/fungsi di kode. Kode tetap memakai bahasa Inggris (aturan di `CLAUDE.md`);
-dokumen inilah "kamus"-nya dalam bahasa Indonesia.
+Dokumen ini menjelaskan apa yang sudah dibangun, bagaimana bagian-bagiannya saling terhubung,
+dan arti nama-nama variabel, fungsi, dan tipe di kode. Kode tetap memakai bahasa Inggris
+(aturan di `CLAUDE.md`); dokumen ini adalah "kamus" dalam bahasa Indonesia.
 
-Status per 2 November 2026 (setelah PR #1–#5 di-merge ke `main`).
+Status per **11 November 2026** (setelah PR #8 di-merge).
 
 ---
 
 ## 1. Gambaran besar
 
-Aplikasi ini **frontend saja** (Next.js 16, App Router). Tidak ada backend atau database.
-API pegawai yang asli belum dikonfirmasi, jadi:
+Frontend **Next.js 16 (App Router)** dengan **Supabase** sebagai backend (Postgres, Auth, Storage).
+Tidak ada API route atau backend lain yang dibuat di repo ini.
 
 | Bagian | Kondisi sekarang |
 |---|---|
-| Login & sesi | **Supabase Auth**: login dengan email + password, sesi di cookie yang dikelola `@supabase/ssr` |
-| Proteksi halaman | **Sudah jalan** lewat `src/proxy.ts` |
-| Tampilan (sidebar, header, login, dashboard) | **Sudah jadi** |
-| Dashboard | Isinya **data contoh** (`mock-dashboard.ts`) |
-| Halaman pegawai (daftar, tambah, detail, ubah) | Masih **placeholder** |
-| Database | **Supabase** (skema di `supabase/migrations`, penjelasan di `docs/database-schema.md`) |
-| TanStack Query | Sudah disiapkan, belum dipakai (dipakai mulai modul data pegawai) |
+| Login & sesi | **Sudah jalan.** Supabase Auth dengan email + password. Sesi disimpan di cookie oleh `@supabase/ssr` |
+| Proteksi halaman | **Sudah jalan** lewat `src/proxy.ts` dan pengecekan permission di halaman |
+| Hak akses (RBAC) | **Sudah jalan.** Menu, route, dan RPC dibatasi berdasarkan permission peran |
+| Kelola akun pengguna | **Sudah jalan** (buat, ubah peran, aktif/nonaktif) |
+| Master data (unit kerja, jabatan) | **Sudah jalan** (daftar, tambah, ubah) |
+| Ganti password | **Sudah jalan** |
+| Dashboard | Masih memakai **data contoh** (`mock-dashboard.ts`) |
+| Data pegawai (daftar, tambah, detail, ubah) | Masih **placeholder** |
+| Modul lain (presensi, cuti, kinerja, diklat, mutasi) | Skema SQL sudah ada, UI belum |
 
-Daftar pertanyaan ke tim API ada di `docs/api-contract.md`.
+Skema database ada di `supabase/migrations` dan dijelaskan di `docs/database-schema.md`.
+Kebutuhan dan rencana fase ada di `docs/requirements.md`.
 
 ---
 
@@ -33,17 +36,20 @@ Daftar pertanyaan ke tim API ada di `docs/api-contract.md`.
 Browser membuka URL
    │
    ▼
-src/proxy.ts                 ← "satpam": cek cookie sesi, arahkan ke /login atau /dashboard
+src/proxy.ts                  ← "satpam": segarkan sesi, cek login, cek permission route
    │
    ▼
-src/app/layout.tsx           ← kerangka HTML paling luar + AppProviders (TanStack Query, toast)
+src/app/layout.tsx            ← kerangka HTML + AppProviders (TanStack Query, toast)
    │
-   ├── (auth)/layout.tsx     ← kerangka halaman login
+   ├── (auth)/layout.tsx      ← kerangka halaman login
    │      └── login/page.tsx
    │
-   └── (dashboard)/layout.tsx ← kerangka setelah login: sidebar + header
+   └── (dashboard)/layout.tsx ← shell setelah login: ambil user → sidebar + header
           ├── dashboard/page.tsx
-          └── employees/...   (placeholder)
+          ├── employees/...          (placeholder)
+          ├── master/work-units, positions
+          ├── accounts/
+          └── profile/password/
 ```
 
 Folder dengan tanda kurung seperti `(auth)` dan `(dashboard)` adalah **route group**: hanya untuk
@@ -55,208 +61,330 @@ mengelompokkan file. Namanya tidak muncul di URL (`/login`, bukan `/(auth)/login
 
 ```
 src/
-  proxy.ts                     Proteksi route (pengganti "middleware" di Next.js 16)
-  app/                         Halaman (setiap folder = satu URL)
-    layout.tsx                 Layout root: font, judul tab, AppProviders
-    page.tsx                   URL "/" → redirect ke /dashboard
-    globals.css                Token warna 60-30-10 (#F8F8FF, #191970, #87CEFA)
-    (auth)/login/page.tsx      Halaman login (split layout)
-    (dashboard)/layout.tsx     Shell setelah login: ambil sesi → sidebar + header
-    (dashboard)/dashboard/     Dashboard + loading.tsx (skeleton)
-    (dashboard)/employees/     Halaman pegawai (masih placeholder)
+  proxy.ts                       Proteksi route (pengganti "middleware" di Next.js 16)
+  app/                           Halaman. Setiap folder = satu URL
+    layout.tsx                   Layout root: font, judul tab, AppProviders
+    page.tsx                     URL "/" → redirect ke /dashboard
+    globals.css                  Token warna 60-30-10 (#F8F8FF, #191970, #87CEFA)
+    (auth)/login/                Halaman login
+    (dashboard)/layout.tsx       Shell setelah login: ambil user → sidebar + header
+    (dashboard)/dashboard/       Dashboard (data contoh) + loading.tsx
+    (dashboard)/employees/       Data pegawai (placeholder)
+    (dashboard)/master/          Unit kerja dan jabatan (memakai requirePermission)
+    (dashboard)/accounts/        Kelola akun pengguna (requirePermission)
+    (dashboard)/profile/password/ Ganti password sendiri
   components/
-    ui/                        Komponen dasar shadcn/ui (Button, Card, Table, dst.). Jarang diubah.
-    layout/                    Sidebar, header, breadcrumb, menu user, pencarian, notifikasi
-    common/                    Komponen umum: AppProviders, EmptyState, PlaceholderNotice
-  features/
-    auth/                      Semua hal tentang login
-      types/auth.ts            Bentuk data: SessionUser, LoginInput, AuthResult
-      schemas/login-schema.ts  Aturan validasi form login (Zod)
-      services/auth-service.ts Login/logout Supabase + baca akun yang sedang login (getCurrentUser)
-      actions.ts               Server Action: loginAction, logoutAction
-      components/login-form.tsx Form login (React Hook Form)
+    ui/                          Komponen dasar shadcn/ui. Jarang diubah
+    layout/                      Sidebar, header, breadcrumb, menu user, pencarian, notifikasi
+    common/                      AppProviders, EmptyState, PlaceholderNotice, QueryErrorState,
+                                 TableSkeleton, ActiveStatusBadge
+  features/                      Satu folder per modul bisnis
+    auth/                        Login, logout, ganti password, baca user yang login
+      actions.ts                 Server Action: loginAction, logoutAction, changePasswordAction
+      services/auth-service.ts   Logika Supabase Auth + getCurrentUser + requirePermission
+      components/                LoginForm, ChangePasswordForm
+      schemas/                   Validasi form login dan ganti password
+      types/auth.ts              SessionUser, RoleCode, LoginInput
+    accounts/                    Kelola akun pengguna (daftar, buat, ubah peran/status)
+      services/account-service.ts  listAccounts, listRoles, updateAccount, createAccount
+      hooks/use-accounts.ts      useAccounts, useRoles, useUpdateAccount, useCreateAccount
+      components/                AccountsPanel, CreateAccountDialog, AccountFormDialog
+      schemas/, types/           Validasi dan bentuk data akun
+    master-data/                 Unit kerja dan jabatan
+      services/master-data-service.ts  listWorkUnits, createWorkUnit, updateWorkUnit, listPositions, ...
+      hooks/use-master-data.ts   useWorkUnits, useSaveWorkUnit, usePositions, useSavePosition
+      components/                WorkUnitsPanel, PositionsPanel, form dialog masing-masing
+      schemas/, types/           Validasi dan bentuk data master
     dashboard/
-      data/mock-dashboard.ts   Data contoh dashboard
-      components/              KpiStrip, RecentEmployeesCard, PendingDocumentsCard
-    employees/                 Disiapkan untuk CRUD pegawai (baru berisi query key)
+      data/mock-dashboard.ts     Data contoh dashboard (akan diganti data asli)
+      components/                KpiStrip, RecentEmployeesCard, PendingDocumentsCard
+    employees/                   Disiapkan untuk CRUD pegawai (saat ini hanya query key)
   lib/
-    axios.ts                   Klien HTTP terpusat (base URL, token, error, 401)
-    api-error.ts               Bentuk error yang seragam (ApiError)
-    query-client.ts            Pengaturan TanStack Query
-    utils.ts                   cn() (gabung class) + getInitials() (inisial nama)
+    supabase/client.ts           Supabase untuk browser (createSupabaseBrowserClient)
+    supabase/server.ts           Supabase untuk server, memakai cookie (createSupabaseServerClient)
+    supabase/proxy.ts            updateSession + redirectWithCookies, dipakai proxy.ts
+    api-error.ts                 ApiError, toApiError, fromSupabaseError
+    query-client.ts              Pengaturan TanStack Query
+    axios.ts                     Klien HTTP untuk API pihak ketiga (belum dipakai)
+    utils.ts                     cn() dan getInitials()
   stores/
-    ui-store.ts                State tampilan (Zustand): sidebar diciutkan / drawer mobile
-    auth-store.ts              Token di memori untuk Axios (API pihak ketiga; belum dipakai)
+    ui-store.ts                  State tampilan (Zustand): sidebar diciutkan, drawer mobile
+    auth-store.ts                Token di memori untuk Axios (belum dipakai)
   config/
-    env.ts                     Membaca environment variable
-    routes.ts                  Daftar URL aplikasi
-    navigation.ts              Daftar menu sidebar
+    env.ts                       Membaca environment variable, termasuk konfigurasi Supabase
+    routes.ts                    Daftar URL aplikasi
+    navigation.ts                Daftar menu sidebar + filter menu berdasarkan permission
+    permissions.ts               Kode permission (PERMISSIONS) + aturan route (requiredPermissionFor)
+    locale.ts                    APP_TIME_ZONE = "Asia/Makassar" (WITA)
+  types/
+    database.ts                  Tipe tabel dan RPC Supabase (dipakai client Supabase)
+
+supabase/
+  migrations/                    Skema SQL berurutan. Jangan mengedit file yang sudah dijalankan
+  functions/admin-create-user/   Edge Function: buat akun Auth dan user_accounts
+  seed.sql                       Data awal: role, permission, status kepegawaian, jenis cuti, jam kerja
 ```
 
 ---
 
-## 4. Alur login (langkah demi langkah)
+## 4. Pola yang dipakai di setiap modul
 
-1. Pengguna membuka `/login` → `src/app/(auth)/login/page.tsx` menampilkan `LoginForm`.
-2. `LoginForm` (`features/auth/components/login-form.tsx`):
-   - `useForm(...)` membuat form dengan aturan dari `loginSchema` (email valid & password wajib diisi).
-   - Saat tombol **Masuk** ditekan, `handleSubmit(onSubmit)` memvalidasi dulu. Kalau salah, pesan
-     error muncul di bawah field dan `onSubmit` tidak dijalankan.
-   - `onSubmit` memanggil `loginAction(values)`.
-3. `loginAction` (`features/auth/actions.ts`) berjalan **di server**:
-   - Memvalidasi ulang dengan `loginSchema.safeParse` (jangan percaya data dari browser).
-   - `signInWithEmail` (`auth-service.ts`) memanggil `supabase.auth.signInWithPassword`.
-     Salah → "Email atau password salah." (Alert merah).
-   - Login berhasil, tetapi akunnya tidak ada di `user_accounts` atau nonaktif → langsung logout lagi,
-     pesan "Akun belum terdaftar … atau sedang nonaktif".
-   - Berhasil → kejadian `login` dicatat di `audit_logs`, cookie sesi Supabase tersimpan, lalu `redirect("/dashboard")`.
-4. Logout: tombol di bawah sidebar atau menu avatar → `logoutAction` → `signOut` → `/login`.
-   Ganti password: menu avatar → **Ganti Password** (`/profile/password`) → `changePasswordAction`
-   → `changePassword` (cek password lama dulu, lalu `supabase.auth.updateUser`).
-5. Siapa yang sedang login dibaca `getCurrentUser()`: klaim JWT Supabase → baris `user_accounts`
-   (role, status aktif) → nama dari `employees` (kalau akun terhubung ke pegawai), atau nama role.
+Ikuti pola yang sudah ada di `features/accounts` dan `features/master-data`. Alurnya:
+
+```
+Halaman (app/)  →  Komponen (components/)  →  Hook (hooks/, TanStack Query)  →  Service (services/)  →  Supabase
+```
+
+| Lapisan | Tugas | Aturan |
+|---|---|---|
+| `app/.../page.tsx` | Route, cek permission (`requirePermission`), susun komponen | Server Component. Jangan ada logika bisnis |
+| `components/` | Tampilan dan form | Tidak memanggil Supabase langsung |
+| `hooks/` | `useQuery` / `useMutation` | Query key terstruktur. Invalidate setelah create/update/delete |
+| `services/` | Satu fungsi per operasi Supabase atau RPC | Semua error dibungkus `fromSupabaseError` menjadi `ApiError` |
+| `schemas/` | Validasi Zod untuk form | Dipakai React Hook Form (form) dan Server Action (ulang di server) |
+| `types/` | Bentuk data di aplikasi | Dipetakan dari nama kolom snake_case ke camelCase di service |
+
+Catatan:
+- **Persetujuan** (cuti, koreksi presensi, penilaian, diklat, mutasi) hanya lewat fungsi RPC, bukan update langsung.
+- **Pimpinan** hanya membaca statistik agregat lewat fungsi `report_*`. Jangan tampilkan data per pegawai untuk mereka.
+- **Tanggal dan jam** memakai zona waktu kampus `APP_TIME_ZONE` (`Asia/Makassar`).
+
+---
+
+## 5. Login dan sesi (langkah demi langkah)
+
+1. Pengguna membuka `/login`. `LoginForm` memakai `useForm` dengan `loginSchema` (email valid, password wajib).
+2. Saat **Masuk** ditekan, `handleSubmit` memvalidasi dulu. Kalau salah, pesan error tampil di bawah field.
+3. `loginAction` (`features/auth/actions.ts`) berjalan di server:
+   - Memvalidasi ulang dengan `loginSchema`. Data dari browser tidak dipercaya.
+   - `signInWithEmail` memanggil `supabase.auth.signInWithPassword`.
+     - Salah → "Email atau password salah."
+     - Belum dikonfirmasi → "Email belum dikonfirmasi."
+   - Login berhasil, tetapi tidak ada baris di `user_accounts` atau `is_active = false` → logout lagi dan pesan
+     "Akun belum terdaftar … atau sedang nonaktif."
+   - Berhasil → RPC `log_audit_event` mencatat `login` di `audit_logs`, cookie sesi tersimpan, lalu redirect ke `/dashboard`.
+4. **Keluar**: `logoutAction` → RPC `log_audit_event` (`logout`) → `signOut` → `/login`.
+5. **Ganti password** (`/profile/password`): `changePasswordAction` → `changePassword`.
+   Password lama diverifikasi dulu dengan `signInWithPassword`, lalu `updateUser`. Hasilnya dicatat sebagai `change_password`.
+6. **Siapa yang login** dibaca `getCurrentUser()`:
+   - Klaim JWT (`getClaims`) memberi `sub` dan `email`.
+   - Baris `user_accounts` memberi peran dan status aktif.
+   - Daftar permission diambil dari `role_permissions`.
+   - Nama tampilan diambil dari `employees.full_name`. Kalau akun tidak terhubung ke pegawai, dipakai nama peran.
 
 Cookie sesi dikelola `@supabase/ssr` dan disegarkan otomatis oleh `src/proxy.ts`.
 
 ---
 
-## 5. Proteksi halaman (`src/proxy.ts`)
+## 6. Hak akses (RBAC)
 
-Dijalankan **sebelum** halaman dirender, hanya untuk URL di `config.matcher`
-(`/`, `/login`, `/dashboard/...`, `/employees/...`).
+Ada tiga lapis. Semuanya memakai daftar permission dari tabel `permissions` yang terhubung ke peran.
+
+| Lapis | Di mana | Fungsi |
+|---|---|---|
+| Menu | `config/navigation.ts` (`navigationFor`) | Menu hanya tampil jika peran punya permission |
+| Route | `src/proxy.ts` dan `config/permissions.ts` (`requiredPermissionFor`) | Route yang butuh permission dikembalikan ke dashboard jika tidak punya |
+| Halaman | `requirePermission(PERMISSIONS.x)` di `page.tsx` | Pengecekan kedua di server. Jika tidak punya izin, redirect ke dashboard |
+| Database | Fungsi `has_permission` dan RLS | Lapis terakhir. Data tetap dijaga walaupun UI dilewati |
+
+Permission yang dipakai frontend ada di `PERMISSIONS`:
+
+| Kode | Arti |
+|---|---|
+| `user.manage` | Kelola akun pengguna |
+| `master.manage` | Kelola unit kerja dan jabatan |
+| `employee.view` | Lihat daftar dan detail pegawai |
+| `employee.manage` | Tambah dan ubah data pegawai |
+
+Peran (`ROLE_CODES`): `superadmin`, `hr_admin`, `chair`, `vice_chair`, `quality_assurance`, `employee`.
+
+**Menambah halaman baru yang butuh izin:** tambahkan aturan di `ROUTE_RULES` (`config/permissions.ts`),
+tambahkan path di `PROTECTED_PREFIXES` (`src/proxy.ts`) jika belum ada, tambahkan item di `mainNavigation`
+(`config/navigation.ts`), lalu panggil `requirePermission` di `page.tsx`.
+
+---
+
+## 7. Proteksi route (`src/proxy.ts`)
+
+Dijalankan **sebelum** halaman dirender, untuk URL di `config.matcher`.
 
 | Kondisi | Hasil |
 |---|---|
 | Buka `/` dan sudah login | ke `/dashboard` |
 | Buka `/` dan belum login | ke `/login` |
-| Buka `/login` dan sudah login | ke `/dashboard` |
-| Buka `/dashboard` atau `/employees/...` dan belum login | ke `/login` |
+| Buka `/login` dan sudah login (dan akun aktif) | ke `/dashboard` |
+| Buka `/login` dengan sesi tetapi akun nonaktif | sesi dihapus, tetap di `/login` |
+| Buka route terlindungi dan belum login | ke `/login` |
+| Buka route yang butuh permission, tetapi tidak punya | ke `/dashboard` (RPC `has_permission`) |
 
-Lapisan kedua: `(dashboard)/layout.tsx` juga memanggil `getSession()`. Kalau sesi tidak ada,
-halaman tetap di-redirect ke `/login`.
+Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalikan `null`, redirect ke `/login`.
 
 ---
 
-## 6. Shell dashboard: sidebar & header
+## 8. Shell dashboard: sidebar dan header
 
-- **`(dashboard)/layout.tsx`**: `DashboardShell` mengambil `user` dari cookie, lalu meneruskannya ke
-  `AppSidebar` dan `AppHeader`. Selama menunggu, `DashboardShellFallback` (kerangka kosong) yang tampil.
-- **`AppSidebar`**: sidebar navy desktop. Tombol di pojok mengecilkan/memperlebar sidebar.
-  Status ini disimpan di `ui-store.ts` dan **diingat setelah reload** (localStorage, kunci `kepegawaian-ui`).
-  - `hasHydrated` = apakah status tersimpan sudah dibaca dari localStorage. Animasi lebar baru dinyalakan
-    setelah itu, supaya sidebar tidak "melompat" saat halaman dimuat.
-- **`SidebarNav`**: daftar menu dari `config/navigation.ts`. `findActiveNavItem` mencari menu yang
-  paling cocok dengan URL sekarang (yang `href`-nya paling panjang menang), lalu menu itu diberi
-  latar lebih terang + bar biru muda di kiri.
+- **`(dashboard)/layout.tsx`**: `DashboardShell` mengambil `user` lalu meneruskannya ke `AppSidebar` dan `AppHeader`.
+  Selama menunggu, `DashboardShellFallback` (kerangka kosong) tampil.
+- **`AppSidebar`**: sidebar navy di desktop. Tombol di pojok mengecilkan atau melebarkan sidebar.
+  Status ini disimpan di `ui-store.ts` dan diingat setelah reload (localStorage, kunci `kepegawaian-ui`).
+  - `hasHydrated` menandakan status sudah dibaca dari localStorage. Animasi lebar baru dinyalakan setelah itu,
+    supaya sidebar tidak "melompat" saat halaman dimuat.
+- **`SidebarNav`**: menu dari `config/navigation.ts`. `findActiveNavItem` memilih menu yang paling cocok
+  dengan URL (`href` terpanjang menang).
 - **`SidebarUser`**: avatar, nama, peran, tombol keluar.
-- **`MobileSidebar`**: versi drawer (laci) untuk layar kecil, dibuka dari tombol ☰ di header.
-- **`AppHeader`**: breadcrumb + judul (`HeaderBreadcrumb`), pencarian (`HeaderSearch`),
-  notifikasi (`NotificationMenu`), menu avatar (`UserMenu`).
-  - Pencarian **belum mencari apa pun**. Submit hanya menampilkan toast "Pencarian belum tersedia",
-    karena endpoint pencarian belum ada.
-  - Notifikasi selalu kosong karena belum ada API-nya.
+- **`MobileSidebar`**: versi drawer untuk layar kecil, dibuka dari tombol ☰ di header.
+- **`AppHeader`**: breadcrumb dan judul, pencarian, notifikasi, menu avatar.
+  - Pencarian **belum mencari apa pun**. Submit hanya menampilkan toast "Pencarian belum tersedia".
+  - Notifikasi selalu kosong karena belum ada sumber datanya.
 
 ---
 
-## 7. Dashboard
+## 9. Modul yang sudah jalan
 
-`src/app/(dashboard)/dashboard/page.tsx` menyusun tiga bagian, semuanya dari data contoh
-`features/dashboard/data/mock-dashboard.ts`:
+### 9.1 Kelola akun (`/accounts`, permission `user.manage`)
 
-1. **Judul + tanggal + label "Data contoh"**, dengan tombol *Data Pegawai* dan *Tambah Pegawai*.
-2. **`KpiStrip`**: 4 indikator dalam satu strip:
-   total pegawai, pegawai aktif (dengan bar proporsi aktif/cuti/nonaktif),
-   pegawai baru bulan ini (dibanding bulan lalu), dokumen menunggu verifikasi.
-3. **`RecentEmployeesCard`**: tabel pegawai terbaru dengan filter status (Semua/Aktif/Cuti/Nonaktif).
-   Filter hanya menyaring data contoh di browser (`useState`).
-4. **`PendingDocumentsCard`**: daftar dokumen yang menunggu, diberi warna kuning jika lebih dari 7 hari.
+- Daftar akun memanggil RPC `list_user_accounts` (berisi email, peran, status, nama pegawai, login terakhir).
+- Ubah peran dan status memanggil `updateAccount`, yang mengupdate `user_accounts`.
+  Jika mencoba menonaktifkan atau mengubah peran sendiri, database menolak dan pesannya diterjemahkan lewat `fromSupabaseError`.
+- Buat akun baru memanggil Edge Function `admin-create-user` dengan `createAccount`.
+  Pembuatan lewat function ini wajib karena membuat user Auth butuh secret key yang tidak boleh ada di browser.
+  Password sementara dibuat otomatis (`generateTemporaryPassword`).
 
-`loading.tsx` adalah skeleton yang otomatis tampil selama halaman disiapkan.
+### 9.2 Master data (`/master/*`, permission `master.manage`)
+
+- Unit kerja: `listWorkUnits`, `createWorkUnit`, `updateWorkUnit`. Punya `unit_type` dan `parent_id` (hierarki).
+- Jabatan: `listPositions`, `createPosition`, `updatePosition`. Punya `position_type` dan `level`.
+- Form memakai dialog (`WorkUnitFormDialog`, `PositionFormDialog`). Setelah simpan, query terkait di-invalidate.
 
 ---
 
-## 8. Kamus nama (variabel, fungsi, tipe)
+## 10. Dashboard
 
-Arti nama-nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini, tambahkan.
+`src/app/(dashboard)/dashboard/page.tsx` menyusun tiga bagian dari data contoh `mock-dashboard.ts`:
+
+1. **Judul, tanggal, dan label "Data contoh"**, dengan tombol *Data Pegawai* dan *Tambah Pegawai*.
+2. **`KpiStrip`**: 4 indikator (total pegawai, pegawai aktif dengan bar proporsi, pegawai baru bulan ini, dokumen menunggu verifikasi).
+3. **`RecentEmployeesCard`**: tabel pegawai terbaru dengan filter status. Filter hanya menyaring data contoh di browser.
+4. **`PendingDocumentsCard`**: dokumen yang menunggu. Diberi warna kuning jika lebih dari 7 hari.
+
+`loading.tsx` adalah skeleton yang tampil selama halaman disiapkan.
+
+---
+
+## 11. Kamus nama (variabel, fungsi, tipe)
+
+Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini, tambahkan.
 
 ### Umum
 | Nama | Arti |
 |---|---|
-| `cn(...)` | Menggabungkan beberapa class Tailwind jadi satu string, membuang yang kosong |
-| `getInitials(name)` | Ambil inisial nama untuk avatar ("Siti Rahmawati" → "SR") |
+| `cn(...)` | Menggabungkan class Tailwind dan membuang yang kosong |
+| `getInitials(name)` | Inisial nama untuk avatar ("Siti Rahmawati" → "SR") |
 | `routes` | Daftar URL aplikasi (`routes.dashboard` = `"/dashboard"`) |
 | `mainNavigation` | Daftar grup menu sidebar |
+| `navigationFor(permissions)` | Menu yang boleh dilihat peran ini |
 | `findActiveNavItem(pathname)` | Cari menu yang sedang aktif berdasarkan URL |
-| `pathname` | Bagian path dari URL sekarang, mis. `/employees/new` |
-| `href` | Alamat tujuan sebuah link |
-| `env` | Nilai dari environment variable (`.env`) |
-| `...Formatter` | Pemformat angka/tanggal gaya Indonesia (`Intl`) |
+| `pathname` | Bagian path dari URL, mis. `/employees/new` |
+| `env` | Nilai environment variable yang dibaca di `config/env.ts` |
+| `APP_TIME_ZONE` | Zona waktu kampus (`Asia/Makassar`) |
 
-### Auth (login)
+### Error
 | Nama | Arti |
 |---|---|
-| `SessionUser` | Data pengguna yang sedang login: `email`, `displayName`, `roleCode`, `roleName`, `employeeId` |
-| `RoleCode` | Kode peran: `superadmin`, `hr_admin`, `chair`, `vice_chair`, `quality_assurance`, `employee` |
+| `ApiError` | Error yang sudah dinormalisasi: `message` (Indonesia), `status`, `details` |
+| `fromSupabaseError(error, overrides)` | Ubah error Supabase jadi `ApiError`. `overrides` mengganti pesan untuk kode tertentu (mis. `self_lockout`) |
+| `toApiError(error)` | Versi umum untuk error apa pun, dipakai Axios |
+
+### Auth
+| Nama | Arti |
+|---|---|
+| `SessionUser` | Data user yang login: `id`, `email`, `displayName`, `roleCode`, `roleName`, `employeeId`, `permissions` |
+| `RoleCode` / `ROLE_CODES` | Kode peran yang dikenali aplikasi |
 | `LoginInput` | Isi form login: `email`, `password` |
-| `loginSchema` | Aturan validasi form login |
-| `signInWithEmail` / `signOut` | Masuk / keluar lewat Supabase Auth |
-| `getCurrentUser` | Data akun yang sedang login (atau `null`) |
-| `createSupabaseServerClient` | Client Supabase untuk kode server (`lib/supabase/server.ts`) |
+| `signInWithEmail` / `signOut` | Masuk dan keluar lewat Supabase Auth |
+| `getCurrentUser()` | User yang sedang login, atau `null` |
+| `requirePermission(code)` | Ambil user untuk halaman. Redirect ke login jika belum masuk, ke dashboard jika tidak punya izin |
+| `changePassword(current, next)` | Ganti password setelah password lama diverifikasi |
+| `createSupabaseServerClient` | Supabase untuk server, dengan cookie (`lib/supabase/server.ts`) |
+| `createSupabaseBrowserClient` | Supabase untuk browser (`lib/supabase/client.ts`) |
 | `updateSession` | Menyegarkan cookie sesi di proxy (`lib/supabase/proxy.ts`) |
-| `loginAction` / `logoutAction` | Aksi server untuk masuk / keluar |
-| `isPasswordVisible` | `true` jika password sedang ditampilkan (ikon mata) |
-| `register` | Menghubungkan sebuah input ke React Hook Form |
-| `handleSubmit` | Validasi dulu, baru panggil `onSubmit` |
-| `errors` | Pesan error per field (`errors.email`, `errors.root` untuk error umum) |
-| `isSubmitting` | `true` selama proses login berjalan (tombol jadi "Memproses...") |
+| `loginAction` / `logoutAction` / `changePasswordAction` | Server Action untuk masuk, keluar, dan ganti password |
+| `log_audit_event` | RPC untuk mencatat aktivitas ke `audit_logs` |
+| `has_permission` | RPC untuk mengecek permission user yang login |
+| `PERMISSIONS` | Kode permission yang dipakai frontend (`PERMISSIONS.userManage` = `"user.manage"`) |
+| `requiredPermissionFor(pathname)` | Permission yang dibutuhkan sebuah route, atau `null` jika cukup login |
+
+### Akun
+| Nama | Arti |
+|---|---|
+| `UserAccount` | Baris akun: `id`, `email`, `roleCode`, `isActive`, `employeeName`, `lastSignInAt` |
+| `NewAccount` / `AccountUpdate` | Data untuk membuat akun / mengubah peran dan status |
+| `listAccounts`, `updateAccount`, `createAccount` | Service akun |
+| `useAccounts`, `useCreateAccount`, `useUpdateAccount` | Hook TanStack Query untuk akun |
+| `accountKeys` | Query key akun |
+| `generateTemporaryPassword(length)` | Password sementara acak untuk akun baru |
+| `SELF_LOCKOUT_MESSAGE` | Pesan saat mencoba menonaktifkan atau mengubah peran sendiri |
+
+### Master data
+| Nama | Arti |
+|---|---|
+| `WorkUnit` | Unit kerja: `name`, `unitType`, `parentId` (induk di hierarki), `isActive` |
+| `Position` | Jabatan: `name`, `positionType`, `level`, `isActive` |
+| `WorkUnitFormValues` / `PositionFormValues` | Bentuk data form dari Zod |
+| `listWorkUnits`, `createWorkUnit`, `updateWorkUnit`, `listPositions`, ... | Service master data |
+| `useWorkUnits`, `useSaveWorkUnit`, `usePositions`, `useSavePosition` | Hook TanStack Query |
+| `masterDataKeys` | Query key master data |
+| `is_active` / `isActive` | `true` jika data masih dipakai (tidak dihapus, hanya dinonaktifkan) |
+
+### Pegawai
+| Nama | Arti |
+|---|---|
+| `employeeQueryKeys` | Query key pegawai: `all`, `lists()`, `list(filters)`, `detail(id)` |
+| `EmployeeListFilters` | Bentuk filter daftar pegawai (belum final) |
 
 ### Tampilan (UI state)
 | Nama | Arti |
 |---|---|
 | `useUiStore` | Penyimpanan state tampilan (Zustand) |
-| `isSidebarCollapsed` / `collapsed` | `true` jika sidebar desktop sedang diciutkan |
+| `isSidebarCollapsed` | `true` jika sidebar desktop sedang diciutkan |
 | `toggleSidebarCollapsed` | Ganti status ciut ↔ lebar |
-| `isMobileSidebarOpen` | `true` jika laci menu mobile sedang terbuka |
+| `isMobileSidebarOpen` | `true` jika drawer menu mobile terbuka |
 | `hasHydrated` | `true` jika status sidebar sudah dibaca dari localStorage |
 | `active` | `true` jika menu ini halaman yang sedang dibuka |
-| `isLoggingOut` | `true` selama proses keluar berjalan |
 
 ### Dashboard
 | Nama | Arti |
 |---|---|
-| `mockDashboardStats` / `stats` | Angka ringkasan contoh (total, aktif, cuti, dst.) |
+| `mockDashboardStats` / `stats` | Angka ringkasan contoh |
 | `mockRecentEmployees` | Daftar pegawai terbaru (contoh) |
-| `mockPendingDocuments` | Daftar dokumen yang menunggu verifikasi (contoh) |
+| `mockPendingDocuments` | Dokumen menunggu verifikasi (contoh) |
 | `employeeNumber` | NIP |
 | `status`: `active` / `onLeave` / `inactive` | Aktif / Cuti / Nonaktif |
-| `category`: `lecturer` / `staff` | Dosen / Tendik (tenaga kependidikan) |
-| `joinedAt` | Tanggal masuk |
+| `category`: `lecturer` / `staff` | Dosen / Tendik |
 | `waitingDays` | Lama dokumen menunggu (hari) |
 | `OVERDUE_AFTER_DAYS` | Batas hari sebelum dokumen dianggap terlambat (7) |
-| `newEmployeesDelta` | Selisih pegawai baru bulan ini dibanding bulan lalu |
-| `filter` / `setFilter` | Filter status yang dipilih di tabel |
-| `kpis` | Daftar 4 indikator di `KpiStrip` |
 
 ---
 
-## 9. Yang belum dikerjakan & catatan penting
+## 12. Yang belum dikerjakan & catatan penting
 
-- **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` (Next.js tidak membaca `.env.example`).
-- **Dashboard** masih memakai data contoh; data asli dari Supabase menyusul per modul.
-- **Halaman pegawai** (daftar/tambah/detail/ubah) masih placeholder. Ini fase berikutnya (lihat `docs/requirements.md`).
-- **Hak akses (RBAC):** menu disaring dari `permissions` milik peran (`config/navigation.ts`), proxy memblokir
-  halaman yang butuh izin (`config/permissions.ts`), dan halaman memanggil `requirePermission(...)`.
-- **Pembuatan akun baru:** halaman Akun Pengguna → "Tambah Akun" memanggil Edge Function `admin-create-user`
-  (`supabase/functions/`), karena membuat user Supabase Auth butuh secret key yang tidak boleh ada di browser.
-- **Pencarian & notifikasi** baru tampilan saja.
+- **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` dan isi `NEXT_PUBLIC_SUPABASE_URL` serta `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Next.js tidak membaca `.env.example`.
+- **Database harus aktif:** project Supabase harus berstatus aktif, dan migrasi serta seed sudah terpasang (langkah di `docs/database-schema.md`).
+- **Data pegawai** (daftar, tambah, detail, ubah, nonaktifkan) masih placeholder. Ini langkah berikutnya di Fase 2.
+- **Dashboard** masih memakai data contoh. Ganti dengan data asli atau empty state.
+- **Pencarian dan notifikasi** baru tampilan saja.
+- **`lib/axios.ts` dan `stores/auth-store.ts`** disiapkan untuk API pihak ketiga (Keuangan, SIAKAD). Belum dipakai. Jangan dipakai untuk Supabase.
+- **Dokumen lama:** `docs/architecture.md` dan `docs/api-contract.md` masih menjelaskan arsitektur API eksternal. Perlu diperbarui.
 
 ---
 
-## 10. Perintah sehari-hari
+## 13. Perintah sehari-hari
 
 | Perintah | Fungsi |
 |---|---|
+| `npm ci` | Pasang dependency sesuai `package-lock.json` |
 | `npm run dev` | Jalankan di `http://localhost:3000` |
-| `npm run lint` | Cek gaya & kesalahan umum |
+| `npx next typegen` | Buat file tipe Next.js (`PageProps`, `LayoutProps`). Jalankan sekali setelah clone baru, sebelum `tsc` |
+| `npm run lint` | Cek gaya dan kesalahan umum |
 | `npx tsc --noEmit` | Cek tipe TypeScript |
 | `npm run build` | Build produksi (cek akhir sebelum PR) |
