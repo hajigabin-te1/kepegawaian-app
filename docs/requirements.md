@@ -83,7 +83,7 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 3 | ✅ (kode selesai, belum diuji di Supabase) Presensi web GPS (radius 100 m) + rekap + koreksi HR | `..._attendance` |
 | 4 | ✅ (kode selesai, belum diuji di Supabase) Cuti & Izin (pengajuan → persetujuan HR → kuota → rekap) | `..._leave` |
 | 5 | ✅ (kode selesai, belum diuji di Supabase; rumus sementara) Penilaian Kinerja | `..._performance_appraisal` |
-| 6 | Dashboard statistik per jabatan (Ketua, Wakil Ketua, LPM) + laporan HR | fungsi `report_*` + `report_scopes` |
+| 6 | ✅ (kode selesai, belum diuji di Supabase) Dashboard statistik per jabatan (Ketua, Wakil Ketua, LPM) + laporan HR (CSV) | fungsi `report_*` + `report_scopes` |
 | 7 | Diklat, Mutasi, Kenaikan Pangkat, Pengumuman | `..._training_mutation_promotion`, `..._announcements` |
 | Nanti | Menu khusus LPM, pengiriman notifikasi email, integrasi presensi mengajar dosen, Keuangan, SIAKAD (BKD), SSO, backup/restore | — |
 

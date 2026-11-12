@@ -15,19 +15,15 @@ import { useAppraisalRecap, usePeriods } from "@/features/performance/hooks/use-
 
 const CATEGORY_LABELS = { lecturer: "Dosen", staff: "Tenaga Kependidikan" } as const;
 
-export function RecapPanel() {
+/** Period picker plus the recap table; also used on the statistics dashboard. */
+export function AppraisalRecapView() {
   const periods = usePeriods();
   const [chosen, setChosen] = useState("");
   const periodId = chosen || periods.data?.[0]?.id || "";
   const recap = useAppraisalRecap(periodId);
 
   return (
-    <>
-      <PageHeader
-        title="Rekap Nilai Kinerja"
-        description="Rata-rata nilai per unit kerja dan kategori. Hanya form yang sudah diverifikasi yang dihitung."
-        breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Penilaian Kinerja" }, { label: "Rekap Nilai" }]}
-      />
+    <div className="space-y-4">
       {periods.data ? <PeriodSelect periods={periods.data} value={periodId} onChange={setChosen} /> : null}
       <Card className="gap-0 py-0">
         {periods.isPending || (periodId !== "" && recap.isPending) ? (
@@ -65,6 +61,19 @@ export function RecapPanel() {
           </Table>
         )}
       </Card>
+    </div>
+  );
+}
+
+export function RecapPanel() {
+  return (
+    <>
+      <PageHeader
+        title="Rekap Nilai Kinerja"
+        description="Rata-rata nilai per unit kerja dan kategori. Hanya form yang sudah diverifikasi yang dihitung."
+        breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Penilaian Kinerja" }, { label: "Rekap Nilai" }]}
+      />
+      <AppraisalRecapView />
     </>
   );
 }
