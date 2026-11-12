@@ -8,7 +8,6 @@ import { EmptyState } from "@/components/common/empty-state";
 import { QueryErrorState } from "@/components/common/query-error-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -119,13 +118,10 @@ export function RolesPanel() {
                       <span className="block truncate font-medium">{role.name}</span>
                       <span className={cn("block text-xs tabular-nums", active ? "text-primary-foreground/80" : "text-muted-foreground")}>
                         {draftOf(role).length} hak akses
+                        {isDirty(role) ? " · belum disimpan" : null}
                       </span>
                     </span>
-                    {isDirty(role) ? (
-                      <Badge variant="warning" className="shrink-0">
-                        Belum disimpan
-                      </Badge>
-                    ) : null}
+                    {isDirty(role) ? <span className="size-2 shrink-0 rounded-full bg-warning" aria-hidden /> : null}
                   </button>
                 );
               })}

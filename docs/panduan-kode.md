@@ -266,6 +266,25 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
 - Nonaktifkan (`DeactivateEmployeeDialog`): konfirmasi + alasan wajib; status Nonaktif atau Pensiun. Bisa diaktifkan kembali.
   Pegawai tidak pernah dihapus.
 
+### 9.5 Struktur Organisasi (`/master/organization`, permission `master.manage`)
+
+- `OrganizationStructure` menyusun pohon dari `work_units.parent_id` (unit dengan induk yang tidak ada dianggap akar).
+- Jumlah pegawai aktif per unit (dosen · tendik) diambil dari RPC `report_employee_statistics`; jika akun tidak punya cakupan statistik, pohon tetap tampil tanpa angka.
+- Hanya baca. Induk unit diubah di menu Unit Kerja.
+
+### 9.6 Peran & Hak Akses (`/settings/roles`, permission `role.manage`)
+
+- Modul `features/roles`. `getRbacData()` membaca `roles` + `role_permissions` + `permissions`.
+- Centang hak akses disimpan sebagai draf per peran; "Simpan Perubahan" memanggil `updateRolePermissions` (tambah dulu, baru hapus).
+- Peran superadmin tidak bisa kehilangan `role.manage` dan `user.manage` (dikunci di UI) agar tidak ada yang terkunci di luar sistem.
+- Daftar peran dan kode hak akses tetap dari seed; halaman ini hanya mengubah pemetaannya.
+
+### 9.7 Pengaturan Aplikasi (`/settings/app`, permission `settings.manage`)
+
+- Modul `features/settings`: tab **Lokasi Presensi** (`attendance_locations`: tambah, ubah, aktif/nonaktif; tidak dihapus karena dirujuk presensi)
+  dan **Jam Kerja** (`work_schedules`: satu per kategori; jam masuk/pulang, toleransi, catat pulang awal).
+- Zona waktu (`app_settings.timezone`) hanya ditampilkan, tidak bisa diubah: frontend memakai `APP_TIME_ZONE` yang sama.
+
 ### 9.4 Riwayat & dokumen (`/histories/*`, `/documents`, permission `employee.view` / `employee.manage`)
 
 - Modul `features/employee-history` (riwayat jabatan & pendidikan) dan `features/documents` (dokumen pegawai).
@@ -391,7 +410,7 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 
 - **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` dan isi `NEXT_PUBLIC_SUPABASE_URL` serta `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Next.js tidak membaca `.env.example`.
 - **Database harus aktif:** project Supabase harus berstatus aktif, dan migrasi serta seed sudah terpasang (langkah di `docs/database-schema.md`).
-- **Berikutnya (Tahap 3 admin):** Struktur Organisasi, Peran & Hak Akses, Pengaturan Aplikasi.
+- **Halaman admin (Tahap 1–3) selesai.** Berikutnya: Presensi web GPS (fase 3 di `docs/requirements.md`).
 - **Pencarian dan notifikasi** baru tampilan saja.
 - **`lib/axios.ts` dan `stores/auth-store.ts`** disiapkan untuk API pihak ketiga (Keuangan, SIAKAD). Belum dipakai. Jangan dipakai untuk Supabase.
 - **Dokumen lama:** `docs/architecture.md` dan `docs/api-contract.md` masih menjelaskan arsitektur API eksternal. Perlu diperbarui.

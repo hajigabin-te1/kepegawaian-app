@@ -204,7 +204,7 @@ di `audit_logs` lewat trigger.
 ## Pengujian
 
 Skema sudah diuji dengan PGlite (Postgres di Node) memakai stub `auth` & `storage`:
-seluruh migrasi + seed berjalan, dan 69 skenario lolos (termasuk hak eksekusi fungsi untuk `anon` dan pengguna login). Skenario mencakup: visibilitas per peran
+seluruh migrasi + seed berjalan, dan 77 skenario lolos (termasuk hak eksekusi fungsi untuk `anon` dan pengguna login). Skenario mencakup: visibilitas per peran
 (pimpinan hanya statistik; cakupan Ketua, Wakil Ketua bidang, dan LPM), cuti diajukan → HR setuju → kuota & notifikasi, presensi GPS di titik kampus
 (65 m diterima, 150 m ditolak, presensi ganda ditolak, terlambat, pulang awal tendik, pulang bebas dosen), koreksi HR, penilaian kinerja oleh HR, diklat → riwayat,
 mutasi, dan akses file Storage. Tetap jalankan di project Supabase uji coba sebelum dipakai.
