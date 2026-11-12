@@ -29,3 +29,31 @@ export type AccountUpdate = {
   employeeId: string | null;
   isActive: boolean;
 };
+
+/** Roles that read statistics through report_scopes. */
+export const LEADER_ROLE_CODES = ["chair", "vice_chair", "quality_assurance"] as const;
+
+export const REPORT_LABELS = {
+  employees: "Pegawai",
+  attendance: "Presensi",
+  leave: "Cuti",
+  appraisal: "Kinerja",
+} as const;
+
+export type ReportKey = keyof typeof REPORT_LABELS;
+
+export type ReportScope = {
+  id: string;
+  /** null = whole campus */
+  workUnitId: string | null;
+  workUnitName: string | null;
+  /** null = lecturers and staff */
+  category: "lecturer" | "staff" | null;
+  reports: ReportKey[];
+};
+
+export type NewReportScope = {
+  workUnitId: string | null;
+  category: "lecturer" | "staff" | null;
+  reports: ReportKey[];
+};

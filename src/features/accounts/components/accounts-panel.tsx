@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PencilIcon, PlusIcon, Trash2Icon, UserCogIcon } from "lucide-react";
+import { BarChart3Icon, PencilIcon, PlusIcon, Trash2Icon, UserCogIcon } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryErrorState } from "@/components/common/query-error-state";
@@ -15,10 +15,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { APP_TIME_ZONE } from "@/config/locale";
 import { routes } from "@/config/routes";
 import { AccountFormDialog } from "@/features/accounts/components/account-form-dialog";
+import { ReportScopeDialog } from "@/features/accounts/components/report-scope-dialog";
 import { DeleteAccountDialog } from "@/features/accounts/components/delete-account-dialog";
 import { CreateAccountDialog } from "@/features/accounts/components/create-account-dialog";
 import { useAccounts, useRoles } from "@/features/accounts/hooks/use-accounts";
-import type { UserAccount } from "@/features/accounts/types/accounts";
+import { LEADER_ROLE_CODES, type UserAccount } from "@/features/accounts/types/accounts";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("id-ID", {
   day: "numeric",
@@ -39,6 +40,7 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
   const [editing, setEditing] = useState<UserAccount | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<UserAccount | null>(null);
+  const [scoping, setScoping] = useState<UserAccount | null>(null);
 
   const rows = accounts.data ?? [];
 
@@ -72,7 +74,7 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
                 <TableHead>Peran</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Login terakhir</TableHead>
-                <TableHead className="w-24 pr-6">
+                <TableHead className="w-32 pr-6">
                   <span className="sr-only">Aksi</span>
                 </TableHead>
               </TableRow>
@@ -99,6 +101,11 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
                       {account.lastSignInAt ? dateTimeFormatter.format(new Date(account.lastSignInAt)) : "Belum pernah"}
                     </TableCell>
                     <TableCell className="pr-6 text-right">
+                      {(LEADER_ROLE_CODES as readonly string[]).includes(account.roleCode) ? (
+                        <Button variant="ghost" size="icon-sm" onClick={() => setScoping(account)} aria-label={`Atur cakupan statistik ${account.email}`} title="Cakupan statistik">
+                          <BarChart3Icon />
+                        </Button>
+                      ) : null}
                       <Button
                         variant="ghost"
                         size="icon-sm"
@@ -130,6 +137,8 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
       </Card>
 
       <CreateAccountDialog open={creating} onOpenChange={setCreating} roles={roles.data ?? []} />
+
+      <ReportScopeDialog account={scoping} onOpenChange={(open) => !open && setScoping(null)} />
 
       <DeleteAccountDialog account={deleting} onOpenChange={(open) => !open && setDeleting(null)} />
 

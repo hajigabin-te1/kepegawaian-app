@@ -177,7 +177,8 @@ HR otomatis melihat seluruh kampus.
 | `report_leave_by_unit(year)` | Cuti/izin disetujui & menunggu per unit, kategori, jenis |
 | `report_appraisal_by_unit(period_id)` | Rata-rata, terendah, tertinggi nilai kinerja per unit & kategori |
 
-**Mengatur cakupan (`report_scopes`)** — satu baris per cakupan, satu akun boleh punya beberapa:
+**Mengatur cakupan (`report_scopes`)** — satu baris per cakupan, satu akun boleh punya beberapa.
+Superadmin mengaturnya di menu **Akun Pengguna** (ikon grafik pada akun Ketua, Wakil Ketua, atau LPM): pilih unit kerja (atau seluruh kampus), kategori (dosen, tendik, atau keduanya), dan laporan yang boleh dilihat. SQL di bawah tetap bisa dipakai:
 
 | Kolom | Arti |
 |---|---|

@@ -2,7 +2,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 
 import { ApiError, fromSupabaseError } from "@/lib/api-error";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { AccountUpdate, LinkableEmployee, NewAccount, Role, UserAccount } from "@/features/accounts/types/accounts";
+import type { AccountUpdate, LinkableEmployee, NewAccount, NewReportScope, ReportKey, ReportScope, Role, UserAccount } from "@/features/accounts/types/accounts";
 
 const EMPLOYEE_TAKEN_MESSAGE = "Pegawai tersebut sudah terhubung dengan akun lain.";
 const SELF_LOCKOUT_MESSAGE = "Anda tidak dapat menonaktifkan atau mengubah peran akun Anda sendiri.";
@@ -71,4 +71,37 @@ export async function createAccount(account: NewAccount): Promise<void> {
 export async function deleteAccount(id: string): Promise<void> {
   const { error } = await createSupabaseBrowserClient().functions.invoke("admin-delete-user", { body: { userId: id } });
   if (error) throw await readFunctionError(error, "Akun gagal dihapus. Silakan coba lagi.");
+}
+
+const REPORT_KEYS: ReportKey[] = ["employees", "attendance", "leave", "appraisal"];
+
+export async function listReportScopes(userId: string): Promise<ReportScope[]> {
+  const { data, error } = await createSupabaseBrowserClient()
+    .from("report_scopes")
+    .select("id, work_unit_id, employee_category, reports, unit:work_units(name)")
+    .eq("user_id", userId)
+    .order("created_at");
+  if (error) throw fromSupabaseError(error);
+  return data.map((row) => ({
+    id: row.id,
+    workUnitId: row.work_unit_id,
+    workUnitName: row.unit?.name ?? null,
+    category: row.employee_category,
+    reports: REPORT_KEYS.filter((key) => row.reports.includes(key)),
+  }));
+}
+
+export async function addReportScope(userId: string, scope: NewReportScope): Promise<void> {
+  const { error } = await createSupabaseBrowserClient().from("report_scopes").insert({
+    user_id: userId,
+    work_unit_id: scope.workUnitId,
+    employee_category: scope.category,
+    reports: scope.reports,
+  });
+  if (error) throw fromSupabaseError(error);
+}
+
+export async function deleteReportScope(id: string): Promise<void> {
+  const { error } = await createSupabaseBrowserClient().from("report_scopes").delete().eq("id", id).select("id").single();
+  if (error) throw fromSupabaseError(error);
 }

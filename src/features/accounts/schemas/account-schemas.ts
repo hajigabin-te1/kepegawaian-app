@@ -15,3 +15,11 @@ export function generateTemporaryPassword(length = 12): string {
   const values = crypto.getRandomValues(new Uint32Array(length));
   return Array.from(values, (value) => PASSWORD_ALPHABET[value % PASSWORD_ALPHABET.length]).join("");
 }
+
+export const reportScopeSchema = z.object({
+  workUnitId: z.string(),
+  category: z.enum(["all", "lecturer", "staff"]),
+  reports: z.array(z.enum(["employees", "attendance", "leave", "appraisal"])).min(1, "Pilih minimal satu jenis laporan."),
+});
+
+export type ReportScopeFormValues = z.infer<typeof reportScopeSchema>;
