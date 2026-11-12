@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PencilIcon, PlusIcon, UserCogIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, Trash2Icon, UserCogIcon } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryErrorState } from "@/components/common/query-error-state";
@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { APP_TIME_ZONE } from "@/config/locale";
 import { routes } from "@/config/routes";
 import { AccountFormDialog } from "@/features/accounts/components/account-form-dialog";
+import { DeleteAccountDialog } from "@/features/accounts/components/delete-account-dialog";
 import { CreateAccountDialog } from "@/features/accounts/components/create-account-dialog";
 import { useAccounts, useRoles } from "@/features/accounts/hooks/use-accounts";
 import type { UserAccount } from "@/features/accounts/types/accounts";
@@ -37,6 +38,7 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
   const roles = useRoles();
   const [editing, setEditing] = useState<UserAccount | null>(null);
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<UserAccount | null>(null);
 
   const rows = accounts.data ?? [];
 
@@ -70,7 +72,7 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
                 <TableHead>Peran</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Login terakhir</TableHead>
-                <TableHead className="w-14 pr-6">
+                <TableHead className="w-24 pr-6">
                   <span className="sr-only">Aksi</span>
                 </TableHead>
               </TableRow>
@@ -107,6 +109,17 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
                       >
                         <PencilIcon />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setDeleting(account)}
+                        disabled={isSelf}
+                        aria-label={`Hapus akun ${account.email}`}
+                        title={isSelf ? "Akun Anda sendiri tidak dapat dihapus" : undefined}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2Icon />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -117,6 +130,8 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
       </Card>
 
       <CreateAccountDialog open={creating} onOpenChange={setCreating} roles={roles.data ?? []} />
+
+      <DeleteAccountDialog account={deleting} onOpenChange={(open) => !open && setDeleting(null)} />
 
       <AccountFormDialog
         account={editing}

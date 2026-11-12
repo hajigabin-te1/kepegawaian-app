@@ -38,14 +38,14 @@ export async function updateAccount(id: string, update: AccountUpdate): Promise<
 }
 
 /** Reads the Indonesian message returned by the admin-create-user Edge Function. */
-async function readFunctionError(error: unknown): Promise<ApiError> {
+async function readFunctionError(error: unknown, fallback: string): Promise<ApiError> {
   if (error instanceof FunctionsHttpError) {
     const response = error.context as Response;
     const body: unknown = await response.json().catch(() => null);
     const message =
       typeof body === "object" && body !== null && "message" in body && typeof body.message === "string"
         ? body.message
-        : "Akun gagal dibuat. Silakan coba lagi.";
+        : fallback;
     return new ApiError(message, response.status, body);
   }
   return new ApiError("Tidak dapat terhubung ke server. Periksa koneksi Anda.", null, error);
@@ -56,5 +56,11 @@ export async function createAccount(account: NewAccount): Promise<void> {
   const { error } = await createSupabaseBrowserClient().functions.invoke("admin-create-user", {
     body: { email: account.email, password: account.temporaryPassword, roleCode: account.roleCode },
   });
-  if (error) throw await readFunctionError(error);
+  if (error) throw await readFunctionError(error, "Akun gagal dibuat. Silakan coba lagi.");
+}
+
+/** Deletes an account (auth user + account row) through the admin-delete-user Edge Function. */
+export async function deleteAccount(id: string): Promise<void> {
+  const { error } = await createSupabaseBrowserClient().functions.invoke("admin-delete-user", { body: { userId: id } });
+  if (error) throw await readFunctionError(error, "Akun gagal dihapus. Silakan coba lagi.");
 }

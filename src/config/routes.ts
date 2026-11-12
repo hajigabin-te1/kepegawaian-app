@@ -7,6 +7,10 @@ export const routes = {
     detail: (id: string) => `/employees/${encodeURIComponent(id)}`,
     edit: (id: string) => `/employees/${encodeURIComponent(id)}/edit`,
   },
+  attendance: {
+    me: "/attendance",
+    recap: "/attendance/recap",
+  },
   masterData: {
     workUnits: "/master/work-units",
     positions: "/master/positions",

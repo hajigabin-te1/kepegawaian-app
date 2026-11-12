@@ -71,12 +71,14 @@ psql "<connection string>" -f supabase/seed.sql
 | Function | Dipakai untuk |
 |---|---|
 | `admin-create-user` (`supabase/functions/admin-create-user`) | Superadmin membuat akun baru: membuat user di Supabase Auth (langsung terkonfirmasi) dan baris `user_accounts` dengan peran yang dipilih, lalu mencatat audit log. Hanya akun dengan izin `user.manage` yang bisa memanggilnya |
+| `admin-delete-user` (`supabase/functions/admin-delete-user`) | Superadmin menghapus akun: menghapus user di Supabase Auth (baris `user_accounts` ikut terhapus). Ditolak untuk akun sendiri dan superadmin terakhir. Data pegawai tidak dihapus; kolom pelaku di riwayat/persetujuan menjadi kosong lewat `on delete set null`. Dicatat di audit log |
 
 Function memakai secret key bawaan Supabase (tidak pernah dikirim ke browser) dan di-deploy dengan
 `verify_jwt = false`, karena sesi pemanggil diverifikasi di dalam kode. Deploy ulang setelah mengubah kodenya:
 
 ```bash
 npx supabase functions deploy admin-create-user
+npx supabase functions deploy admin-delete-user
 ```
 
 Karena akun dibuat oleh superadmin, pendaftaran publik sebaiknya dimatikan:

@@ -1,6 +1,8 @@
 import {
   Building2Icon,
   BriefcaseIcon,
+  CalendarCheckIcon,
+  ClipboardListIcon,
   LayoutDashboardIcon,
   UserCogIcon,
   UserPlusIcon,
@@ -34,6 +36,13 @@ export const mainNavigation: NavGroup[] = [
     items: [
       { title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon, permission: PERMISSIONS.employeeView },
       { title: "Tambah Pegawai", href: routes.employees.create, icon: UserPlusIcon, permission: PERMISSIONS.employeeManage },
+    ],
+  },
+  {
+    title: "Presensi",
+    items: [
+      { title: "Presensi Saya", href: routes.attendance.me, icon: CalendarCheckIcon },
+      { title: "Rekap Presensi", href: routes.attendance.recap, icon: ClipboardListIcon, permission: PERMISSIONS.attendanceView },
     ],
   },
   {
