@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AttendanceTab } from "@/features/dashboard/components/attendance-tab";
-import { EmployeesTab } from "@/features/dashboard/components/employees-tab";
+import { EmployeeStatistics } from "@/features/dashboard/components/employee-statistics";
 import { LeaveTab } from "@/features/dashboard/components/leave-tab";
 import { PendingActionsCard } from "@/features/dashboard/components/pending-actions-card";
 import { useScopeInfo } from "@/features/dashboard/hooks/use-dashboard";
@@ -50,7 +50,7 @@ export function StatisticsDashboard({ user }: StatisticsDashboardProps) {
           <TabsTrigger value="appraisal">Kinerja</TabsTrigger>
         </TabsList>
         <TabsContent value="employees" className="pt-3">
-          <EmployeesTab />
+          <EmployeeStatistics canViewEmployees={user.permissions.includes("employee.view")} />
         </TabsContent>
         <TabsContent value="attendance" className="pt-3">
           <AttendanceTab />

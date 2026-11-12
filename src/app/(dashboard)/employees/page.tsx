@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default async function EmployeesPage() {
-  const user = await requirePermission(PERMISSIONS.employeeView);
+  await requirePermission(PERMISSIONS.employeeView);
   return (
     <PageContainer>
-      <EmployeesPanel canManage={user.permissions.includes(PERMISSIONS.employeeManage)} />
+      <EmployeesPanel />
     </PageContainer>
   );
 }

@@ -1912,6 +1912,15 @@ export type Database = {
         Args: { approve: boolean; note?: string; request_id: string }
         Returns: undefined
       }
+      get_employee_account: {
+        Args: { target_employee_id: string }
+        Returns: {
+          email: string
+          is_active: boolean
+          last_sign_in_at: string
+          user_id: string
+        }[]
+      }
       has_permission: { Args: { permission_code: string }; Returns: boolean }
       has_report_access: { Args: { report_name: string }; Returns: boolean }
       list_linkable_employees: {

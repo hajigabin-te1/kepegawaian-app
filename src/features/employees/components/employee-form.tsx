@@ -1,210 +1,342 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Controller, useForm, type Control, type FieldPath } from "react-hook-form";
+import { Controller, useForm, useWatch, type Control, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2Icon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, Loader2Icon, WandSparklesIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { routes } from "@/config/routes";
-import { useCreateEmployee, useEmploymentStatuses, useUpdateEmployee } from "@/features/employees/hooks/use-employees";
-import { employeeSchema, type EmployeeFormValues } from "@/features/employees/schemas/employee-schemas";
-import { CATEGORY_LABELS, GENDER_LABELS, MARITAL_LABELS, type Employee } from "@/features/employees/types/employees";
+import { generateTemporaryPassword } from "@/features/accounts/schemas/account-schemas";
+import {
+  useCreateEmployee,
+  useCreateEmployeeAccount,
+  useEmploymentStatuses,
+  useUpdateEmployee,
+} from "@/features/employees/hooks/use-employees";
+import {
+  createEmployeeFormSchema,
+  type CreateEmployeeFormValues,
+  type EmployeeFormValues,
+} from "@/features/employees/schemas/employee-schema";
+import {
+  CATEGORY_LABELS,
+  GENDER_LABELS,
+  MARITAL_STATUS_LABELS,
+  RELIGION_OPTIONS,
+  type EmployeeDetail,
+} from "@/features/employees/types/employee";
 import { usePositions, useWorkUnits } from "@/features/master-data/hooks/use-master-data";
 import { ApiError } from "@/lib/api-error";
 
-const NONE = "none";
+const NONE = "";
 
-function toFormValues(employee: Employee | null): EmployeeFormValues {
-  const s = (value: string | number | null | undefined) => (value === null || value === undefined ? "" : String(value));
+type EmployeeFormProps = { mode: "create" } | { mode: "edit"; employee: EmployeeDetail };
+
+function toFormValues(employee: EmployeeDetail | null): CreateEmployeeFormValues {
+  const text = (value: string | null) => value ?? "";
+  const number = (value: number | null) => (value === null ? "" : String(value));
   return {
-    fullName: s(employee?.fullName),
-    category: employee?.category ?? "staff",
-    employeeNumber: s(employee?.employeeNumber),
-    lecturerNumber: s(employee?.lecturerNumber),
-    nationalIdNumber: s(employee?.nationalIdNumber),
-    birthPlace: s(employee?.birthPlace),
-    birthDate: s(employee?.birthDate),
+    fullName: text(employee?.fullName ?? null),
+    category: employee?.category ?? "lecturer",
+    workUnitId: text(employee?.workUnitId ?? null),
+    employeeNumber: text(employee?.employeeNumber ?? null),
+    lecturerNumber: text(employee?.lecturerNumber ?? null),
+    nationalIdNumber: text(employee?.nationalIdNumber ?? null),
+    birthPlace: text(employee?.birthPlace ?? null),
+    birthDate: text(employee?.birthDate ?? null),
     gender: employee?.gender ?? "",
-    religion: s(employee?.religion),
+    religion: text(employee?.religion ?? null),
     maritalStatus: employee?.maritalStatus ?? "",
-    address: s(employee?.address),
-    city: s(employee?.city),
-    province: s(employee?.province),
-    postalCode: s(employee?.postalCode),
-    phone: s(employee?.phone),
-    email: s(employee?.email),
-    employmentStatusCode: s(employee?.employmentStatusCode),
-    appointmentDate: s(employee?.appointmentDate),
-    workUnitId: s(employee?.workUnitId),
-    positionId: s(employee?.positionId),
-    rankGrade: s(employee?.rankGrade),
-    serviceYears: s(employee?.serviceYears),
-    serviceMonths: s(employee?.serviceMonths),
+    address: text(employee?.address ?? null),
+    city: text(employee?.city ?? null),
+    province: text(employee?.province ?? null),
+    postalCode: text(employee?.postalCode ?? null),
+    phone: text(employee?.phone ?? null),
+    email: text(employee?.email ?? null),
+    employmentStatusCode: text(employee?.employmentStatusCode ?? null),
+    appointmentDate: text(employee?.appointmentDate ?? null),
+    positionId: text(employee?.positionId ?? null),
+    rankGrade: text(employee?.rankGrade ?? null),
+    serviceYears: number(employee?.serviceYears ?? null),
+    serviceMonths: number(employee?.serviceMonths ?? null),
+    createAccount: false,
+    temporaryPassword: "",
   };
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Field({ id, label, error, required, hint, children }: {
+  id?: string;
+  label: string;
+  error?: string;
+  required?: boolean;
+  hint?: string;
+  children: ReactNode;
+}) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-4 sm:grid-cols-2">{children}</CardContent>
-    </Card>
+    <div className="space-y-2">
+      <Label htmlFor={id}>
+        {label}
+        {required ? <span className="text-destructive">*</span> : null}
+      </Label>
+      {children}
+      {error ? <p className="text-sm text-destructive">{error}</p> : hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
   );
 }
 
-type SelectFieldProps = {
-  control: Control<EmployeeFormValues>;
-  name: FieldPath<EmployeeFormValues>;
+function SelectField({ control, name, label, items, placeholder, required, error }: {
+  control: Control<CreateEmployeeFormValues>;
+  name: FieldPath<CreateEmployeeFormValues>;
   label: string;
-  options: Record<string, string>;
-  /** Adds a "—" choice that stores an empty value. */
-  allowEmpty?: boolean;
+  items: Record<string, string>;
+  placeholder: string;
+  required?: boolean;
   error?: string;
-};
-
-function SelectField({ control, name, label, options, allowEmpty = false, error }: SelectFieldProps) {
-  const items = allowEmpty ? { [NONE]: "—", ...options } : options;
+}) {
+  const allItems = required ? items : { [NONE]: placeholder, ...items };
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <Field label={label} required={required} error={error}>
       <Controller
         control={control}
         name={name}
         render={({ field }) => (
-          <Select
-            items={items}
-            value={field.value === "" ? NONE : String(field.value)}
-            onValueChange={(value) => field.onChange(value === NONE || value === null ? "" : value)}
-          >
-            <SelectTrigger className="w-full" aria-label={label}>
-              <SelectValue placeholder="Pilih" />
+          <Select items={allItems} value={String(field.value)} onValueChange={(value) => field.onChange(value ?? NONE)}>
+            <SelectTrigger className="w-full" aria-label={label} aria-invalid={error ? true : undefined}>
+              <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(items).map(([value, text]) => (
-                <SelectItem key={value} value={value}>
-                  {text}
+              {Object.entries(allItems).map(([value, itemLabel]) => (
+                <SelectItem key={value || "none"} value={value}>
+                  {itemLabel}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         )}
       />
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-    </div>
+    </Field>
   );
 }
 
-type EmployeeFormProps = {
-  /** Employee being edited, or null to create a new one. */
-  employee: Employee | null;
-};
+function FormSection({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-2">{children}</CardContent>
+    </Card>
+  );
+}
 
-export function EmployeeForm({ employee }: EmployeeFormProps) {
+export function EmployeeForm(props: EmployeeFormProps) {
   const router = useRouter();
-  const create = useCreateEmployee();
-  const update = useUpdateEmployee(employee?.id ?? "");
-  const statuses = useEmploymentStatuses();
+  const employee = props.mode === "edit" ? props.employee : null;
   const workUnits = useWorkUnits();
   const positions = usePositions();
+  const employmentStatuses = useEmploymentStatuses();
+  const createEmployee = useCreateEmployee();
+  const updateEmployee = useUpdateEmployee(employee?.id ?? "");
+  const createAccount = useCreateEmployeeAccount();
+  const [isPasswordVisible, setPasswordVisible] = useState(false);
+
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors },
-  } = useForm<EmployeeFormValues>({ resolver: zodResolver(employeeSchema), defaultValues: toFormValues(employee) });
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateEmployeeFormValues>({
+    resolver: zodResolver(createEmployeeFormSchema),
+    defaultValues: toFormValues(employee),
+  });
+  const wantsAccount = useWatch({ control, name: "createAccount" });
 
-  const pending = create.isPending || update.isPending;
-  const failed = (error: unknown) => toast.error(error instanceof ApiError ? error.message : "Data pegawai gagal disimpan.");
+  // Inactive units and positions stay selectable only when already assigned.
+  const unitItems = Object.fromEntries(
+    (workUnits.data ?? []).filter((unit) => unit.isActive || unit.id === employee?.workUnitId).map((unit) => [unit.id, unit.name]),
+  );
+  const positionItems = Object.fromEntries(
+    (positions.data ?? []).filter((item) => item.isActive || item.id === employee?.positionId).map((item) => [item.id, item.name]),
+  );
+  const statusItems = Object.fromEntries((employmentStatuses.data ?? []).map((status) => [status.code, status.name]));
+  const religionItems = Object.fromEntries(RELIGION_OPTIONS.map((religion) => [religion, religion]));
 
-  const onSubmit = (values: EmployeeFormValues) => {
-    if (employee) {
-      update.mutate(values, {
-        onSuccess: () => {
-          toast.success("Data pegawai diperbarui.");
-          router.push(routes.employees.detail(employee.id));
-        },
-        onError: failed,
-      });
-    } else {
-      create.mutate(values, {
-        onSuccess: (id) => {
+  const onSubmit = async (values: CreateEmployeeFormValues) => {
+    const { createAccount: withAccount, temporaryPassword, ...employeeValues } = values;
+    const formValues: EmployeeFormValues = employeeValues;
+    try {
+      if (!employee) {
+        const id = await createEmployee.mutateAsync(formValues);
+        if (withAccount) {
+          try {
+            await createAccount.mutateAsync({ employeeId: id, email: formValues.email, temporaryPassword });
+            toast.success("Pegawai dan akun login ditambahkan.", {
+              description: "Berikan email dan password sementara kepada pegawai secara langsung.",
+            });
+          } catch (error) {
+            toast.warning("Data pegawai tersimpan, tetapi akun login gagal dibuat.", {
+              description: `${error instanceof ApiError ? error.message : "Silakan coba lagi."} Akun dapat dibuat dari halaman detail.`,
+            });
+          }
+        } else {
           toast.success("Pegawai ditambahkan.");
-          router.push(routes.employees.detail(id));
-        },
-        onError: failed,
-      });
+        }
+        router.push(routes.employees.detail(id));
+      } else {
+        await updateEmployee.mutateAsync(formValues);
+        toast.success("Data pegawai diperbarui.");
+        router.push(routes.employees.detail(employee.id));
+      }
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Data pegawai gagal disimpan.");
     }
   };
 
-  const field = (name: FieldPath<EmployeeFormValues>, label: string, props: { type?: string; placeholder?: string; inputMode?: "numeric" } = {}) => (
-    <div className="space-y-2">
-      <Label htmlFor={`emp-${name}`}>{label}</Label>
-      <Input id={`emp-${name}`} aria-invalid={errors[name] ? true : undefined} {...props} {...register(name)} />
-      {errors[name] ? <p className="text-sm text-destructive">{errors[name]?.message}</p> : null}
-    </div>
-  );
-
-  const unitOptions = Object.fromEntries((workUnits.data ?? []).filter((u) => u.isActive || u.id === employee?.workUnitId).map((u) => [u.id, u.name]));
-  const positionOptions = Object.fromEntries((positions.data ?? []).filter((p) => p.isActive || p.id === employee?.positionId).map((p) => [p.id, p.name]));
-  const statusOptions = Object.fromEntries((statuses.data ?? []).map((s) => [s.code, s.code === s.name ? s.code : `${s.code} — ${s.name}`]));
+  const cancelHref = employee ? routes.employees.detail(employee.id) : routes.employees.list;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-      <Section title="Data pokok">
-        <div className="sm:col-span-2">{field("fullName", "Nama lengkap")}</div>
-        <SelectField control={control} name="category" label="Kategori" options={CATEGORY_LABELS} error={errors.category?.message} />
-        {field("nationalIdNumber", "NIK")}
-        {field("employeeNumber", "NIP")}
-        {field("lecturerNumber", "NIDN (dosen)")}
-        {field("birthPlace", "Tempat lahir")}
-        {field("birthDate", "Tanggal lahir", { type: "date" })}
-        <SelectField control={control} name="gender" label="Jenis kelamin" options={GENDER_LABELS} allowEmpty />
-        {field("religion", "Agama")}
-        <SelectField control={control} name="maritalStatus" label="Status pernikahan" options={MARITAL_LABELS} allowEmpty />
-      </Section>
-
-      <Section title="Kontak dan alamat">
-        {field("phone", "No. HP")}
-        {field("email", "Email", { type: "email" })}
-        <div className="sm:col-span-2">{field("address", "Alamat")}</div>
-        {field("city", "Kota/Kabupaten")}
-        {field("province", "Provinsi")}
-        {field("postalCode", "Kode pos", { inputMode: "numeric" })}
-      </Section>
-
-      <Section title="Data kepegawaian">
-        <SelectField control={control} name="employmentStatusCode" label="Status kepegawaian" options={statusOptions} allowEmpty />
-        {field("appointmentDate", "Tanggal pengangkatan", { type: "date" })}
-        <SelectField control={control} name="workUnitId" label="Unit kerja" options={unitOptions} allowEmpty />
-        <SelectField control={control} name="positionId" label="Jabatan" options={positionOptions} allowEmpty />
-        {field("rankGrade", "Pangkat/golongan")}
-        <div className="grid grid-cols-2 gap-4">
-          {field("serviceYears", "Masa kerja (tahun)", { inputMode: "numeric" })}
-          {field("serviceMonths", "Masa kerja (bulan)", { inputMode: "numeric" })}
+      <FormSection title="Data pokok" description="Identitas pegawai. Kolom bertanda * wajib diisi.">
+        <div className="sm:col-span-2">
+          <Field id="full-name" label="Nama lengkap (dengan gelar)" required error={errors.fullName?.message}>
+            <Input id="full-name" placeholder="mis. Dr. Siti Rahmawati, M.Si." {...register("fullName")} aria-invalid={errors.fullName ? true : undefined} />
+          </Field>
         </div>
-      </Section>
+        <SelectField control={control} name="category" label="Kategori" items={CATEGORY_LABELS} placeholder="Pilih kategori" required error={errors.category?.message} />
+        <Field id="national-id" label="NIK" error={errors.nationalIdNumber?.message} hint="16 digit sesuai KTP.">
+          <Input id="national-id" inputMode="numeric" className="tabular-nums" {...register("nationalIdNumber")} />
+        </Field>
+        <Field id="employee-number" label="NIP" error={errors.employeeNumber?.message}>
+          <Input id="employee-number" inputMode="numeric" className="tabular-nums" {...register("employeeNumber")} />
+        </Field>
+        <Field id="lecturer-number" label="NIDN" error={errors.lecturerNumber?.message} hint="Khusus dosen.">
+          <Input id="lecturer-number" inputMode="numeric" className="tabular-nums" {...register("lecturerNumber")} />
+        </Field>
+        <Field id="birth-place" label="Tempat lahir" error={errors.birthPlace?.message}>
+          <Input id="birth-place" {...register("birthPlace")} />
+        </Field>
+        <Field id="birth-date" label="Tanggal lahir">
+          <Input id="birth-date" type="date" {...register("birthDate")} />
+        </Field>
+        <SelectField control={control} name="gender" label="Jenis kelamin" items={GENDER_LABELS} placeholder="Belum diisi" />
+        <SelectField control={control} name="religion" label="Agama" items={religionItems} placeholder="Belum diisi" />
+        <SelectField control={control} name="maritalStatus" label="Status perkawinan" items={MARITAL_STATUS_LABELS} placeholder="Belum diisi" />
+      </FormSection>
 
-      <div className="flex justify-end gap-2">
-        <Button
-          variant="outline"
-          nativeButton={false}
-          render={<Link href={employee ? routes.employees.detail(employee.id) : routes.employees.list} />}
-        >
+      <FormSection title="Kontak & alamat" description="Dipakai untuk komunikasi dan akun login.">
+        <Field id="email" label="Email" error={errors.email?.message}>
+          <Input id="email" type="email" placeholder="nama@stiaamuntai.ac.id" {...register("email")} />
+        </Field>
+        <Field id="phone" label="No. HP" error={errors.phone?.message}>
+          <Input id="phone" inputMode="tel" placeholder="08xxxxxxxxxx" className="tabular-nums" {...register("phone")} />
+        </Field>
+        <div className="sm:col-span-2">
+          <Field id="address" label="Alamat" error={errors.address?.message}>
+            <Input id="address" {...register("address")} />
+          </Field>
+        </div>
+        <Field id="city" label="Kota/Kabupaten" error={errors.city?.message}>
+          <Input id="city" {...register("city")} />
+        </Field>
+        <Field id="province" label="Provinsi" error={errors.province?.message}>
+          <Input id="province" {...register("province")} />
+        </Field>
+        <Field id="postal-code" label="Kode pos" error={errors.postalCode?.message}>
+          <Input id="postal-code" inputMode="numeric" className="tabular-nums" {...register("postalCode")} />
+        </Field>
+      </FormSection>
+
+      <FormSection title="Data kepegawaian" description="Unit kerja, jabatan, dan status kepegawaian.">
+        <SelectField control={control} name="workUnitId" label="Unit kerja" items={unitItems} placeholder="Pilih unit kerja" required error={errors.workUnitId?.message} />
+        <SelectField control={control} name="positionId" label="Jabatan" items={positionItems} placeholder="Belum diisi" />
+        <SelectField control={control} name="employmentStatusCode" label="Status kepegawaian" items={statusItems} placeholder="Belum diisi" />
+        <Field id="appointment-date" label="Tanggal pengangkatan">
+          <Input id="appointment-date" type="date" {...register("appointmentDate")} />
+        </Field>
+        <Field id="rank-grade" label="Golongan" error={errors.rankGrade?.message}>
+          <Input id="rank-grade" placeholder="mis. III/a" {...register("rankGrade")} />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field id="service-years" label="Masa kerja (tahun)" error={errors.serviceYears?.message}>
+            <Input id="service-years" inputMode="numeric" className="tabular-nums" {...register("serviceYears")} />
+          </Field>
+          <Field id="service-months" label="(bulan)" error={errors.serviceMonths?.message}>
+            <Input id="service-months" inputMode="numeric" className="tabular-nums" {...register("serviceMonths")} />
+          </Field>
+        </div>
+      </FormSection>
+
+      {employee ? null : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Akun login</CardTitle>
+            <CardDescription>Opsional. Akun berperan Pegawai, masuk dengan email di atas.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <label className="flex items-start gap-3 text-sm">
+              <input type="checkbox" className="mt-0.5 size-4 accent-primary" {...register("createAccount")} />
+              <span>
+                <span className="font-medium">Buatkan akun login untuk pegawai ini</span>
+                <span className="block text-xs text-muted-foreground">Pegawai dapat mengganti password setelah masuk.</span>
+              </span>
+            </label>
+            {wantsAccount ? (
+              <Field id="temporary-password" label="Password sementara" required error={errors.temporaryPassword?.message} hint="Catat sebelum menyimpan.">
+                <div className="flex max-w-md gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      id="temporary-password"
+                      type={isPasswordVisible ? "text" : "password"}
+                      autoComplete="new-password"
+                      className="pr-10 font-mono"
+                      {...register("temporaryPassword")}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground"
+                      onClick={() => setPasswordVisible((visible) => !visible)}
+                      aria-label={isPasswordVisible ? "Sembunyikan password" : "Tampilkan password"}
+                    >
+                      {isPasswordVisible ? <EyeOffIcon /> : <EyeIcon />}
+                    </Button>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setValue("temporaryPassword", generateTemporaryPassword(), { shouldValidate: true });
+                      setPasswordVisible(true);
+                    }}
+                  >
+                    <WandSparklesIcon />
+                    Buat
+                  </Button>
+                </div>
+              </Field>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variant="outline" nativeButton={false} render={<Link href={cancelHref} />}>
           Batal
         </Button>
-        <Button type="submit" disabled={pending}>
-          {pending ? <Loader2Icon className="animate-spin" /> : null}
-          Simpan
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
+          {employee ? "Simpan Perubahan" : "Simpan Pegawai"}
         </Button>
       </div>
     </form>

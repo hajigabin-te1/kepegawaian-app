@@ -1,4 +1,6 @@
-// Creates a Supabase Auth user and its user_accounts row. Callable only by accounts with `user.manage`.
+// Creates a Supabase Auth user and its user_accounts row.
+// - `user.manage` (superadmin): any role, optionally linked to an employee.
+// - `employee.manage` (HR): only the "employee" role, always linked to an employee without an account.
 // Deployed with verify_jwt = false: the caller's session is verified below (required for publishable/secret keys).
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 
@@ -14,7 +16,10 @@ type CreateAccountBody = {
   email?: unknown;
   password?: unknown;
   roleCode?: unknown;
+  employeeId?: unknown;
 };
+
+const EMPLOYEE_ROLE_CODE = "employee";
 
 function json(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
@@ -67,8 +72,11 @@ Deno.serve(async (request) => {
   if (callerError || !callerData.user) {
     return fail(401, "unauthenticated", "Sesi tidak valid. Silakan masuk kembali.");
   }
-  const { data: allowed } = await callerClient.rpc("has_permission", { permission_code: "user.manage" });
-  if (allowed !== true) {
+  const [{ data: canManageUsers }, { data: canManageEmployees }] = await Promise.all([
+    callerClient.rpc("has_permission", { permission_code: "user.manage" }),
+    callerClient.rpc("has_permission", { permission_code: "employee.manage" }),
+  ]);
+  if (canManageUsers !== true && canManageEmployees !== true) {
     return fail(403, "forbidden", "Anda tidak memiliki akses untuk membuat akun.");
   }
 
@@ -82,6 +90,10 @@ Deno.serve(async (request) => {
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
   const roleCode = typeof body.roleCode === "string" ? body.roleCode : "";
+  const employeeId = typeof body.employeeId === "string" && body.employeeId !== "" ? body.employeeId : null;
+  if (canManageUsers !== true && (roleCode !== EMPLOYEE_ROLE_CODE || employeeId === null)) {
+    return fail(403, "forbidden", "Bagian Kepegawaian hanya dapat membuat akun berperan Pegawai untuk data pegawai.");
+  }
   if (!EMAIL_PATTERN.test(email)) {
     return fail(400, "invalid_email", "Format email tidak valid.");
   }
@@ -96,6 +108,17 @@ Deno.serve(async (request) => {
   const { data: role } = await admin.from("roles").select("id").eq("code", roleCode).maybeSingle();
   if (!role) {
     return fail(400, "invalid_role", "Peran tidak dikenal.");
+  }
+
+  if (employeeId !== null) {
+    const { data: employee } = await admin.from("employees").select("id").eq("id", employeeId).maybeSingle();
+    if (!employee) {
+      return fail(400, "invalid_employee", "Data pegawai tidak ditemukan.");
+    }
+    const { data: existing } = await admin.from("user_accounts").select("id").eq("employee_id", employeeId).maybeSingle();
+    if (existing) {
+      return fail(409, "employee_has_account", "Pegawai ini sudah memiliki akun.");
+    }
   }
 
   // 3. Create the auth user (already confirmed) and link it to the role.
@@ -114,7 +137,9 @@ Deno.serve(async (request) => {
     return fail(500, "create_failed", "Akun gagal dibuat. Silakan coba lagi.");
   }
 
-  const { error: linkError } = await admin.from("user_accounts").insert({ id: created.user.id, role_id: role.id });
+  const { error: linkError } = await admin
+    .from("user_accounts")
+    .insert({ id: created.user.id, role_id: role.id, employee_id: employeeId });
   if (linkError) {
     // Do not leave an auth user without an account row.
     await admin.auth.admin.deleteUser(created.user.id);

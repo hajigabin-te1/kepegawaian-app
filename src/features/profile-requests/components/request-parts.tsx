@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Employee } from "@/features/employees/types/employees";
+import type { EmployeeDetail } from "@/features/employees/types/employee";
 import {
   CHANGE_FIELDS,
   REQUEST_STATUS_LABELS,
@@ -17,7 +17,7 @@ export function RequestStatusBadge({ status }: { status: RequestStatus }) {
 }
 
 /** Maps an employee record to the values of the fields that can be corrected. */
-export function employeeToFieldValues(employee: Employee): FieldValues {
+export function employeeToFieldValues(employee: EmployeeDetail): FieldValues {
   return {
     full_name: employee.fullName,
     national_id_number: employee.nationalIdNumber ?? "",

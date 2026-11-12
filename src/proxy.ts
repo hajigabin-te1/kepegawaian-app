@@ -4,7 +4,7 @@ import { requiredPermissionFor } from "@/config/permissions";
 import { routes } from "@/config/routes";
 import { redirectWithCookies, updateSession } from "@/lib/supabase/proxy";
 
-const PROTECTED_PREFIXES = [routes.dashboard, routes.employees.list, "/master", routes.accounts, "/profile"];
+const PROTECTED_PREFIXES = [routes.dashboard, routes.employees.list, "/histories", routes.documents, "/master", routes.accounts, "/settings", "/profile"];
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -45,5 +45,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard/:path*", "/employees/:path*", "/master/:path*", "/accounts/:path*", "/profile/:path*"],
+  matcher: ["/", "/login", "/dashboard/:path*", "/employees/:path*", "/histories/:path*", "/documents/:path*", "/master/:path*", "/accounts/:path*", "/settings/:path*", "/profile/:path*"],
 };

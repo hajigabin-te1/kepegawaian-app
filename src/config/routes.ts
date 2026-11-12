@@ -34,8 +34,18 @@ export const routes = {
   masterData: {
     workUnits: "/master/work-units",
     positions: "/master/positions",
+    organization: "/master/organization",
   },
+  histories: {
+    positions: "/histories/positions",
+    education: "/histories/education",
+  },
+  documents: "/documents",
   accounts: "/accounts",
+  settings: {
+    roles: "/settings/roles",
+    app: "/settings/app",
+  },
   profile: {
     me: "/profile",
     password: "/profile/password",

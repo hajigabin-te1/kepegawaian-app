@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { employeeQueryKeys } from "@/features/employees/hooks/employee-query-keys";
+import { employeeKeys } from "@/features/employees/hooks/use-employees";
 import type { MutationFormValues } from "@/features/mutation/schemas/mutation-schemas";
 import { decideMutation, executeMutation, listMutations, proposeMutation } from "@/features/mutation/services/mutation-service";
 import type { ProposalStatus } from "@/features/mutation/types/mutation";
@@ -31,6 +31,6 @@ export function useExecuteMutation() {
   return useMutation({
     mutationFn: (id: string) => executeMutation(id),
     // Execution changes the employee's unit/position and history.
-    onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: key }), queryClient.invalidateQueries({ queryKey: employeeQueryKeys.all })]),
+    onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: key }), queryClient.invalidateQueries({ queryKey: employeeKeys.all })]),
   });
 }

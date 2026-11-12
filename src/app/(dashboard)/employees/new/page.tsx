@@ -17,10 +17,14 @@ export default async function CreateEmployeePage() {
     <PageContainer>
       <PageHeader
         title="Tambah Pegawai"
-        description="Isi data pegawai baru. Hanya nama dan kategori yang wajib."
-        breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Data Pegawai", href: routes.employees.list }, { label: "Tambah" }]}
+        description="Isi data dosen atau tenaga kependidikan baru. Data lain dapat dilengkapi kemudian."
+        breadcrumbs={[
+          { label: "Beranda", href: routes.dashboard },
+          { label: "Data Pegawai", href: routes.employees.list },
+          { label: "Tambah Pegawai" },
+        ]}
       />
-      <EmployeeForm employee={null} />
+      <EmployeeForm mode="create" />
     </PageContainer>
   );
 }

@@ -1,20 +1,8 @@
 import type { Database } from "@/types/database";
 
 export type EmployeeCategory = Database["public"]["Enums"]["employee_category"];
-export type WorkUnitType = Database["public"]["Enums"]["work_unit_type"];
 
 export const CATEGORY_LABELS: Record<EmployeeCategory, string> = { lecturer: "Dosen", staff: "Tenaga Kependidikan" };
-
-/** Headcount of one unit and category (aggregate, never individual rows). */
-export type EmployeeStatRow = {
-  workUnitId: string | null;
-  workUnitName: string;
-  unitType: WorkUnitType | null;
-  category: EmployeeCategory;
-  active: number;
-  inactive: number;
-  retired: number;
-};
 
 export type AttendanceStatRow = {
   workUnitName: string;

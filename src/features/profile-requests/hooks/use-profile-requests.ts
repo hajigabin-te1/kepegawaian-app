@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { employeeQueryKeys } from "@/features/employees/hooks/employee-query-keys";
+import { employeeKeys } from "@/features/employees/hooks/use-employees";
 import { decideRequest, listRequests, submitRequest } from "@/features/profile-requests/services/profile-request-service";
 import type { ChangeFieldKey, RequestStatus } from "@/features/profile-requests/types/profile-requests";
 
@@ -35,7 +35,7 @@ export function useDecideRequest() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: profileRequestKeys.all });
       // Approval changes the employee record itself.
-      return queryClient.invalidateQueries({ queryKey: employeeQueryKeys.all });
+      return queryClient.invalidateQueries({ queryKey: employeeKeys.all });
     },
   });
 }

@@ -47,9 +47,9 @@ export function AccountsPanel({ currentUserId }: AccountsPanelProps) {
   return (
     <>
       <PageHeader
-        title="Akun Pengguna"
+        title="Pengguna"
         description="Buat akun, lalu atur peran dan status akun yang dapat masuk ke aplikasi."
-        breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Administrasi" }, { label: "Akun Pengguna" }]}
+        breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Pengaturan" }, { label: "Pengguna" }]}
         actions={
           <Button onClick={() => setCreating(true)} disabled={roles.isPending || roles.isError}>
             <PlusIcon />

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GENDER_LABELS, MARITAL_LABELS } from "@/features/employees/types/employees";
+import { GENDER_LABELS, MARITAL_STATUS_LABELS } from "@/features/employees/types/employee";
 import { useSubmitRequest } from "@/features/profile-requests/hooks/use-profile-requests";
 import { profileRequestSchema, type ProfileRequestFormValues } from "@/features/profile-requests/schemas/profile-request-schemas";
 import { CHANGE_FIELDS, type ChangeFieldKey, type FieldValues } from "@/features/profile-requests/types/profile-requests";
@@ -79,7 +79,7 @@ export function RequestFormDialog({ open, onOpenChange, current }: RequestFormDi
           {CHANGE_FIELDS.map((field) => {
             const error = errors[field.key]?.message;
             if (field.kind === "gender" || field.kind === "marital") {
-              const items = { [NONE]: "—", ...(field.kind === "gender" ? GENDER_LABELS : MARITAL_LABELS) };
+              const items = { [NONE]: "—", ...(field.kind === "gender" ? GENDER_LABELS : MARITAL_STATUS_LABELS) };
               return (
                 <div key={field.key} className="space-y-2">
                   <Label>{field.label}</Label>

@@ -4,23 +4,29 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   getAttendanceStats,
-  getEmployeeStats,
+  getEmployeeStatistics,
   getLeaveStats,
   getPendingCounts,
   getScopeInfo,
+  listRecentEmployees,
 } from "@/features/dashboard/services/dashboard-service";
 
 export const dashboardKeys = {
   all: ["dashboard"] as const,
-  employees: () => [...dashboardKeys.all, "employees"] as const,
+  employeeStatistics: () => [...dashboardKeys.all, "employee-statistics"] as const,
+  recentEmployees: () => [...dashboardKeys.all, "recent-employees"] as const,
   attendance: (month: string) => [...dashboardKeys.all, "attendance", month] as const,
   leave: (year: number) => [...dashboardKeys.all, "leave", year] as const,
   scope: (userId: string) => [...dashboardKeys.all, "scope", userId] as const,
   pending: () => [...dashboardKeys.all, "pending"] as const,
 };
 
-export function useEmployeeStats() {
-  return useQuery({ queryKey: dashboardKeys.employees(), queryFn: getEmployeeStats });
+export function useEmployeeStatistics() {
+  return useQuery({ queryKey: dashboardKeys.employeeStatistics(), queryFn: getEmployeeStatistics });
+}
+
+export function useRecentEmployees(enabled: boolean) {
+  return useQuery({ queryKey: dashboardKeys.recentEmployees(), queryFn: listRecentEmployees, enabled });
 }
 
 export function useAttendanceStats(month: string) {

@@ -1,4 +1,4 @@
-import { GENDER_LABELS, MARITAL_LABELS } from "@/features/employees/types/employees";
+import { GENDER_LABELS, MARITAL_STATUS_LABELS } from "@/features/employees/types/employee";
 
 export type ChangeFieldKind = "text" | "date" | "gender" | "marital";
 
@@ -75,6 +75,6 @@ export function formatFieldValue(field: ChangeField, value: string | undefined):
   if (!value) return "—";
   if (field.kind === "date") return dateFormatter.format(new Date(`${value}T00:00:00Z`));
   if (field.kind === "gender") return GENDER_LABELS[value as keyof typeof GENDER_LABELS] ?? value;
-  if (field.kind === "marital") return MARITAL_LABELS[value as keyof typeof MARITAL_LABELS] ?? value;
+  if (field.kind === "marital") return MARITAL_STATUS_LABELS[value as keyof typeof MARITAL_STATUS_LABELS] ?? value;
   return value;
 }

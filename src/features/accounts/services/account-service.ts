@@ -62,7 +62,12 @@ async function readFunctionError(error: unknown, fallback: string): Promise<ApiE
 /** Creates a confirmed sign-in account through the admin-create-user Edge Function. */
 export async function createAccount(account: NewAccount): Promise<void> {
   const { error } = await createSupabaseBrowserClient().functions.invoke("admin-create-user", {
-    body: { email: account.email, password: account.temporaryPassword, roleCode: account.roleCode },
+    body: {
+      email: account.email,
+      password: account.temporaryPassword,
+      roleCode: account.roleCode,
+      employeeId: account.employeeId,
+    },
   });
   if (error) throw await readFunctionError(error, "Akun gagal dibuat. Silakan coba lagi.");
 }
