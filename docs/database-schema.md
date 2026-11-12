@@ -13,6 +13,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261103000001_restrict_function_execute.sql` | Membatasi fungsi yang bisa dipanggil lewat API: `anon` tidak bisa memanggil fungsi apa pun; pengguna login hanya bisa memanggil RPC aplikasi dan helper RLS |
 | `migrations/20261104000001_account_management.sql` | `list_user_accounts()` (daftar akun + email untuk superadmin) dan pengaman agar akun tidak bisa menonaktifkan/mengubah peran dirinya sendiri |
 | `migrations/20261112000001_link_account_employee.sql` | `list_linkable_employees()`: superadmin memilih pegawai untuk dihubungkan ke akun tanpa izin `employee.view` (hanya id, nama, NIP pegawai aktif yang belum punya akun) |
+| `migrations/20261112000002_profile_change_requests.sql` | `submit_profile_change_request()` (pegawai mengajukan perbaikan data pribadi, kolom divalidasi) dan `decide_profile_change_request()` (HR setuju/tolak; setuju langsung memperbarui `employees`). Kebijakan insert/update langsung pada `profile_change_requests` dihapus |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -149,6 +150,7 @@ Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan 
 
 | Fungsi | Dipakai untuk |
 |---|---|
+| `decide_profile_change_request(id, approve, note)` | HR setuju/tolak perbaikan data pegawai (alasan wajib jika ditolak); jika disetujui, data pegawai diperbarui. Kolom yang boleh diajukan: nama, NIK, tempat/tanggal lahir, jenis kelamin, agama, status pernikahan, alamat, kota, provinsi, kode pos, no. HP, email |
 | `decide_leave_request(id, approve, note)` | HR setuju/tolak cuti (alasan wajib jika ditolak); kuota otomatis terpakai; notifikasi ke pegawai |
 | `generate_appraisals(period_id)` | HR membuat form penilaian untuk semua pegawai aktif |
 | `review_appraisal(id, accept, note)` | HR memverifikasi atau mengembalikan penilaian untuk diperbaiki |

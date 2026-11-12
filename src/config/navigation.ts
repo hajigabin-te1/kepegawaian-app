@@ -4,7 +4,9 @@ import {
   CalendarCheckIcon,
   ClipboardListIcon,
   LayoutDashboardIcon,
+  FilePenLineIcon,
   UserCogIcon,
+  UserRoundIcon,
   UserPlusIcon,
   UsersIcon,
   type LucideIcon,
@@ -29,12 +31,16 @@ export type NavGroup = {
 export const mainNavigation: NavGroup[] = [
   {
     title: "Menu utama",
-    items: [{ title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon }],
+    items: [
+      { title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon },
+      { title: "Profil Saya", href: routes.profile.me, icon: UserRoundIcon },
+    ],
   },
   {
     title: "Kepegawaian",
     items: [
       { title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon, permission: PERMISSIONS.employeeView },
+      { title: "Perbaikan Data", href: routes.employees.changeRequests, icon: FilePenLineIcon, permission: PERMISSIONS.employeeManage },
       { title: "Tambah Pegawai", href: routes.employees.create, icon: UserPlusIcon, permission: PERMISSIONS.employeeManage },
     ],
   },

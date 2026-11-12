@@ -22,6 +22,7 @@ const startsWith = (prefix: string) => (pathname: string) => pathname === prefix
 /** Most specific rules first; the first match decides. Routes without a rule only need a signed-in user. */
 const ROUTE_RULES: RouteRule[] = [
   { matches: startsWith(routes.attendance.recap), permission: PERMISSIONS.attendanceView },
+  { matches: startsWith(routes.employees.changeRequests), permission: PERMISSIONS.employeeManage },
   { matches: startsWith(routes.employees.create), permission: PERMISSIONS.employeeManage },
   { matches: (pathname) => /^\/employees\/[^/]+\/edit$/.test(pathname), permission: PERMISSIONS.employeeManage },
   { matches: startsWith(routes.employees.list), permission: PERMISSIONS.employeeView },

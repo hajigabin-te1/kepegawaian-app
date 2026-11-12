@@ -4,6 +4,7 @@ export const routes = {
   employees: {
     list: "/employees",
     create: "/employees/new",
+    changeRequests: "/employees/change-requests",
     detail: (id: string) => `/employees/${encodeURIComponent(id)}`,
     edit: (id: string) => `/employees/${encodeURIComponent(id)}/edit`,
   },
@@ -17,6 +18,7 @@ export const routes = {
   },
   accounts: "/accounts",
   profile: {
+    me: "/profile",
     password: "/profile/password",
   },
 } as const;

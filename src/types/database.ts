@@ -1835,6 +1835,14 @@ export type Database = {
         Args: { target_period_id: string }
         Returns: number
       }
+      submit_profile_change_request: {
+        Args: { changes: Json; request_reason: string }
+        Returns: string
+      }
+      decide_profile_change_request: {
+        Args: { approve: boolean; note?: string; request_id: string }
+        Returns: undefined
+      }
       has_permission: { Args: { permission_code: string }; Returns: boolean }
       has_report_access: { Args: { report_name: string }; Returns: boolean }
       list_linkable_employees: {
