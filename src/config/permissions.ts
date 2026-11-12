@@ -23,6 +23,8 @@ const ROUTE_RULES: RouteRule[] = [
   { matches: startsWith(routes.employees.create), permission: PERMISSIONS.employeeManage },
   { matches: (pathname) => /^\/employees\/[^/]+\/edit$/.test(pathname), permission: PERMISSIONS.employeeManage },
   { matches: startsWith(routes.employees.list), permission: PERMISSIONS.employeeView },
+  { matches: startsWith("/histories"), permission: PERMISSIONS.employeeView },
+  { matches: startsWith(routes.documents), permission: PERMISSIONS.employeeView },
   { matches: startsWith("/master"), permission: PERMISSIONS.masterManage },
   { matches: startsWith(routes.accounts), permission: PERMISSIONS.userManage },
 ];

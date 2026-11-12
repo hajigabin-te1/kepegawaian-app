@@ -112,3 +112,11 @@ export const RELIGION_OPTIONS = [
   "Khonghucu",
   "Kepercayaan terhadap Tuhan YME",
 ] as const;
+
+/** Minimal employee data for pickers. */
+export type EmployeeOption = {
+  id: string;
+  fullName: string;
+  employeeNumber: string | null;
+  activeStatus: EmployeeActiveStatus;
+};

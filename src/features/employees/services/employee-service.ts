@@ -7,6 +7,7 @@ import {
   type EmployeeDetail,
   type EmployeeListFilters,
   type EmployeeListResult,
+  type EmployeeOption,
   type EmploymentStatus,
 } from "@/features/employees/types/employee";
 import type { Database } from "@/types/database";
@@ -178,4 +179,19 @@ export async function getEmployeeAccount(employeeId: string): Promise<EmployeeAc
   if (error) throw fromSupabaseError(error);
   const row = data[0];
   return row ? { userId: row.user_id, email: row.email, isActive: row.is_active, lastSignInAt: row.last_sign_in_at } : null;
+}
+
+export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
+  const { data, error } = await createSupabaseBrowserClient()
+    .from("employees")
+    .select("id, full_name, employee_number, active_status")
+    .order("full_name")
+    .limit(2000);
+  if (error) throw fromSupabaseError(error);
+  return data.map((row) => ({
+    id: row.id,
+    fullName: row.full_name,
+    employeeNumber: row.employee_number,
+    activeStatus: row.active_status,
+  }));
 }

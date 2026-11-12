@@ -1,6 +1,9 @@
 import {
   Building2Icon,
   BriefcaseIcon,
+  FileTextIcon,
+  GraduationCapIcon,
+  HistoryIcon,
   LayoutDashboardIcon,
   UserCogIcon,
   UsersIcon,
@@ -30,7 +33,11 @@ export const mainNavigation: NavGroup[] = [
   },
   {
     title: "Kepegawaian",
-    items: [{ title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon, permission: PERMISSIONS.employeeView }],
+    items: [
+      { title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon, permission: PERMISSIONS.employeeView },
+      { title: "Riwayat Jabatan", href: routes.histories.positions, icon: HistoryIcon, permission: PERMISSIONS.employeeView },
+      { title: "Riwayat Pendidikan", href: routes.histories.education, icon: GraduationCapIcon, permission: PERMISSIONS.employeeView },
+    ],
   },
   {
     title: "Organisasi",
@@ -38,6 +45,10 @@ export const mainNavigation: NavGroup[] = [
       { title: "Unit Kerja", href: routes.masterData.workUnits, icon: Building2Icon, permission: PERMISSIONS.masterManage },
       { title: "Jabatan", href: routes.masterData.positions, icon: BriefcaseIcon, permission: PERMISSIONS.masterManage },
     ],
+  },
+  {
+    title: "Dokumen",
+    items: [{ title: "Dokumen Pegawai", href: routes.documents, icon: FileTextIcon, permission: PERMISSIONS.employeeView }],
   },
   {
     title: "Pengaturan",

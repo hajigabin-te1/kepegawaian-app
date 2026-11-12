@@ -9,6 +9,7 @@ import {
   deactivateEmployee,
   getEmployee,
   getEmployeeAccount,
+  listEmployeeOptions,
   listEmployees,
   listEmploymentStatuses,
   reactivateEmployee,
@@ -25,6 +26,7 @@ export const employeeKeys = {
   detail: (id: string) => [...employeeKeys.all, "detail", id] as const,
   account: (id: string) => [...employeeKeys.all, "account", id] as const,
   employmentStatuses: () => [...employeeKeys.all, "employment-statuses"] as const,
+  options: () => [...employeeKeys.all, "options"] as const,
 };
 
 export function useEmployees(filters: EmployeeListFilters) {
@@ -86,4 +88,8 @@ export function useCreateEmployeeAccount() {
       createAccount({ email, temporaryPassword, roleCode: EMPLOYEE_ROLE_CODE, employeeId }),
     onSuccess: (_data, variables) => queryClient.invalidateQueries({ queryKey: employeeKeys.account(variables.employeeId) }),
   });
+}
+
+export function useEmployeeOptions(enabled = true) {
+  return useQuery({ queryKey: employeeKeys.options(), queryFn: listEmployeeOptions, enabled, staleTime: 60_000 });
 }

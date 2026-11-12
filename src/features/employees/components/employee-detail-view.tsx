@@ -16,6 +16,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { APP_TIME_ZONE } from "@/config/locale";
 import { routes } from "@/config/routes";
+import { DocumentsPanel } from "@/features/documents/components/documents-panel";
+import { EducationHistoryPanel } from "@/features/employee-history/components/education-history-panel";
+import { PositionHistoryPanel } from "@/features/employee-history/components/position-history-panel";
 import { DeactivateEmployeeDialog } from "@/features/employees/components/deactivate-employee-dialog";
 import { EmployeeAccountCard } from "@/features/employees/components/employee-account-card";
 import { EmployeeStatusBadge } from "@/features/employees/components/employee-status-badge";
@@ -165,6 +168,9 @@ export function EmployeeDetailView({ employeeId, canManage }: EmployeeDetailView
         <TabsList variant="line" className="w-full justify-start overflow-x-auto border-b">
           <TabsTrigger value="biodata">Biodata</TabsTrigger>
           <TabsTrigger value="employment">Kepegawaian</TabsTrigger>
+          <TabsTrigger value="positions">Riwayat Jabatan</TabsTrigger>
+          <TabsTrigger value="education">Riwayat Pendidikan</TabsTrigger>
+          <TabsTrigger value="documents">Dokumen</TabsTrigger>
           <TabsTrigger value="account">Akun Login</TabsTrigger>
         </TabsList>
 
@@ -198,6 +204,18 @@ export function EmployeeDetailView({ employeeId, canManage }: EmployeeDetailView
             <InfoItem label="Tanggal pengangkatan" value={formatDate(data.appointmentDate)} />
             <InfoItem label="Masa kerja" value={serviceLength(data)} />
           </InfoGrid>
+        </TabsContent>
+
+        <TabsContent value="positions">
+          <PositionHistoryPanel employeeId={data.id} canManage={canManage} />
+        </TabsContent>
+
+        <TabsContent value="education">
+          <EducationHistoryPanel employeeId={data.id} canManage={canManage} />
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <DocumentsPanel employeeId={data.id} canManage={canManage} />
         </TabsContent>
 
         <TabsContent value="account">

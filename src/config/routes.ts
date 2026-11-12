@@ -11,6 +11,11 @@ export const routes = {
     workUnits: "/master/work-units",
     positions: "/master/positions",
   },
+  histories: {
+    positions: "/histories/positions",
+    education: "/histories/education",
+  },
+  documents: "/documents",
   accounts: "/accounts",
   profile: {
     password: "/profile/password",
