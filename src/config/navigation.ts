@@ -3,7 +3,6 @@ import {
   BriefcaseIcon,
   LayoutDashboardIcon,
   UserCogIcon,
-  UserPlusIcon,
   UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -31,21 +30,18 @@ export const mainNavigation: NavGroup[] = [
   },
   {
     title: "Kepegawaian",
-    items: [
-      { title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon, permission: PERMISSIONS.employeeView },
-      { title: "Tambah Pegawai", href: routes.employees.create, icon: UserPlusIcon, permission: PERMISSIONS.employeeManage },
-    ],
+    items: [{ title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon, permission: PERMISSIONS.employeeView }],
   },
   {
-    title: "Master data",
+    title: "Organisasi",
     items: [
       { title: "Unit Kerja", href: routes.masterData.workUnits, icon: Building2Icon, permission: PERMISSIONS.masterManage },
       { title: "Jabatan", href: routes.masterData.positions, icon: BriefcaseIcon, permission: PERMISSIONS.masterManage },
     ],
   },
   {
-    title: "Administrasi",
-    items: [{ title: "Akun Pengguna", href: routes.accounts, icon: UserCogIcon, permission: PERMISSIONS.userManage }],
+    title: "Pengaturan",
+    items: [{ title: "Pengguna", href: routes.accounts, icon: UserCogIcon, permission: PERMISSIONS.userManage }],
   },
 ];
 

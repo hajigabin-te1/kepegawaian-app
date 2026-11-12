@@ -21,8 +21,8 @@ Tidak ada API route atau backend lain yang dibuat di repo ini.
 | Kelola akun pengguna | **Sudah jalan** (buat, ubah peran, aktif/nonaktif) |
 | Master data (unit kerja, jabatan) | **Sudah jalan** (daftar, tambah, ubah) |
 | Ganti password | **Sudah jalan** |
-| Dashboard | Masih memakai **data contoh** (`mock-dashboard.ts`) |
-| Data pegawai (daftar, tambah, detail, ubah) | Masih **placeholder** |
+| Dashboard | **Statistik asli** dari `report_employee_statistics()` (HR & pimpinan); akun lain melihat panel sambutan |
+| Data pegawai (daftar, tambah, detail, ubah, nonaktifkan, buat akun) | **Sudah jalan** (HR, `employee.view` / `employee.manage`) |
 | Modul lain (presensi, cuti, kinerja, diklat, mutasi) | Skema SQL sudah ada, UI belum |
 
 Skema database ada di `supabase/migrations` dan dijelaskan di `docs/database-schema.md`.
@@ -256,16 +256,26 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
 - Jabatan: `listPositions`, `createPosition`, `updatePosition`. Punya `position_type` dan `level`.
 - Form memakai dialog (`WorkUnitFormDialog`, `PositionFormDialog`). Setelah simpan, query terkait di-invalidate.
 
+### 9.3 Data pegawai (`/employees/*`, permission `employee.view` / `employee.manage`)
+
+- Daftar (`EmployeesPanel`): `listEmployees(filters)` dengan pencarian nama/NIP/NIDN (debounce 300 ms),
+  filter kategori, unit kerja, status, dan paginasi 20 baris (`EMPLOYEE_PAGE_SIZE`).
+- Tambah/ubah (`EmployeeForm`): wajib hanya nama lengkap, kategori, dan unit kerja; NIK 16 digit, kode pos 5 digit.
+  Saat menambah, opsi **"Buatkan akun login"** memanggil `admin-create-user` dengan peran Pegawai dan `employeeId`.
+- Detail (`EmployeeDetailView`): tab Biodata, Kepegawaian, Akun Login. Status akun dibaca lewat RPC `get_employee_account`.
+- Nonaktifkan (`DeactivateEmployeeDialog`): konfirmasi + alasan wajib; status Nonaktif atau Pensiun. Bisa diaktifkan kembali.
+  Pegawai tidak pernah dihapus.
+
 ---
 
 ## 10. Dashboard
 
-`src/app/(dashboard)/dashboard/page.tsx` menyusun tiga bagian dari data contoh `mock-dashboard.ts`:
+`src/app/(dashboard)/dashboard/page.tsx`:
 
-1. **Judul, tanggal, dan label "Data contoh"**, dengan tombol *Data Pegawai* dan *Tambah Pegawai*.
-2. **`KpiStrip`**: 4 indikator (total pegawai, pegawai aktif dengan bar proporsi, pegawai baru bulan ini, dokumen menunggu verifikasi).
-3. **`RecentEmployeesCard`**: tabel pegawai terbaru dengan filter status. Filter hanya menyaring data contoh di browser.
-4. **`PendingDocumentsCard`**: dokumen yang menunggu. Diberi warna kuning jika lebih dari 7 hari.
+- **HR dan pimpinan** (`employee.view` atau `report.view`): `EmployeeStatistics`, berisi 4 angka (pegawai aktif,
+  dosen aktif, tendik aktif, nonaktif & pensiun) dan tabel sebaran per unit kerja dari `report_employee_statistics()`.
+  Cakupan pimpinan mengikuti `report_scopes`. HR juga melihat **Pegawai terbaru** (5 data terakhir).
+- **Akun lain** (superadmin, pegawai): `WelcomePanel` sampai modul mereka dibuat.
 
 `loading.tsx` adalah skeleton yang tampil selama halaman disiapkan.
 
@@ -370,8 +380,7 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 
 - **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` dan isi `NEXT_PUBLIC_SUPABASE_URL` serta `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Next.js tidak membaca `.env.example`.
 - **Database harus aktif:** project Supabase harus berstatus aktif, dan migrasi serta seed sudah terpasang (langkah di `docs/database-schema.md`).
-- **Data pegawai** (daftar, tambah, detail, ubah, nonaktifkan) masih placeholder. Ini langkah berikutnya di Fase 2.
-- **Dashboard** masih memakai data contoh. Ganti dengan data asli atau empty state.
+- **Berikutnya (Tahap 2 admin HR):** Riwayat Jabatan, Riwayat Pendidikan, Dokumen Pegawai.
 - **Pencarian dan notifikasi** baru tampilan saja.
 - **`lib/axios.ts` dan `stores/auth-store.ts`** disiapkan untuk API pihak ketiga (Keuangan, SIAKAD). Belum dipakai. Jangan dipakai untuk Supabase.
 - **Dokumen lama:** `docs/architecture.md` dan `docs/api-contract.md` masih menjelaskan arsitektur API eksternal. Perlu diperbarui.

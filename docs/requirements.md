@@ -79,7 +79,7 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 |---|---|---|
 | 0 | Setup Supabase: jalankan migrasi + seed, buat akun superadmin | semua |
 | 1 | ✅ Login Supabase Auth (ganti mock), ✅ RBAC di proxy & menu, ✅ kelola akun superadmin (buat akun lewat Edge Function `admin-create-user`, ubah peran & status) | `..._core`, `..._account_management` |
-| 2 | ✅ Master data (unit kerja, jabatan) · Data Pegawai CRUD + riwayat + dokumen + perbaikan data | `..._core`, `..._storage` |
+| 2 | ✅ Master data (unit kerja, jabatan) · ✅ Data Pegawai (daftar, tambah, detail, ubah, nonaktifkan, akun login) · riwayat jabatan/pendidikan + dokumen · perbaikan data | `..._core`, `..._storage` |
 | 3 | Presensi web GPS (radius 100 m) + rekap + koreksi HR | `..._attendance` |
 | 4 | Cuti & Izin (pengajuan → persetujuan HR → kuota → rekap) | `..._leave` |
 | 5 | Penilaian Kinerja | `..._performance_appraisal` |
@@ -104,6 +104,11 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 2 Nov 2026 | Jam kerja tendik | Datang **09:00**, toleransi **30 menit**, pulang **16:30** |
 | 2 Nov 2026 | Jam kerja dosen | Datang **08:30**, toleransi **30 menit**, pulang **18:00**, tetapi jam pulang **bebas** (tidak pernah ditandai "pulang awal") karena faktor mengajar |
 | 2 Nov 2026 | Hari Jumat | Jam kerja **sama** dengan hari lain |
+| 12 Nov 2026 | Halaman admin | Fokus ke **admin HR (Bagian Kepegawaian)**. Superadmin tetap terpisah (Pengguna, Peran & Hak Akses, Pengaturan Aplikasi) |
+| 12 Nov 2026 | Akun pegawai | Saat menambah pegawai, HR dapat langsung **membuatkan akun login** (peran Pegawai, email pegawai) |
+| 12 Nov 2026 | Kolom wajib pegawai | Hanya **nama lengkap, kategori, unit kerja**. NIP/NIDN/NIK opsional |
+| 12 Nov 2026 | Dokumen pegawai | Maksimal **5 MB**, format **PDF, JPG, PNG** |
+| 12 Nov 2026 | Tabel lama `pegawai` | Datanya dipindahkan ke `employees` (kategori awal *Tendik*, dikoreksi HR bila perlu); tabel lama dihapus setelah dikonfirmasi |
 | 2 Nov 2026 | Hari tanpa presensi | **Dibiarkan kosong**; tidak dibuat catatan "tidak hadir" otomatis |
 | 2 Nov 2026 | Backend | Supabase |
 

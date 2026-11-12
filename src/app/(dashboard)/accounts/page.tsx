@@ -6,7 +6,7 @@ import { AccountsPanel } from "@/features/accounts/components/accounts-panel";
 import { requirePermission } from "@/features/auth/services/auth-service";
 
 export const metadata: Metadata = {
-  title: "Akun Pengguna",
+  title: "Pengguna",
 };
 
 export default async function AccountsPage() {

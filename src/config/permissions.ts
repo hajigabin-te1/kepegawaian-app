@@ -6,6 +6,7 @@ export const PERMISSIONS = {
   masterManage: "master.manage",
   employeeView: "employee.view",
   employeeManage: "employee.manage",
+  reportView: "report.view",
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

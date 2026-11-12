@@ -1,45 +1,31 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeftIcon } from "lucide-react";
 
-import { PlaceholderNotice } from "@/components/common/placeholder-notice";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PERMISSIONS } from "@/config/permissions";
 import { routes } from "@/config/routes";
+import { requirePermission } from "@/features/auth/services/auth-service";
+import { EmployeeEditView } from "@/features/employees/components/employee-edit-view";
 
 export const metadata: Metadata = {
-  title: "Ubah Pegawai",
+  title: "Ubah Data Pegawai",
 };
 
-async function EditEmployeeContent({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditEmployeePage({ params }: PageProps<"/employees/[id]/edit">) {
+  await requirePermission(PERMISSIONS.employeeManage);
   const { id } = await params;
-
-  return (
-    <>
-      <PageHeader
-        title="Ubah Pegawai"
-        description={`ID pegawai: ${id}`}
-        actions={
-          <Button variant="outline" nativeButton={false} render={<Link href={routes.employees.detail(id)} />}>
-            <ArrowLeftIcon />
-            Kembali
-          </Button>
-        }
-      />
-      <PlaceholderNotice description="Formulir ubah data pegawai akan dibuat setelah field dan aturan validasi dikonfirmasi." />
-    </>
-  );
-}
-
-export default function EditEmployeePage({ params }: PageProps<"/employees/[id]/edit">) {
   return (
     <PageContainer>
-      <Suspense fallback={<Skeleton className="h-40 w-full" />}>
-        <EditEmployeeContent params={params} />
-      </Suspense>
+      <PageHeader
+        title="Ubah Data Pegawai"
+        breadcrumbs={[
+          { label: "Beranda", href: routes.dashboard },
+          { label: "Data Pegawai", href: routes.employees.list },
+          { label: "Detail Pegawai", href: routes.employees.detail(id) },
+          { label: "Ubah" },
+        ]}
+      />
+      <EmployeeEditView employeeId={id} />
     </PageContainer>
   );
 }
