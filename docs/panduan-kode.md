@@ -266,6 +266,17 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
 - Nonaktifkan (`DeactivateEmployeeDialog`): konfirmasi + alasan wajib; status Nonaktif atau Pensiun. Bisa diaktifkan kembali.
   Pegawai tidak pernah dihapus.
 
+### 9.4 Riwayat & dokumen (`/histories/*`, `/documents`, permission `employee.view` / `employee.manage`)
+
+- Modul `features/employee-history` (riwayat jabatan & pendidikan) dan `features/documents` (dokumen pegawai).
+- Setiap panel (`PositionHistoryPanel`, `EducationHistoryPanel`, `DocumentsPanel`) dipakai dua kali:
+  tanpa `employeeId` = halaman menu (semua pegawai, cari nama, paginasi 20); dengan `employeeId` = tab di Detail Pegawai.
+- Tombol tambah/ubah/hapus hanya muncul jika punya `employee.manage` (`canManage`). Hapus selalu lewat `ConfirmDeleteDialog`.
+- File (SK, ijazah, dokumen) diunggah lewat `file-storage.ts` ke bucket privat `employee-documents`
+  dengan path `<employee_id>/<documents|education|positions>/...`; dibuka dengan signed URL 60 detik (`FileLinkButton`).
+  Batas 5 MB dan PDF/JPG/PNG dicek di form (`validateEmployeeFile`) dan di Storage (migrasi `..._employee_document_limits`).
+- Mengganti file menghapus file lama; menghapus data menghapus file-nya. Jika simpan data gagal, file yang baru diunggah dihapus lagi.
+
 ---
 
 ## 10. Dashboard
@@ -380,7 +391,7 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 
 - **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` dan isi `NEXT_PUBLIC_SUPABASE_URL` serta `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Next.js tidak membaca `.env.example`.
 - **Database harus aktif:** project Supabase harus berstatus aktif, dan migrasi serta seed sudah terpasang (langkah di `docs/database-schema.md`).
-- **Berikutnya (Tahap 2 admin HR):** Riwayat Jabatan, Riwayat Pendidikan, Dokumen Pegawai.
+- **Berikutnya (Tahap 3 admin):** Struktur Organisasi, Peran & Hak Akses, Pengaturan Aplikasi.
 - **Pencarian dan notifikasi** baru tampilan saja.
 - **`lib/axios.ts` dan `stores/auth-store.ts`** disiapkan untuk API pihak ketiga (Keuangan, SIAKAD). Belum dipakai. Jangan dipakai untuk Supabase.
 - **Dokumen lama:** `docs/architecture.md` dan `docs/api-contract.md` masih menjelaskan arsitektur API eksternal. Perlu diperbarui.

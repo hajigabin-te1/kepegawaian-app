@@ -52,14 +52,18 @@ function UploadDocumentForm({ fixedEmployeeId, onDone }: { fixedEmployeeId: stri
     defaultValues: { employeeId: fixedEmployeeId ?? "", documentType: "SK", title: "" },
   });
 
+  /** Returns false (and shows the message) when the file is missing or not allowed. */
+  const checkFile = (): File | null => {
+    const message = file ? validateEmployeeFile(file) : "Pilih file dokumen.";
+    setFileError(message ?? undefined);
+    return message === null ? file : null;
+  };
+
   const onSubmit = (values: DocumentFormValues) => {
-    if (!file) {
-      setFileError("Pilih file dokumen.");
-      return;
-    }
-    if (validateEmployeeFile(file)) return;
+    const validFile = checkFile();
+    if (!validFile) return;
     upload.mutate(
-      { values, file },
+      { values, file: validFile },
       {
         onSuccess: () => {
           toast.success("Dokumen diunggah.");
@@ -77,7 +81,7 @@ function UploadDocumentForm({ fixedEmployeeId, onDone }: { fixedEmployeeId: stri
         <DialogDescription>Dokumen tersimpan privat dan hanya dapat dibuka oleh Bagian Kepegawaian dan pegawai yang bersangkutan.</DialogDescription>
       </DialogHeader>
 
-      <form id="upload-document-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+      <form id="upload-document-form" onSubmit={handleSubmit(onSubmit, () => void checkFile())} noValidate className="space-y-4">
         {fixedEmployeeId ? null : (
           <div className="space-y-2">
             <Label>

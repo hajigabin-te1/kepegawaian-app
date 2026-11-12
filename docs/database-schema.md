@@ -14,6 +14,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261104000001_account_management.sql` | `list_user_accounts()` (daftar akun + email untuk superadmin) dan pengaman agar akun tidak bisa menonaktifkan/mengubah peran dirinya sendiri |
 | `migrations/20261112000001_employee_account_lookup.sql` | `get_employee_account(employee_id)`: HR melihat apakah pegawai sudah punya akun login (email, status, login terakhir) |
 | `migrations/20261112000002_migrate_legacy_pegawai.sql` | Sekali jalan: memindahkan isi tabel lama `pegawai` ke `employees` dan mengaktifkan RLS di tabel lama |
+| `migrations/20261112000003_employee_document_limits.sql` | Bucket `employee-documents`: maks. 5 MB per file, hanya PDF/JPG/PNG (dipaksa oleh Storage) |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -203,7 +204,7 @@ di `audit_logs` lewat trigger.
 ## Pengujian
 
 Skema sudah diuji dengan PGlite (Postgres di Node) memakai stub `auth` & `storage`:
-seluruh migrasi + seed berjalan, dan 63 skenario lolos (termasuk hak eksekusi fungsi untuk `anon` dan pengguna login). Skenario mencakup: visibilitas per peran
+seluruh migrasi + seed berjalan, dan 69 skenario lolos (termasuk hak eksekusi fungsi untuk `anon` dan pengguna login). Skenario mencakup: visibilitas per peran
 (pimpinan hanya statistik; cakupan Ketua, Wakil Ketua bidang, dan LPM), cuti diajukan → HR setuju → kuota & notifikasi, presensi GPS di titik kampus
 (65 m diterima, 150 m ditolak, presensi ganda ditolak, terlambat, pulang awal tendik, pulang bebas dosen), koreksi HR, penilaian kinerja oleh HR, diklat → riwayat,
 mutasi, dan akses file Storage. Tetap jalankan di project Supabase uji coba sebelum dipakai.
