@@ -1837,6 +1837,14 @@ export type Database = {
       }
       has_permission: { Args: { permission_code: string }; Returns: boolean }
       has_report_access: { Args: { report_name: string }; Returns: boolean }
+      list_linkable_employees: {
+        Args: { for_account_id?: string }
+        Returns: {
+          employee_number: string
+          full_name: string
+          id: string
+        }[]
+      }
       list_user_accounts: {
         Args: never
         Returns: {

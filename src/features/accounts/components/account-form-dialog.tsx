@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useUpdateAccount } from "@/features/accounts/hooks/use-accounts";
+import { useLinkableEmployees, useUpdateAccount } from "@/features/accounts/hooks/use-accounts";
 import type { Role, UserAccount } from "@/features/accounts/types/accounts";
 import { ApiError } from "@/lib/api-error";
 
+const NO_EMPLOYEE = "none";
 const STATUS_ITEMS = { active: "Aktif", inactive: "Nonaktif" };
 
 type AccountFormDialogProps = {
@@ -42,13 +43,19 @@ type AccountFormProps = {
 function AccountForm({ account, roles, onDone }: AccountFormProps) {
   const updateAccount = useUpdateAccount();
   const [roleId, setRoleId] = useState(String(account.roleId));
+  const linkable = useLinkableEmployees(account.id);
+  const [employeeId, setEmployeeId] = useState(account.employeeId ?? NO_EMPLOYEE);
   const [status, setStatus] = useState<"active" | "inactive">(account.isActive ? "active" : "inactive");
 
+  const employeeItems = {
+    [NO_EMPLOYEE]: "Tidak terhubung",
+    ...Object.fromEntries((linkable.data ?? []).map((e) => [e.id, e.employeeNumber ? `${e.name} (${e.employeeNumber})` : e.name])),
+  };
   const roleItems = Object.fromEntries(roles.map((role) => [String(role.id), role.name]));
 
   const save = () => {
     updateAccount.mutate(
-      { id: account.id, update: { roleId: Number(roleId), isActive: status === "active" } },
+      { id: account.id, update: { roleId: Number(roleId), isActive: status === "active", employeeId: employeeId === NO_EMPLOYEE ? null : employeeId } },
       {
         onSuccess: () => {
           toast.success("Akun diperbarui.");
@@ -85,6 +92,25 @@ function AccountForm({ account, roles, onDone }: AccountFormProps) {
         </div>
 
         <div className="space-y-2">
+          <Label>Pegawai</Label>
+          <Select items={employeeItems} value={employeeId} onValueChange={(value) => value && setEmployeeId(value)}>
+            <SelectTrigger className="w-full" aria-label="Pegawai">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(employeeItems).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {linkable.isError ? "Daftar pegawai gagal dimuat." : "Akun harus terhubung ke pegawai agar bisa presensi dan mengajukan cuti."}
+          </p>
+        </div>
+
+        <div className="space-y-2">
           <Label>Status akun</Label>
           <Select
             items={STATUS_ITEMS}
@@ -107,7 +133,7 @@ function AccountForm({ account, roles, onDone }: AccountFormProps) {
         <Button variant="outline" onClick={onDone} disabled={updateAccount.isPending}>
           Batal
         </Button>
-        <Button onClick={save} disabled={updateAccount.isPending}>
+        <Button onClick={save} disabled={updateAccount.isPending || linkable.isPending}>
           {updateAccount.isPending ? <Loader2Icon className="animate-spin" /> : null}
           Simpan
         </Button>

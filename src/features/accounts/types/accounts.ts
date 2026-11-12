@@ -5,6 +5,7 @@ export type UserAccount = {
   roleCode: string;
   roleName: string;
   isActive: boolean;
+  employeeId: string | null;
   employeeName: string | null;
   lastSignInAt: string | null;
 };
@@ -21,7 +22,10 @@ export type NewAccount = {
   temporaryPassword: string;
 };
 
+export type LinkableEmployee = { id: string; name: string; employeeNumber: string | null };
+
 export type AccountUpdate = {
   roleId: number;
+  employeeId: string | null;
   isActive: boolean;
 };

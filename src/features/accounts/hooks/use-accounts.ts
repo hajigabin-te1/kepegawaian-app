@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createAccount, deleteAccount, listAccounts, listRoles, updateAccount } from "@/features/accounts/services/account-service";
+import { createAccount, deleteAccount, listAccounts, listLinkableEmployees, listRoles, updateAccount } from "@/features/accounts/services/account-service";
 import type { AccountUpdate, NewAccount } from "@/features/accounts/types/accounts";
 
 export const accountKeys = {
@@ -17,6 +17,10 @@ export function useAccounts() {
 
 export function useRoles() {
   return useQuery({ queryKey: accountKeys.roles(), queryFn: listRoles, staleTime: 5 * 60_000 });
+}
+
+export function useLinkableEmployees(accountId: string) {
+  return useQuery({ queryKey: [...accountKeys.all, "linkable-employees", accountId], queryFn: () => listLinkableEmployees(accountId) });
 }
 
 export function useUpdateAccount() {

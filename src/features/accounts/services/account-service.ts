@@ -2,8 +2,9 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 
 import { ApiError, fromSupabaseError } from "@/lib/api-error";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { AccountUpdate, NewAccount, Role, UserAccount } from "@/features/accounts/types/accounts";
+import type { AccountUpdate, LinkableEmployee, NewAccount, Role, UserAccount } from "@/features/accounts/types/accounts";
 
+const EMPLOYEE_TAKEN_MESSAGE = "Pegawai tersebut sudah terhubung dengan akun lain.";
 const SELF_LOCKOUT_MESSAGE = "Anda tidak dapat menonaktifkan atau mengubah peran akun Anda sendiri.";
 
 export async function listAccounts(): Promise<UserAccount[]> {
@@ -16,6 +17,7 @@ export async function listAccounts(): Promise<UserAccount[]> {
     roleCode: row.role_code,
     roleName: row.role_name,
     isActive: row.is_active,
+    employeeId: row.employee_id,
     employeeName: row.employee_name,
     lastSignInAt: row.last_sign_in_at,
   }));
@@ -27,14 +29,20 @@ export async function listRoles(): Promise<Role[]> {
   return data;
 }
 
+export async function listLinkableEmployees(accountId: string): Promise<LinkableEmployee[]> {
+  const { data, error } = await createSupabaseBrowserClient().rpc("list_linkable_employees", { for_account_id: accountId });
+  if (error) throw fromSupabaseError(error);
+  return data.map((row) => ({ id: row.id, name: row.full_name, employeeNumber: row.employee_number }));
+}
+
 export async function updateAccount(id: string, update: AccountUpdate): Promise<void> {
   const { error } = await createSupabaseBrowserClient()
     .from("user_accounts")
-    .update({ role_id: update.roleId, is_active: update.isActive })
+    .update({ role_id: update.roleId, is_active: update.isActive, employee_id: update.employeeId })
     .eq("id", id)
     .select("id")
     .single();
-  if (error) throw fromSupabaseError(error, { self_lockout: SELF_LOCKOUT_MESSAGE });
+  if (error) throw fromSupabaseError(error, { self_lockout: SELF_LOCKOUT_MESSAGE, "23505": EMPLOYEE_TAKEN_MESSAGE });
 }
 
 /** Reads the Indonesian message returned by the admin-create-user Edge Function. */

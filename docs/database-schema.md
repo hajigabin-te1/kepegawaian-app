@@ -12,6 +12,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261102000006_announcements_reports_storage.sql` | Pengumuman, rekap pegawai per unit, bucket Storage |
 | `migrations/20261103000001_restrict_function_execute.sql` | Membatasi fungsi yang bisa dipanggil lewat API: `anon` tidak bisa memanggil fungsi apa pun; pengguna login hanya bisa memanggil RPC aplikasi dan helper RLS |
 | `migrations/20261104000001_account_management.sql` | `list_user_accounts()` (daftar akun + email untuk superadmin) dan pengaman agar akun tidak bisa menonaktifkan/mengubah peran dirinya sendiri |
+| `migrations/20261112000001_link_account_employee.sql` | `list_linkable_employees()`: superadmin memilih pegawai untuk dihubungkan ke akun tanpa izin `employee.view` (hanya id, nama, NIP pegawai aktif yang belum punya akun) |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---

@@ -1,7 +1,4 @@
-/**
- * Structured query keys for employee data.
- * List filter shape will be refined once the API contract is confirmed.
- */
+/** Structured query keys for employee data. */
 export type EmployeeListFilters = Readonly<Record<string, string | number | undefined>>;
 
 export const employeeQueryKeys = {
