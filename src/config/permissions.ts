@@ -11,6 +11,9 @@ export const PERMISSIONS = {
   leaveView: "leave.view",
   leaveManage: "leave.manage",
   appraisalManage: "appraisal.manage",
+  trainingManage: "training.manage",
+  mutationManage: "mutation.manage",
+  promotionManage: "promotion.manage",
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -25,6 +28,9 @@ const startsWith = (prefix: string) => (pathname: string) => pathname === prefix
 /** Most specific rules first; the first match decides. Routes without a rule only need a signed-in user. */
 const ROUTE_RULES: RouteRule[] = [
   { matches: startsWith(routes.attendance.recap), permission: PERMISSIONS.attendanceView },
+  { matches: startsWith(routes.training.manage), permission: PERMISSIONS.trainingManage },
+  { matches: startsWith(routes.mutations), permission: PERMISSIONS.mutationManage },
+  { matches: startsWith(routes.promotions), permission: PERMISSIONS.promotionManage },
   { matches: startsWith(routes.performance.periods), permission: PERMISSIONS.appraisalManage },
   { matches: startsWith(routes.performance.forms), permission: PERMISSIONS.appraisalManage },
   { matches: startsWith(routes.performance.recap), permission: PERMISSIONS.appraisalManage },

@@ -4,7 +4,12 @@ import {
   CalendarCheckIcon,
   CalendarDaysIcon,
   CalendarHeartIcon,
+  ArrowRightLeftIcon,
+  BookOpenCheckIcon,
   CalendarOffIcon,
+  GraduationCapIcon,
+  MegaphoneIcon,
+  TrendingUpIcon,
   ClipboardCheckIcon,
   ClipboardPenLineIcon,
   GaugeIcon,
@@ -40,6 +45,7 @@ export const mainNavigation: NavGroup[] = [
     title: "Menu utama",
     items: [
       { title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon },
+      { title: "Pengumuman", href: routes.announcements, icon: MegaphoneIcon },
       { title: "Profil Saya", href: routes.profile.me, icon: UserRoundIcon },
     ],
   },
@@ -73,6 +79,15 @@ export const mainNavigation: NavGroup[] = [
       { title: "Form Penilaian", href: routes.performance.forms, icon: ClipboardPenLineIcon, permission: PERMISSIONS.appraisalManage },
       { title: "Periode Penilaian", href: routes.performance.periods, icon: CalendarRangeIcon, permission: PERMISSIONS.appraisalManage },
       { title: "Rekap Nilai", href: routes.performance.recap, icon: GaugeIcon, permission: PERMISSIONS.appraisalManage },
+    ],
+  },
+  {
+    title: "Pengembangan Pegawai",
+    items: [
+      { title: "Diklat", href: routes.training.me, icon: GraduationCapIcon },
+      { title: "Kelola Diklat", href: routes.training.manage, icon: BookOpenCheckIcon, permission: PERMISSIONS.trainingManage },
+      { title: "Mutasi", href: routes.mutations, icon: ArrowRightLeftIcon, permission: PERMISSIONS.mutationManage },
+      { title: "Kenaikan Pangkat", href: routes.promotions, icon: TrendingUpIcon, permission: PERMISSIONS.promotionManage },
     ],
   },
   {

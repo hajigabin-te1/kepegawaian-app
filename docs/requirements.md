@@ -84,7 +84,7 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 4 | ✅ (kode selesai, belum diuji di Supabase) Cuti & Izin (pengajuan → persetujuan HR → kuota → rekap) | `..._leave` |
 | 5 | ✅ (kode selesai, belum diuji di Supabase; rumus sementara) Penilaian Kinerja | `..._performance_appraisal` |
 | 6 | ✅ (kode selesai, belum diuji di Supabase) Dashboard statistik per jabatan (Ketua, Wakil Ketua, LPM) + laporan HR (CSV) | fungsi `report_*` + `report_scopes` |
-| 7 | Diklat, Mutasi, Kenaikan Pangkat, Pengumuman | `..._training_mutation_promotion`, `..._announcements` |
+| 7 | ✅ (kode selesai, belum diuji di Supabase) Diklat, Mutasi, Kenaikan Pangkat, Pengumuman | `..._training_mutation_promotion`, `..._announcements` |
 | Nanti | Menu khusus LPM, pengiriman notifikasi email, integrasi presensi mengajar dosen, Keuangan, SIAKAD (BKD), SSO, backup/restore | — |
 
 ---
@@ -110,6 +110,8 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 12 Nov 2026 | Di luar kuota umum | **Cuti melahirkan** (hanya pegawai perempuan, maksimal 3 bulan per pengajuan) dan **sakit berkepanjangan** (beberapa minggu) tidak mengurangi kuota 12 hari |
 | 12 Nov 2026 | Hitungan hari cuti | **Hari Minggu dan tanggal merah tidak dihitung**; Sabtu dihitung. Tanggal merah diisi HR di menu Hari Libur |
 | 12 Nov 2026 | Rumus nilai kinerja (SEMENTARA) | Nilai akhir = **rata-rata nilai indikator**, skala **0–100** (`app_settings.appraisal_max_score`). Hanya asumsi agar alur bisa dipakai; rumus ada di satu fungsi `compute_appraisal_score()` dan akan diganti setelah Kepala Bagian Kepegawaian menjawab |
+| 12 Nov 2026 | Alur diklat | Pendaftar menunggu → HR setuju/tolak → HR tetapkan peserta (maksimal sebesar kuota, jika ada) atau tidak terpilih → HR catat selesai, yang otomatis masuk riwayat pelatihan pegawai. Lampiran sertifikat belum ada antarmukanya |
+| 12 Nov 2026 | Mutasi & kenaikan pangkat | HR mengusulkan → HR setuju/tolak → HR menjalankan. Menjalankan memperbarui data pegawai dan riwayat jabatan/pangkat. Nomor SK diisi saat persetujuan (opsional) |
 | 12 Nov 2026 | Kuota terlampaui | Pengajuan yang melebihi sisa kuota **ditolak sistem** saat diajukan (asumsi, belum dikonfirmasi) |
 
 ## 7. Pertanyaan yang masih terbuka

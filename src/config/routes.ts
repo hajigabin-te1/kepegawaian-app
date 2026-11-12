@@ -24,6 +24,13 @@ export const routes = {
     form: (id: string) => `/performance/forms/${encodeURIComponent(id)}`,
     recap: "/performance/recap",
   },
+  announcements: "/announcements",
+  training: {
+    me: "/training",
+    manage: "/training/manage",
+  },
+  mutations: "/mutations",
+  promotions: "/promotions",
   masterData: {
     workUnits: "/master/work-units",
     positions: "/master/positions",

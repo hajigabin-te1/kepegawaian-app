@@ -16,6 +16,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261112000002_profile_change_requests.sql` | `submit_profile_change_request()` (pegawai mengajukan perbaikan data pribadi, kolom divalidasi) dan `decide_profile_change_request()` (HR setuju/tolak; setuju langsung memperbarui `employees`). Kebijakan insert/update langsung pada `profile_change_requests` dihapus |
 | `migrations/20261112000003_leave_rules.sql` | Aturan cuti: tabel `public_holidays`, kolom `counts_toward_quota` / `female_only` / `max_months` pada `leave_types`, jenis `long_sick`, pengaturan `annual_leave_quota`, fungsi `count_leave_days`, `get_leave_balance`, `submit_leave_request`, `cancel_leave_request`; `decide_leave_request` tidak lagi menulis `leave_balances` |
 | `migrations/20261112000004_appraisal_rules.sql` | Alur penilaian lewat RPC: `save_appraisal`, `submit_appraisal`, `review_appraisal` (diganti), `generate_appraisals` (hanya periode aktif), `compute_appraisal_score` (rumus sementara = rata-rata), pengaturan `appraisal_max_score`. HR hanya bisa membaca langsung; kebijakan tulis pada `appraisals` dan `appraisal_items` dihapus |
+| `migrations/20261112000005_training_mutation_promotion_rules.sql` | Alur Fase 7 lewat RPC: `set_training_outcome`, `decide_mutation`, `decide_promotion`, `execute_promotion`; trigger pengisi data "saat ini" pada usulan dan waktu terbit pengumuman. Kebijakan tulis langsung HR pada `mutations`, `promotion_proposals`, `training_registrations` dihapus (usulan tetap bisa dibuat) |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -156,6 +157,10 @@ Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan 
 | `submit_leave_request(type, start, end, reason, attachment)` | Pegawai mengajukan cuti/izin. Server menghitung hari (tanpa Minggu dan tanggal merah), menolak jika bertabrakan, melebihi sisa kuota, jenis khusus perempuan untuk non-perempuan, atau melebihi 3 bulan (cuti melahirkan) |
 | `cancel_leave_request(id)` | Pegawai membatalkan pengajuannya yang masih menunggu |
 | `get_leave_balance(employee, year)` | Kuota, terpakai, menunggu, dan sisa. Dihitung dari pengajuan; baris `leave_balances` jenis `annual` hanya menimpa kuota pegawai tertentu |
+| `decide_training_registration(id, approve, note)` | HR setuju/tolak pendaftaran diklat |
+| `set_training_outcome(id, status, note)` | HR menetapkan peserta/tidak terpilih (kuota dicek), lalu mencatat selesai; selesai masuk riwayat pelatihan |
+| `decide_mutation(id, approve, note, decree)` / `execute_mutation(id)` | HR setuju/tolak lalu menjalankan mutasi (unit, jabatan, riwayat jabatan) |
+| `decide_promotion(id, approve, note, decree)` / `execute_promotion(id)` | HR setuju/tolak lalu menjalankan kenaikan pangkat/jabatan (data pegawai dan riwayat) |
 | `decide_leave_request(id, approve, note)` | HR setuju/tolak cuti (alasan wajib jika ditolak); notifikasi ke pegawai |
 | `generate_appraisals(period_id)` | HR membuat form penilaian untuk semua pegawai aktif (periode harus aktif) |
 | `save_appraisal(id, note, items)` | HR menyimpan indikator dan catatan selama form berstatus draf/perlu revisi; nilai divalidasi terhadap skala |

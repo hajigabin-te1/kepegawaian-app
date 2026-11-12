@@ -1874,6 +1874,23 @@ export type Database = {
         Returns: number
       }
       execute_mutation: { Args: { mutation_id: string }; Returns: undefined }
+      execute_promotion: { Args: { promotion_id: string }; Returns: undefined }
+      decide_mutation: {
+        Args: { approve: boolean; decree?: string; mutation_id: string; note?: string }
+        Returns: undefined
+      }
+      decide_promotion: {
+        Args: { approve: boolean; decree?: string; note?: string; promotion_id: string }
+        Returns: undefined
+      }
+      set_training_outcome: {
+        Args: {
+          new_status: Database["public"]["Enums"]["training_registration_status"]
+          note?: string
+          registration_id: string
+        }
+        Returns: undefined
+      }
       find_attendance_location: {
         Args: { lat: number; lon: number }
         Returns: string
