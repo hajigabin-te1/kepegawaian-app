@@ -21,8 +21,8 @@ Tidak ada API route atau backend lain yang dibuat di repo ini.
 | Kelola akun pengguna | **Sudah jalan** (buat, ubah peran, aktif/nonaktif) |
 | Master data (unit kerja, jabatan) | **Sudah jalan** (daftar, tambah, ubah) |
 | Ganti password | **Sudah jalan** |
-| Dashboard | Masih memakai **data contoh** (`mock-dashboard.ts`) |
-| Data pegawai (daftar, tambah, detail, ubah) | Masih **placeholder** |
+| Dashboard | **Statistik asli** dari `report_employee_statistics()` (HR & pimpinan); akun lain melihat panel sambutan |
+| Data pegawai (daftar, tambah, detail, ubah, nonaktifkan, buat akun) | **Sudah jalan** (HR, `employee.view` / `employee.manage`) |
 | Modul lain (presensi, cuti, kinerja, diklat, mutasi) | Skema SQL sudah ada, UI belum |
 
 Skema database ada di `supabase/migrations` dan dijelaskan di `docs/database-schema.md`.
@@ -256,16 +256,56 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
 - Jabatan: `listPositions`, `createPosition`, `updatePosition`. Punya `position_type` dan `level`.
 - Form memakai dialog (`WorkUnitFormDialog`, `PositionFormDialog`). Setelah simpan, query terkait di-invalidate.
 
+### 9.3 Data pegawai (`/employees/*`, permission `employee.view` / `employee.manage`)
+
+- Daftar (`EmployeesPanel`): `listEmployees(filters)` dengan pencarian nama/NIP/NIDN (debounce 300 ms),
+  filter kategori, unit kerja, status, dan paginasi 20 baris (`EMPLOYEE_PAGE_SIZE`).
+- Tambah/ubah (`EmployeeForm`): wajib hanya nama lengkap, kategori, dan unit kerja; NIK 16 digit, kode pos 5 digit.
+  Saat menambah, opsi **"Buatkan akun login"** memanggil `admin-create-user` dengan peran Pegawai dan `employeeId`.
+- Detail (`EmployeeDetailView`): tab Biodata, Kepegawaian, Akun Login. Status akun dibaca lewat RPC `get_employee_account`.
+- Nonaktifkan (`DeactivateEmployeeDialog`): konfirmasi + alasan wajib; status Nonaktif atau Pensiun. Bisa diaktifkan kembali.
+  Pegawai tidak pernah dihapus.
+
+### 9.5 Struktur Organisasi (`/master/organization`, permission `master.manage`)
+
+- `OrganizationStructure` menyusun pohon dari `work_units.parent_id` (unit dengan induk yang tidak ada dianggap akar).
+- Jumlah pegawai aktif per unit (dosen · tendik) diambil dari RPC `report_employee_statistics`; jika akun tidak punya cakupan statistik, pohon tetap tampil tanpa angka.
+- Hanya baca. Induk unit diubah di menu Unit Kerja.
+
+### 9.6 Peran & Hak Akses (`/settings/roles`, permission `role.manage`)
+
+- Modul `features/roles`. `getRbacData()` membaca `roles` + `role_permissions` + `permissions`.
+- Centang hak akses disimpan sebagai draf per peran; "Simpan Perubahan" memanggil `updateRolePermissions` (tambah dulu, baru hapus).
+- Peran superadmin tidak bisa kehilangan `role.manage` dan `user.manage` (dikunci di UI) agar tidak ada yang terkunci di luar sistem.
+- Daftar peran dan kode hak akses tetap dari seed; halaman ini hanya mengubah pemetaannya.
+
+### 9.7 Pengaturan Aplikasi (`/settings/app`, permission `settings.manage`)
+
+- Modul `features/settings`: tab **Lokasi Presensi** (`attendance_locations`: tambah, ubah, aktif/nonaktif; tidak dihapus karena dirujuk presensi)
+  dan **Jam Kerja** (`work_schedules`: satu per kategori; jam masuk/pulang, toleransi, catat pulang awal).
+- Zona waktu (`app_settings.timezone`) hanya ditampilkan, tidak bisa diubah: frontend memakai `APP_TIME_ZONE` yang sama.
+
+### 9.4 Riwayat & dokumen (`/histories/*`, `/documents`, permission `employee.view` / `employee.manage`)
+
+- Modul `features/employee-history` (riwayat jabatan & pendidikan) dan `features/documents` (dokumen pegawai).
+- Setiap panel (`PositionHistoryPanel`, `EducationHistoryPanel`, `DocumentsPanel`) dipakai dua kali:
+  tanpa `employeeId` = halaman menu (semua pegawai, cari nama, paginasi 20); dengan `employeeId` = tab di Detail Pegawai.
+- Tombol tambah/ubah/hapus hanya muncul jika punya `employee.manage` (`canManage`). Hapus selalu lewat `ConfirmDeleteDialog`.
+- File (SK, ijazah, dokumen) diunggah lewat `file-storage.ts` ke bucket privat `employee-documents`
+  dengan path `<employee_id>/<documents|education|positions>/...`; dibuka dengan signed URL 60 detik (`FileLinkButton`).
+  Batas 5 MB dan PDF/JPG/PNG dicek di form (`validateEmployeeFile`) dan di Storage (migrasi `..._employee_document_limits`).
+- Mengganti file menghapus file lama; menghapus data menghapus file-nya. Jika simpan data gagal, file yang baru diunggah dihapus lagi.
+
 ---
 
 ## 10. Dashboard
 
-`src/app/(dashboard)/dashboard/page.tsx` menyusun tiga bagian dari data contoh `mock-dashboard.ts`:
+`src/app/(dashboard)/dashboard/page.tsx`:
 
-1. **Judul, tanggal, dan label "Data contoh"**, dengan tombol *Data Pegawai* dan *Tambah Pegawai*.
-2. **`KpiStrip`**: 4 indikator (total pegawai, pegawai aktif dengan bar proporsi, pegawai baru bulan ini, dokumen menunggu verifikasi).
-3. **`RecentEmployeesCard`**: tabel pegawai terbaru dengan filter status. Filter hanya menyaring data contoh di browser.
-4. **`PendingDocumentsCard`**: dokumen yang menunggu. Diberi warna kuning jika lebih dari 7 hari.
+- **HR dan pimpinan** (`employee.view` atau `report.view`): `EmployeeStatistics`, berisi 4 angka (pegawai aktif,
+  dosen aktif, tendik aktif, nonaktif & pensiun) dan tabel sebaran per unit kerja dari `report_employee_statistics()`.
+  Cakupan pimpinan mengikuti `report_scopes`. HR juga melihat **Pegawai terbaru** (5 data terakhir).
+- **Akun lain** (superadmin, pegawai): `WelcomePanel` sampai modul mereka dibuat.
 
 `loading.tsx` adalah skeleton yang tampil selama halaman disiapkan.
 
@@ -370,8 +410,7 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 
 - **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` dan isi `NEXT_PUBLIC_SUPABASE_URL` serta `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Next.js tidak membaca `.env.example`.
 - **Database harus aktif:** project Supabase harus berstatus aktif, dan migrasi serta seed sudah terpasang (langkah di `docs/database-schema.md`).
-- **Data pegawai** (daftar, tambah, detail, ubah, nonaktifkan) masih placeholder. Ini langkah berikutnya di Fase 2.
-- **Dashboard** masih memakai data contoh. Ganti dengan data asli atau empty state.
+- **Halaman admin (Tahap 1–3) selesai.** Berikutnya: Presensi web GPS (fase 3 di `docs/requirements.md`).
 - **Pencarian dan notifikasi** baru tampilan saja.
 - **`lib/axios.ts` dan `stores/auth-store.ts`** disiapkan untuk API pihak ketiga (Keuangan, SIAKAD). Belum dipakai. Jangan dipakai untuk Supabase.
 - **Dokumen lama:** `docs/architecture.md` dan `docs/api-contract.md` masih menjelaskan arsitektur API eksternal. Perlu diperbarui.

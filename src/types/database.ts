@@ -1835,6 +1835,15 @@ export type Database = {
         Args: { target_period_id: string }
         Returns: number
       }
+      get_employee_account: {
+        Args: { target_employee_id: string }
+        Returns: {
+          email: string
+          is_active: boolean
+          last_sign_in_at: string
+          user_id: string
+        }[]
+      }
       has_permission: { Args: { permission_code: string }; Returns: boolean }
       has_report_access: { Args: { report_name: string }; Returns: boolean }
       list_user_accounts: {

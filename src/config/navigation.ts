@@ -1,9 +1,14 @@
 import {
   Building2Icon,
   BriefcaseIcon,
+  FileTextIcon,
+  GraduationCapIcon,
+  HistoryIcon,
   LayoutDashboardIcon,
+  NetworkIcon,
+  SettingsIcon,
+  ShieldCheckIcon,
   UserCogIcon,
-  UserPlusIcon,
   UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -33,19 +38,29 @@ export const mainNavigation: NavGroup[] = [
     title: "Kepegawaian",
     items: [
       { title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon, permission: PERMISSIONS.employeeView },
-      { title: "Tambah Pegawai", href: routes.employees.create, icon: UserPlusIcon, permission: PERMISSIONS.employeeManage },
+      { title: "Riwayat Jabatan", href: routes.histories.positions, icon: HistoryIcon, permission: PERMISSIONS.employeeView },
+      { title: "Riwayat Pendidikan", href: routes.histories.education, icon: GraduationCapIcon, permission: PERMISSIONS.employeeView },
     ],
   },
   {
-    title: "Master data",
+    title: "Organisasi",
     items: [
       { title: "Unit Kerja", href: routes.masterData.workUnits, icon: Building2Icon, permission: PERMISSIONS.masterManage },
       { title: "Jabatan", href: routes.masterData.positions, icon: BriefcaseIcon, permission: PERMISSIONS.masterManage },
+      { title: "Struktur Organisasi", href: routes.masterData.organization, icon: NetworkIcon, permission: PERMISSIONS.masterManage },
     ],
   },
   {
-    title: "Administrasi",
-    items: [{ title: "Akun Pengguna", href: routes.accounts, icon: UserCogIcon, permission: PERMISSIONS.userManage }],
+    title: "Dokumen",
+    items: [{ title: "Dokumen Pegawai", href: routes.documents, icon: FileTextIcon, permission: PERMISSIONS.employeeView }],
+  },
+  {
+    title: "Pengaturan",
+    items: [
+      { title: "Pengguna", href: routes.accounts, icon: UserCogIcon, permission: PERMISSIONS.userManage },
+      { title: "Peran & Hak Akses", href: routes.settings.roles, icon: ShieldCheckIcon, permission: PERMISSIONS.roleManage },
+      { title: "Pengaturan Aplikasi", href: routes.settings.app, icon: SettingsIcon, permission: PERMISSIONS.settingsManage },
+    ],
   },
 ];
 

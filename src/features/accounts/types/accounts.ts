@@ -19,6 +19,8 @@ export type NewAccount = {
   email: string;
   roleCode: string;
   temporaryPassword: string;
+  /** Links the account to an employee record (required when HR creates the account). */
+  employeeId?: string;
 };
 
 export type AccountUpdate = {

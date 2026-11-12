@@ -12,6 +12,9 @@ File SQL ada di `supabase/`:
 | `migrations/20261102000006_announcements_reports_storage.sql` | Pengumuman, rekap pegawai per unit, bucket Storage |
 | `migrations/20261103000001_restrict_function_execute.sql` | Membatasi fungsi yang bisa dipanggil lewat API: `anon` tidak bisa memanggil fungsi apa pun; pengguna login hanya bisa memanggil RPC aplikasi dan helper RLS |
 | `migrations/20261104000001_account_management.sql` | `list_user_accounts()` (daftar akun + email untuk superadmin) dan pengaman agar akun tidak bisa menonaktifkan/mengubah peran dirinya sendiri |
+| `migrations/20261112000001_employee_account_lookup.sql` | `get_employee_account(employee_id)`: HR melihat apakah pegawai sudah punya akun login (email, status, login terakhir) |
+| `migrations/20261112000002_migrate_legacy_pegawai.sql` | Sekali jalan: memindahkan isi tabel lama `pegawai` ke `employees` dan mengaktifkan RLS di tabel lama |
+| `migrations/20261112000003_employee_document_limits.sql` | Bucket `employee-documents`: maks. 5 MB per file, hanya PDF/JPG/PNG (dipaksa oleh Storage) |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -70,7 +73,7 @@ psql "<connection string>" -f supabase/seed.sql
 
 | Function | Dipakai untuk |
 |---|---|
-| `admin-create-user` (`supabase/functions/admin-create-user`) | Superadmin membuat akun baru: membuat user di Supabase Auth (langsung terkonfirmasi) dan baris `user_accounts` dengan peran yang dipilih, lalu mencatat audit log. Hanya akun dengan izin `user.manage` yang bisa memanggilnya |
+| `admin-create-user` (`supabase/functions/admin-create-user`) | Membuat akun baru: user di Supabase Auth (langsung terkonfirmasi) + baris `user_accounts`, lalu mencatat audit log. **Superadmin** (`user.manage`): peran apa pun. **HR** (`employee.manage`): hanya peran Pegawai, wajib terhubung ke data pegawai yang belum punya akun |
 
 Function memakai secret key bawaan Supabase (tidak pernah dikirim ke browser) dan di-deploy dengan
 `verify_jwt = false`, karena sesi pemanggil diverifikasi di dalam kode. Deploy ulang setelah mengubah kodenya:
@@ -201,7 +204,7 @@ di `audit_logs` lewat trigger.
 ## Pengujian
 
 Skema sudah diuji dengan PGlite (Postgres di Node) memakai stub `auth` & `storage`:
-seluruh migrasi + seed berjalan, dan 58 skenario lolos (termasuk hak eksekusi fungsi untuk `anon` dan pengguna login). Skenario mencakup: visibilitas per peran
+seluruh migrasi + seed berjalan, dan 77 skenario lolos (termasuk hak eksekusi fungsi untuk `anon` dan pengguna login). Skenario mencakup: visibilitas per peran
 (pimpinan hanya statistik; cakupan Ketua, Wakil Ketua bidang, dan LPM), cuti diajukan → HR setuju → kuota & notifikasi, presensi GPS di titik kampus
 (65 m diterima, 150 m ditolak, presensi ganda ditolak, terlambat, pulang awal tendik, pulang bebas dosen), koreksi HR, penilaian kinerja oleh HR, diklat → riwayat,
 mutasi, dan akses file Storage. Tetap jalankan di project Supabase uji coba sebelum dipakai.

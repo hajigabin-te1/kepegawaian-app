@@ -34,7 +34,7 @@ export function WorkUnitsPanel() {
       <PageHeader
         title="Unit Kerja"
         description="Bidang, program studi, bagian, dan unit lain tempat pegawai bertugas."
-        breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Master Data" }, { label: "Unit Kerja" }]}
+        breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Organisasi" }, { label: "Unit Kerja" }]}
         actions={
           <Button onClick={() => openDialog(null)}>
             <PlusIcon />

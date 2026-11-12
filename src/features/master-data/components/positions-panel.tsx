@@ -33,7 +33,7 @@ export function PositionsPanel() {
       <PageHeader
         title="Jabatan"
         description="Daftar jabatan yang dapat diberikan kepada dosen dan tenaga kependidikan."
-        breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Master Data" }, { label: "Jabatan" }]}
+        breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Organisasi" }, { label: "Jabatan" }]}
         actions={
           <Button onClick={() => openDialog(null)}>
             <PlusIcon />
