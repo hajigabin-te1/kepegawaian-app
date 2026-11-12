@@ -17,6 +17,13 @@ export const routes = {
     requests: "/leave/requests",
     holidays: "/leave/holidays",
   },
+  performance: {
+    me: "/performance",
+    periods: "/performance/periods",
+    forms: "/performance/forms",
+    form: (id: string) => `/performance/forms/${encodeURIComponent(id)}`,
+    recap: "/performance/recap",
+  },
   masterData: {
     workUnits: "/master/work-units",
     positions: "/master/positions",

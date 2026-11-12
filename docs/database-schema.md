@@ -15,6 +15,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261112000001_link_account_employee.sql` | `list_linkable_employees()`: superadmin memilih pegawai untuk dihubungkan ke akun tanpa izin `employee.view` (hanya id, nama, NIP pegawai aktif yang belum punya akun) |
 | `migrations/20261112000002_profile_change_requests.sql` | `submit_profile_change_request()` (pegawai mengajukan perbaikan data pribadi, kolom divalidasi) dan `decide_profile_change_request()` (HR setuju/tolak; setuju langsung memperbarui `employees`). Kebijakan insert/update langsung pada `profile_change_requests` dihapus |
 | `migrations/20261112000003_leave_rules.sql` | Aturan cuti: tabel `public_holidays`, kolom `counts_toward_quota` / `female_only` / `max_months` pada `leave_types`, jenis `long_sick`, pengaturan `annual_leave_quota`, fungsi `count_leave_days`, `get_leave_balance`, `submit_leave_request`, `cancel_leave_request`; `decide_leave_request` tidak lagi menulis `leave_balances` |
+| `migrations/20261112000004_appraisal_rules.sql` | Alur penilaian lewat RPC: `save_appraisal`, `submit_appraisal`, `review_appraisal` (diganti), `generate_appraisals` (hanya periode aktif), `compute_appraisal_score` (rumus sementara = rata-rata), pengaturan `appraisal_max_score`. HR hanya bisa membaca langsung; kebijakan tulis pada `appraisals` dan `appraisal_items` dihapus |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -156,7 +157,9 @@ Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan 
 | `cancel_leave_request(id)` | Pegawai membatalkan pengajuannya yang masih menunggu |
 | `get_leave_balance(employee, year)` | Kuota, terpakai, menunggu, dan sisa. Dihitung dari pengajuan; baris `leave_balances` jenis `annual` hanya menimpa kuota pegawai tertentu |
 | `decide_leave_request(id, approve, note)` | HR setuju/tolak cuti (alasan wajib jika ditolak); notifikasi ke pegawai |
-| `generate_appraisals(period_id)` | HR membuat form penilaian untuk semua pegawai aktif |
+| `generate_appraisals(period_id)` | HR membuat form penilaian untuk semua pegawai aktif (periode harus aktif) |
+| `save_appraisal(id, note, items)` | HR menyimpan indikator dan catatan selama form berstatus draf/perlu revisi; nilai divalidasi terhadap skala |
+| `submit_appraisal(id)` | HR mengirim form untuk verifikasi (semua indikator harus bernilai); nilai akhir dihitung ulang |
 | `review_appraisal(id, accept, note)` | HR memverifikasi atau mengembalikan penilaian untuk diperbaiki |
 | `decide_training_registration(id, approve, note)` | HR setuju/tolak pendaftaran diklat |
 | `execute_mutation(id)` | HR menjalankan mutasi yang disetujui (unit/jabatan + riwayat) |

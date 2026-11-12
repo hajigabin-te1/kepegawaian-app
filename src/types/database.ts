@@ -1878,6 +1878,11 @@ export type Database = {
         Args: { lat: number; lon: number }
         Returns: string
       }
+      save_appraisal: {
+        Args: { items: Json; new_note: string; target_appraisal_id: string }
+        Returns: undefined
+      }
+      submit_appraisal: { Args: { target_appraisal_id: string }; Returns: undefined }
       generate_appraisals: {
         Args: { target_period_id: string }
         Returns: number

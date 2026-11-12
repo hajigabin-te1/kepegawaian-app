@@ -5,6 +5,10 @@ import {
   CalendarDaysIcon,
   CalendarHeartIcon,
   CalendarOffIcon,
+  ClipboardCheckIcon,
+  ClipboardPenLineIcon,
+  GaugeIcon,
+  CalendarRangeIcon,
   ClipboardListIcon,
   LayoutDashboardIcon,
   FilePenLineIcon,
@@ -60,6 +64,15 @@ export const mainNavigation: NavGroup[] = [
       { title: "Cuti Saya", href: routes.leave.me, icon: CalendarHeartIcon },
       { title: "Pengajuan Cuti", href: routes.leave.requests, icon: CalendarDaysIcon, permission: PERMISSIONS.leaveView },
       { title: "Hari Libur", href: routes.leave.holidays, icon: CalendarOffIcon, permission: PERMISSIONS.leaveManage },
+    ],
+  },
+  {
+    title: "Penilaian Kinerja",
+    items: [
+      { title: "Penilaian Saya", href: routes.performance.me, icon: ClipboardCheckIcon },
+      { title: "Form Penilaian", href: routes.performance.forms, icon: ClipboardPenLineIcon, permission: PERMISSIONS.appraisalManage },
+      { title: "Periode Penilaian", href: routes.performance.periods, icon: CalendarRangeIcon, permission: PERMISSIONS.appraisalManage },
+      { title: "Rekap Nilai", href: routes.performance.recap, icon: GaugeIcon, permission: PERMISSIONS.appraisalManage },
     ],
   },
   {
