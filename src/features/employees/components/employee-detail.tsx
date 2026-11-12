@@ -11,8 +11,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { routes } from "@/config/routes";
 import { DeactivateDialog } from "@/features/employees/components/deactivate-dialog";
+import { DocumentsPanel } from "@/features/employees/components/documents-panel";
+import { HistoryPanel } from "@/features/employees/components/history-panel";
 import { EmployeeStatusBadge } from "@/features/employees/components/employee-status-badge";
 import { useEmployee, useEmploymentStatuses, useSetEmployeeActive } from "@/features/employees/hooks/use-employees";
 import { CATEGORY_LABELS, GENDER_LABELS, MARITAL_LABELS } from "@/features/employees/types/employees";
@@ -124,32 +127,47 @@ export function EmployeeDetail({ id, canManage }: { id: string; canManage: boole
         <p className="rounded-lg border bg-muted px-4 py-3 text-sm">Alasan nonaktif: {data.deactivationReason}</p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Group title="Data pokok">
-          <Info label="NIK" value={data.nationalIdNumber} />
-          <Info label="NIP" value={data.employeeNumber} />
-          <Info label="NIDN" value={data.lecturerNumber} />
-          <Info label="Jenis kelamin" value={data.gender ? GENDER_LABELS[data.gender] : null} />
-          <Info label="Tempat, tanggal lahir" value={[data.birthPlace, formatDate(data.birthDate)].filter(Boolean).join(", ")} />
-          <Info label="Agama" value={data.religion} />
-          <Info label="Status pernikahan" value={data.maritalStatus ? MARITAL_LABELS[data.maritalStatus] : null} />
-        </Group>
-        <Group title="Kontak dan alamat">
-          <Info label="No. HP" value={data.phone} />
-          <Info label="Email" value={data.email} />
-          <div className="sm:col-span-2">
-            <Info label="Alamat" value={address} />
-          </div>
-        </Group>
-        <Group title="Data kepegawaian">
-          <Info label="Status kepegawaian" value={employmentStatus ? employmentStatus.name : data.employmentStatusCode} />
-          <Info label="Tanggal pengangkatan" value={formatDate(data.appointmentDate)} />
-          <Info label="Unit kerja" value={data.workUnitName} />
-          <Info label="Jabatan" value={data.positionName} />
-          <Info label="Pangkat/golongan" value={data.rankGrade} />
-          <Info label="Masa kerja" value={service} />
-        </Group>
-      </div>
+      <Tabs defaultValue="profile">
+        <TabsList>
+          <TabsTrigger value="profile">Profil</TabsTrigger>
+          <TabsTrigger value="history">Riwayat</TabsTrigger>
+          <TabsTrigger value="documents">Dokumen</TabsTrigger>
+        </TabsList>
+        <TabsContent value="profile" className="pt-2">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Group title="Data pokok">
+            <Info label="NIK" value={data.nationalIdNumber} />
+            <Info label="NIP" value={data.employeeNumber} />
+            <Info label="NIDN" value={data.lecturerNumber} />
+            <Info label="Jenis kelamin" value={data.gender ? GENDER_LABELS[data.gender] : null} />
+            <Info label="Tempat, tanggal lahir" value={[data.birthPlace, formatDate(data.birthDate)].filter(Boolean).join(", ")} />
+            <Info label="Agama" value={data.religion} />
+            <Info label="Status pernikahan" value={data.maritalStatus ? MARITAL_LABELS[data.maritalStatus] : null} />
+          </Group>
+          <Group title="Kontak dan alamat">
+            <Info label="No. HP" value={data.phone} />
+            <Info label="Email" value={data.email} />
+            <div className="sm:col-span-2">
+              <Info label="Alamat" value={address} />
+            </div>
+          </Group>
+          <Group title="Data kepegawaian">
+            <Info label="Status kepegawaian" value={employmentStatus ? employmentStatus.name : data.employmentStatusCode} />
+            <Info label="Tanggal pengangkatan" value={formatDate(data.appointmentDate)} />
+            <Info label="Unit kerja" value={data.workUnitName} />
+            <Info label="Jabatan" value={data.positionName} />
+            <Info label="Pangkat/golongan" value={data.rankGrade} />
+            <Info label="Masa kerja" value={service} />
+          </Group>
+        </div>
+        </TabsContent>
+        <TabsContent value="history" className="pt-2">
+          <HistoryPanel employeeId={id} canManage={canManage} />
+        </TabsContent>
+        <TabsContent value="documents" className="pt-2">
+          <DocumentsPanel employeeId={id} canManage={canManage} />
+        </TabsContent>
+      </Tabs>
 
       <DeactivateDialog employeeId={id} employeeName={data.fullName} open={deactivating} onOpenChange={setDeactivating} />
     </>
