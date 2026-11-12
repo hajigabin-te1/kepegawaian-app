@@ -3,6 +3,8 @@ import { routes } from "@/config/routes";
 /** Permission codes from public.permissions that the frontend checks. */
 export const PERMISSIONS = {
   userManage: "user.manage",
+  roleManage: "role.manage",
+  settingsManage: "settings.manage",
   masterManage: "master.manage",
   employeeView: "employee.view",
   employeeManage: "employee.manage",
@@ -26,6 +28,8 @@ const ROUTE_RULES: RouteRule[] = [
   { matches: startsWith("/histories"), permission: PERMISSIONS.employeeView },
   { matches: startsWith(routes.documents), permission: PERMISSIONS.employeeView },
   { matches: startsWith("/master"), permission: PERMISSIONS.masterManage },
+  { matches: startsWith(routes.settings.roles), permission: PERMISSIONS.roleManage },
+  { matches: startsWith(routes.settings.app), permission: PERMISSIONS.settingsManage },
   { matches: startsWith(routes.accounts), permission: PERMISSIONS.userManage },
 ];
 

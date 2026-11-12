@@ -5,6 +5,9 @@ import {
   GraduationCapIcon,
   HistoryIcon,
   LayoutDashboardIcon,
+  NetworkIcon,
+  SettingsIcon,
+  ShieldCheckIcon,
   UserCogIcon,
   UsersIcon,
   type LucideIcon,
@@ -44,6 +47,7 @@ export const mainNavigation: NavGroup[] = [
     items: [
       { title: "Unit Kerja", href: routes.masterData.workUnits, icon: Building2Icon, permission: PERMISSIONS.masterManage },
       { title: "Jabatan", href: routes.masterData.positions, icon: BriefcaseIcon, permission: PERMISSIONS.masterManage },
+      { title: "Struktur Organisasi", href: routes.masterData.organization, icon: NetworkIcon, permission: PERMISSIONS.masterManage },
     ],
   },
   {
@@ -52,7 +56,11 @@ export const mainNavigation: NavGroup[] = [
   },
   {
     title: "Pengaturan",
-    items: [{ title: "Pengguna", href: routes.accounts, icon: UserCogIcon, permission: PERMISSIONS.userManage }],
+    items: [
+      { title: "Pengguna", href: routes.accounts, icon: UserCogIcon, permission: PERMISSIONS.userManage },
+      { title: "Peran & Hak Akses", href: routes.settings.roles, icon: ShieldCheckIcon, permission: PERMISSIONS.roleManage },
+      { title: "Pengaturan Aplikasi", href: routes.settings.app, icon: SettingsIcon, permission: PERMISSIONS.settingsManage },
+    ],
   },
 ];
 
