@@ -749,6 +749,24 @@ export type Database = {
           },
         ]
       }
+      public_holidays: {
+        Row: {
+          created_at: string
+          holiday_date: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          holiday_date: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          holiday_date?: string
+          name?: string
+        }
+        Relationships: []
+      }
       leave_requests: {
         Row: {
           created_at: string
@@ -819,10 +837,13 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["leave_category"]
           code: string
+          counts_toward_quota: boolean
           created_at: string
           default_annual_quota: number | null
+          female_only: boolean
           id: string
           is_active: boolean
+          max_months: number | null
           name: string
           requires_document: boolean
           updated_at: string
@@ -830,10 +851,13 @@ export type Database = {
         Insert: {
           category: Database["public"]["Enums"]["leave_category"]
           code: string
+          counts_toward_quota?: boolean
           created_at?: string
           default_annual_quota?: number | null
+          female_only?: boolean
           id?: string
           is_active?: boolean
+          max_months?: number | null
           name: string
           requires_document?: boolean
           updated_at?: string
@@ -841,10 +865,13 @@ export type Database = {
         Update: {
           category?: Database["public"]["Enums"]["leave_category"]
           code?: string
+          counts_toward_quota?: boolean
           created_at?: string
           default_annual_quota?: number | null
+          female_only?: boolean
           id?: string
           is_active?: boolean
+          max_months?: number | null
           name?: string
           requires_document?: boolean
           updated_at?: string
@@ -1814,6 +1841,26 @@ export type Database = {
         Returns: undefined
       }
       current_employee_id: { Args: never; Returns: string }
+      get_leave_balance: {
+        Args: { target_employee_id: string; target_year: number }
+        Returns: {
+          pending: number
+          quota: number
+          remaining: number
+          used: number
+        }[]
+      }
+      submit_leave_request: {
+        Args: {
+          attachment_path?: string
+          request_end: string
+          request_reason: string
+          request_start: string
+          request_type_id: string
+        }
+        Returns: string
+      }
+      cancel_leave_request: { Args: { request_id: string }; Returns: undefined }
       decide_leave_request: {
         Args: { approve: boolean; note?: string; request_id: string }
         Returns: undefined
@@ -1827,13 +1874,43 @@ export type Database = {
         Returns: number
       }
       execute_mutation: { Args: { mutation_id: string }; Returns: undefined }
+      execute_promotion: { Args: { promotion_id: string }; Returns: undefined }
+      decide_mutation: {
+        Args: { approve: boolean; decree?: string; mutation_id: string; note?: string }
+        Returns: undefined
+      }
+      decide_promotion: {
+        Args: { approve: boolean; decree?: string; note?: string; promotion_id: string }
+        Returns: undefined
+      }
+      set_training_outcome: {
+        Args: {
+          new_status: Database["public"]["Enums"]["training_registration_status"]
+          note?: string
+          registration_id: string
+        }
+        Returns: undefined
+      }
       find_attendance_location: {
         Args: { lat: number; lon: number }
         Returns: string
       }
+      save_appraisal: {
+        Args: { items: Json; new_note: string; target_appraisal_id: string }
+        Returns: undefined
+      }
+      submit_appraisal: { Args: { target_appraisal_id: string }; Returns: undefined }
       generate_appraisals: {
         Args: { target_period_id: string }
         Returns: number
+      }
+      submit_profile_change_request: {
+        Args: { changes: Json; request_reason: string }
+        Returns: string
+      }
+      decide_profile_change_request: {
+        Args: { approve: boolean; note?: string; request_id: string }
+        Returns: undefined
       }
       get_employee_account: {
         Args: { target_employee_id: string }
@@ -1846,6 +1923,14 @@ export type Database = {
       }
       has_permission: { Args: { permission_code: string }; Returns: boolean }
       has_report_access: { Args: { report_name: string }; Returns: boolean }
+      list_linkable_employees: {
+        Args: { for_account_id?: string }
+        Returns: {
+          employee_number: string
+          full_name: string
+          id: string
+        }[]
+      }
       list_user_accounts: {
         Args: never
         Returns: {

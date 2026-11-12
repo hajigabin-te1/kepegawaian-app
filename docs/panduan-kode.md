@@ -21,9 +21,9 @@ Tidak ada API route atau backend lain yang dibuat di repo ini.
 | Kelola akun pengguna | **Sudah jalan** (buat, ubah peran, aktif/nonaktif) |
 | Master data (unit kerja, jabatan) | **Sudah jalan** (daftar, tambah, ubah) |
 | Ganti password | **Sudah jalan** |
-| Dashboard | **Statistik asli** dari `report_employee_statistics()` (HR & pimpinan); akun lain melihat panel sambutan |
+| Dashboard | Statistik agregat untuk HR dan pimpinan (tab Pegawai, Presensi, Cuti, Kinerja); akun lain melihat beranda |
 | Data pegawai (daftar, tambah, detail, ubah, nonaktifkan, buat akun) | **Sudah jalan** (HR, `employee.view` / `employee.manage`) |
-| Modul lain (presensi, cuti, kinerja, diklat, mutasi) | Skema SQL sudah ada, UI belum |
+| Presensi, cuti, kinerja, diklat, mutasi, kenaikan pangkat, pengumuman, perbaikan data | **Kode selesai** (belum diuji end-to-end di Supabase) |
 
 Skema database ada di `supabase/migrations` dan dijelaskan di `docs/database-schema.md`.
 Kebutuhan dan rencana fase ada di `docs/requirements.md`.
@@ -68,7 +68,7 @@ src/
     globals.css                  Token warna 60-30-10 (#F8F8FF, #191970, #87CEFA)
     (auth)/login/                Halaman login
     (dashboard)/layout.tsx       Shell setelah login: ambil user → sidebar + header
-    (dashboard)/dashboard/       Dashboard (data contoh) + loading.tsx
+    (dashboard)/dashboard/       Dashboard (statistik atau beranda, sesuai izin) + loading.tsx
     (dashboard)/employees/       Data pegawai (placeholder)
     (dashboard)/master/          Unit kerja dan jabatan (memakai requirePermission)
     (dashboard)/accounts/        Kelola akun pengguna (requirePermission)
@@ -96,8 +96,9 @@ src/
       components/                WorkUnitsPanel, PositionsPanel, form dialog masing-masing
       schemas/, types/           Validasi dan bentuk data master
     dashboard/
-      data/mock-dashboard.ts     Data contoh dashboard (akan diganti data asli)
-      components/                KpiStrip, RecentEmployeesCard, PendingDocumentsCard
+      services/dashboard-service.ts  Memanggil fungsi report_* (agregat) dan menghitung antrean HR
+      hooks/use-dashboard.ts     TanStack Query untuk statistik, cakupan, dan antrean
+      components/                StatisticsDashboard (tab Pegawai/Presensi/Cuti/Kinerja), WelcomePanel, PendingActionsCard
     employees/                   Disiapkan untuk CRUD pegawai (saat ini hanya query key)
   lib/
     supabase/client.ts           Supabase untuk browser (createSupabaseBrowserClient)
@@ -300,12 +301,13 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
 
 ## 10. Dashboard
 
-`src/app/(dashboard)/dashboard/page.tsx`:
+`src/app/(dashboard)/dashboard/page.tsx` memilih tampilan dari izin `report.view`:
 
-- **HR dan pimpinan** (`employee.view` atau `report.view`): `EmployeeStatistics`, berisi 4 angka (pegawai aktif,
-  dosen aktif, tendik aktif, nonaktif & pensiun) dan tabel sebaran per unit kerja dari `report_employee_statistics()`.
-  Cakupan pimpinan mengikuti `report_scopes`. HR juga melihat **Pegawai terbaru** (5 data terakhir).
-- **Akun lain** (superadmin, pegawai): `WelcomePanel` sampai modul mereka dibuat.
+1. **Punya `report.view`** (HR, Ketua, Wakil Ketua, LPM): `StatisticsDashboard`, yaitu statistik **agregat** dosen dan
+   tenaga kependidikan dalam empat tab: Pegawai (`EmployeeStatistics`, HR juga melihat pegawai terbaru), Presensi (per bulan), Cuti (per tahun), Kinerja (per periode).
+   Data berasal dari fungsi `report_*` yang membatasi hasil sesuai `report_scopes`; tidak ada data per pegawai.
+   Tabel presensi, cuti, dan kinerja bisa diunduh sebagai CSV. HR juga melihat kartu **Perlu tindakan** (antrean cuti, perbaikan data, verifikasi nilai).
+2. **Lainnya** (pegawai, Superadmin): `WelcomePanel` berisi presensi hari ini (jika akun terhubung ke pegawai) dan pintasan menu.
 
 `loading.tsx` adalah skeleton yang tampil selama halaman disiapkan.
 
@@ -395,6 +397,12 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 ### Dashboard
 | Nama | Arti |
 |---|---|
+| `report.view` | Izin yang menampilkan dashboard statistik |
+| `ScopeInfo` | Cakupan pimpinan dari `report_scopes` (label unit/kategori) |
+| `EmployeeStatRow` | Jumlah pegawai per unit dan kategori (aktif, nonaktif, pensiun) |
+| `PendingCounts` | Jumlah antrean untuk HR (cuti, perbaikan data, nilai) |
+
+---|---|
 | `mockDashboardStats` / `stats` | Angka ringkasan contoh |
 | `mockRecentEmployees` | Daftar pegawai terbaru (contoh) |
 | `mockPendingDocuments` | Dokumen menunggu verifikasi (contoh) |
@@ -410,7 +418,7 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 
 - **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` dan isi `NEXT_PUBLIC_SUPABASE_URL` serta `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Next.js tidak membaca `.env.example`.
 - **Database harus aktif:** project Supabase harus berstatus aktif, dan migrasi serta seed sudah terpasang (langkah di `docs/database-schema.md`).
-- **Halaman admin (Tahap 1–3) selesai.** Berikutnya: Presensi web GPS (fase 3 di `docs/requirements.md`).
+- **Semua fase kode (1–7) selesai.** Berikutnya: uji alur per peran di Supabase, lalu fitur tambahan (lihat `docs/requirements.md` bagian 7).
 - **Pencarian dan notifikasi** baru tampilan saja.
 - **`lib/axios.ts` dan `stores/auth-store.ts`** disiapkan untuk API pihak ketiga (Keuangan, SIAKAD). Belum dipakai. Jangan dipakai untuk Supabase.
 - **Dokumen lama:** `docs/architecture.md` dan `docs/api-contract.md` masih menjelaskan arsitektur API eksternal. Perlu diperbarui.

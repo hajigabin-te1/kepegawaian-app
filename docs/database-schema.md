@@ -15,6 +15,11 @@ File SQL ada di `supabase/`:
 | `migrations/20261112000001_employee_account_lookup.sql` | `get_employee_account(employee_id)`: HR melihat apakah pegawai sudah punya akun login (email, status, login terakhir) |
 | `migrations/20261112000002_migrate_legacy_pegawai.sql` | Sekali jalan: memindahkan isi tabel lama `pegawai` ke `employees` dan mengaktifkan RLS di tabel lama |
 | `migrations/20261112000003_employee_document_limits.sql` | Bucket `employee-documents`: maks. 5 MB per file, hanya PDF/JPG/PNG (dipaksa oleh Storage) |
+| `migrations/20261112202816_link_account_employee.sql` | `list_linkable_employees()`: superadmin memilih pegawai untuk dihubungkan ke akun tanpa izin `employee.view` (hanya id, nama, NIP pegawai aktif yang belum punya akun) |
+| `migrations/20261112202834_profile_change_requests.sql` | `submit_profile_change_request()` (pegawai mengajukan perbaikan data pribadi, kolom divalidasi) dan `decide_profile_change_request()` (HR setuju/tolak; setuju langsung memperbarui `employees`). Kebijakan insert/update langsung pada `profile_change_requests` dihapus |
+| `migrations/20261112202905_leave_rules.sql` | Aturan cuti: tabel `public_holidays`, kolom `counts_toward_quota` / `female_only` / `max_months` pada `leave_types`, jenis `long_sick`, pengaturan `annual_leave_quota`, fungsi `count_leave_days`, `get_leave_balance`, `submit_leave_request`, `cancel_leave_request`; `decide_leave_request` tidak lagi menulis `leave_balances` |
+| `migrations/20261112202941_appraisal_rules.sql` | Alur penilaian lewat RPC: `save_appraisal`, `submit_appraisal`, `review_appraisal` (diganti), `generate_appraisals` (hanya periode aktif), `compute_appraisal_score` (rumus sementara = rata-rata), pengaturan `appraisal_max_score`. HR hanya bisa membaca langsung; kebijakan tulis pada `appraisals` dan `appraisal_items` dihapus |
+| `migrations/20261112202953_training_mutation_promotion_rules.sql` | Alur Fase 7 lewat RPC: `set_training_outcome`, `decide_mutation`, `decide_promotion`, `execute_promotion`; trigger pengisi data "saat ini" pada usulan dan waktu terbit pengumuman. Kebijakan tulis langsung HR pada `mutations`, `promotion_proposals`, `training_registrations` dihapus (usulan tetap bisa dibuat) |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -74,12 +79,14 @@ psql "<connection string>" -f supabase/seed.sql
 | Function | Dipakai untuk |
 |---|---|
 | `admin-create-user` (`supabase/functions/admin-create-user`) | Membuat akun baru: user di Supabase Auth (langsung terkonfirmasi) + baris `user_accounts`, lalu mencatat audit log. **Superadmin** (`user.manage`): peran apa pun. **HR** (`employee.manage`): hanya peran Pegawai, wajib terhubung ke data pegawai yang belum punya akun |
+| `admin-delete-user` (`supabase/functions/admin-delete-user`) | Superadmin menghapus akun: menghapus user di Supabase Auth (baris `user_accounts` ikut terhapus). Ditolak untuk akun sendiri dan superadmin terakhir. Data pegawai tidak dihapus; kolom pelaku di riwayat/persetujuan menjadi kosong lewat `on delete set null`. Dicatat di audit log |
 
 Function memakai secret key bawaan Supabase (tidak pernah dikirim ke browser) dan di-deploy dengan
 `verify_jwt = false`, karena sesi pemanggil diverifikasi di dalam kode. Deploy ulang setelah mengubah kodenya:
 
 ```bash
 npx supabase functions deploy admin-create-user
+npx supabase functions deploy admin-delete-user
 ```
 
 Karena akun dibuat oleh superadmin, pendaftaran publik sebaiknya dimatikan:
@@ -149,8 +156,18 @@ Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan 
 
 | Fungsi | Dipakai untuk |
 |---|---|
-| `decide_leave_request(id, approve, note)` | HR setuju/tolak cuti (alasan wajib jika ditolak); kuota otomatis terpakai; notifikasi ke pegawai |
-| `generate_appraisals(period_id)` | HR membuat form penilaian untuk semua pegawai aktif |
+| `decide_profile_change_request(id, approve, note)` | HR setuju/tolak perbaikan data pegawai (alasan wajib jika ditolak); jika disetujui, data pegawai diperbarui. Kolom yang boleh diajukan: nama, NIK, tempat/tanggal lahir, jenis kelamin, agama, status pernikahan, alamat, kota, provinsi, kode pos, no. HP, email |
+| `submit_leave_request(type, start, end, reason, attachment)` | Pegawai mengajukan cuti/izin. Server menghitung hari (tanpa Minggu dan tanggal merah), menolak jika bertabrakan, melebihi sisa kuota, jenis khusus perempuan untuk non-perempuan, atau melebihi 3 bulan (cuti melahirkan) |
+| `cancel_leave_request(id)` | Pegawai membatalkan pengajuannya yang masih menunggu |
+| `get_leave_balance(employee, year)` | Kuota, terpakai, menunggu, dan sisa. Dihitung dari pengajuan; baris `leave_balances` jenis `annual` hanya menimpa kuota pegawai tertentu |
+| `decide_training_registration(id, approve, note)` | HR setuju/tolak pendaftaran diklat |
+| `set_training_outcome(id, status, note)` | HR menetapkan peserta/tidak terpilih (kuota dicek), lalu mencatat selesai; selesai masuk riwayat pelatihan |
+| `decide_mutation(id, approve, note, decree)` / `execute_mutation(id)` | HR setuju/tolak lalu menjalankan mutasi (unit, jabatan, riwayat jabatan) |
+| `decide_promotion(id, approve, note, decree)` / `execute_promotion(id)` | HR setuju/tolak lalu menjalankan kenaikan pangkat/jabatan (data pegawai dan riwayat) |
+| `decide_leave_request(id, approve, note)` | HR setuju/tolak cuti (alasan wajib jika ditolak); notifikasi ke pegawai |
+| `generate_appraisals(period_id)` | HR membuat form penilaian untuk semua pegawai aktif (periode harus aktif) |
+| `save_appraisal(id, note, items)` | HR menyimpan indikator dan catatan selama form berstatus draf/perlu revisi; nilai divalidasi terhadap skala |
+| `submit_appraisal(id)` | HR mengirim form untuk verifikasi (semua indikator harus bernilai); nilai akhir dihitung ulang |
 | `review_appraisal(id, accept, note)` | HR memverifikasi atau mengembalikan penilaian untuk diperbaiki |
 | `decide_training_registration(id, approve, note)` | HR setuju/tolak pendaftaran diklat |
 | `execute_mutation(id)` | HR menjalankan mutasi yang disetujui (unit/jabatan + riwayat) |
@@ -168,7 +185,8 @@ HR otomatis melihat seluruh kampus.
 | `report_leave_by_unit(year)` | Cuti/izin disetujui & menunggu per unit, kategori, jenis |
 | `report_appraisal_by_unit(period_id)` | Rata-rata, terendah, tertinggi nilai kinerja per unit & kategori |
 
-**Mengatur cakupan (`report_scopes`)** — satu baris per cakupan, satu akun boleh punya beberapa:
+**Mengatur cakupan (`report_scopes`)** — satu baris per cakupan, satu akun boleh punya beberapa.
+Superadmin mengaturnya di menu **Akun Pengguna** (ikon grafik pada akun Ketua, Wakil Ketua, atau LPM): pilih unit kerja (atau seluruh kampus), kategori (dosen, tendik, atau keduanya), dan laporan yang boleh dilihat. SQL di bawah tetap bisa dipakai:
 
 | Kolom | Arti |
 |---|---|

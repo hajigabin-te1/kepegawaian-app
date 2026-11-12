@@ -79,12 +79,12 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 |---|---|---|
 | 0 | Setup Supabase: jalankan migrasi + seed, buat akun superadmin | semua |
 | 1 | ✅ Login Supabase Auth (ganti mock), ✅ RBAC di proxy & menu, ✅ kelola akun superadmin (buat akun lewat Edge Function `admin-create-user`, ubah peran & status), ✅ Peran & Hak Akses, ✅ Pengaturan Aplikasi (lokasi presensi, jam kerja) | `..._core`, `..._account_management` |
-| 2 | ✅ Master data (unit kerja, jabatan, struktur organisasi) · ✅ Data Pegawai (daftar, tambah, detail, ubah, nonaktifkan, akun login) · ✅ Riwayat Jabatan, Riwayat Pendidikan, Dokumen Pegawai (file privat, maks. 5 MB, PDF/JPG/PNG) · perbaikan data | `..._core`, `..._storage`, `..._employee_document_limits` |
-| 3 | Presensi web GPS (radius 100 m) + rekap + koreksi HR | `..._attendance` |
-| 4 | Cuti & Izin (pengajuan → persetujuan HR → kuota → rekap) | `..._leave` |
-| 5 | Penilaian Kinerja | `..._performance_appraisal` |
-| 6 | Dashboard statistik per jabatan (Ketua, Wakil Ketua, LPM) + laporan HR | fungsi `report_*` + `report_scopes` |
-| 7 | Diklat, Mutasi, Kenaikan Pangkat, Pengumuman | `..._training_mutation_promotion`, `..._announcements` |
+| 2 | ✅ Master data (unit kerja, jabatan, struktur organisasi) · ✅ Data Pegawai (daftar, tambah, detail, ubah, nonaktifkan, akun login) · ✅ Riwayat Jabatan, Riwayat Pendidikan, Dokumen Pegawai (file privat, maks. 5 MB, PDF/JPG/PNG) · ✅ perbaikan data (pegawai mengajukan di Profil Saya, HR menyetujui) | `..._core`, `..._storage`, `..._employee_document_limits` |
+| 3 | ✅ (kode selesai, belum diuji di Supabase) Presensi web GPS (radius 100 m) + rekap + koreksi HR | `..._attendance` |
+| 4 | ✅ (kode selesai, belum diuji di Supabase) Cuti & Izin (pengajuan → persetujuan HR → kuota → rekap) | `..._leave` |
+| 5 | ✅ (kode selesai, belum diuji di Supabase; rumus sementara) Penilaian Kinerja | `..._performance_appraisal` |
+| 6 | ✅ (kode selesai, belum diuji di Supabase) Dashboard statistik per jabatan (Ketua, Wakil Ketua, LPM) + laporan HR (CSV) | fungsi `report_*` + `report_scopes` |
+| 7 | ✅ (kode selesai, belum diuji di Supabase) Diklat, Mutasi, Kenaikan Pangkat, Pengumuman | `..._training_mutation_promotion`, `..._announcements` |
 | Nanti | Menu khusus LPM, pengiriman notifikasi email, integrasi presensi mengajar dosen, Keuangan, SIAKAD (BKD), SSO, backup/restore | — |
 
 ---
@@ -111,6 +111,13 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 12 Nov 2026 | Tabel lama `pegawai` | Datanya dipindahkan ke `employees` (kategori awal *Tendik*, dikoreksi HR bila perlu); tabel lama dihapus setelah dikonfirmasi |
 | 2 Nov 2026 | Hari tanpa presensi | **Dibiarkan kosong**; tidak dibuat catatan "tidak hadir" otomatis |
 | 2 Nov 2026 | Backend | Supabase |
+| 12 Nov 2026 | Kuota cuti | **12 hari kerja per tahun** untuk semua pegawai (parameter `app_settings.annual_leave_quota`). Semua jenis cuti kecuali dua pengecualian di bawah memakai kuota ini; izin tidak memakai kuota |
+| 12 Nov 2026 | Di luar kuota umum | **Cuti melahirkan** (hanya pegawai perempuan, maksimal 3 bulan per pengajuan) dan **sakit berkepanjangan** (beberapa minggu) tidak mengurangi kuota 12 hari |
+| 12 Nov 2026 | Hitungan hari cuti | **Hari Minggu dan tanggal merah tidak dihitung**; Sabtu dihitung. Tanggal merah diisi HR di menu Hari Libur |
+| 12 Nov 2026 | Rumus nilai kinerja (SEMENTARA) | Nilai akhir = **rata-rata nilai indikator**, skala **0–100** (`app_settings.appraisal_max_score`). Hanya asumsi agar alur bisa dipakai; rumus ada di satu fungsi `compute_appraisal_score()` dan akan diganti setelah Kepala Bagian Kepegawaian menjawab |
+| 12 Nov 2026 | Alur diklat | Pendaftar menunggu → HR setuju/tolak → HR tetapkan peserta (maksimal sebesar kuota, jika ada) atau tidak terpilih → HR catat selesai, yang otomatis masuk riwayat pelatihan pegawai. Lampiran sertifikat belum ada antarmukanya |
+| 12 Nov 2026 | Mutasi & kenaikan pangkat | HR mengusulkan → HR setuju/tolak → HR menjalankan. Menjalankan memperbarui data pegawai dan riwayat jabatan/pangkat. Nomor SK diisi saat persetujuan (opsional) |
+| 12 Nov 2026 | Kuota terlampaui | Pengajuan yang melebihi sisa kuota **ditolak sistem** saat diajukan (asumsi, belum dikonfirmasi) |
 
 ## 7. Pertanyaan yang masih terbuka
 
@@ -121,8 +128,7 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 
 **Menunggu konfirmasi Kepala Bagian Kepegawaian**
 
-2. Kuota tiap jenis cuti per tahun, dan apakah kuota boleh terlampaui.
-3. Cara menghitung hari cuti (hari kerja atau hari kalender, libur nasional).
-4. Rumus nilai kinerja dan skala nilai.
+2. ~~Kuota cuti~~ dan ~~cara menghitung hari~~: dijawab 12 Nov 2026 (lihat bagian 6). Masih perlu dikonfirmasi: apakah **cuti besar** dan **cuti alasan penting** ikut kuota 12 hari (saat ini ikut), dan apakah kuota boleh terlampaui (saat ini ditolak).
+4. Rumus nilai kinerja dan skala nilai. *(Sementara: rata-rata indikator, skala 0–100; lihat bagian 6.)*
 5. Kepanjangan **TTU** dan **TTK**, serta daftar lengkap status kepegawaian ("dll.").
 6. "Neraca kebutuhan pegawai": data apa yang dibandingkan (formasi vs. jumlah pegawai)?

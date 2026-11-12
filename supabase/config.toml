@@ -424,3 +424,6 @@ enabled = true
 # Authorizes callers in code (publishable/secret keys are not JWTs).
 [functions.admin-create-user]
 verify_jwt = false
+
+[functions.admin-delete-user]
+verify_jwt = false

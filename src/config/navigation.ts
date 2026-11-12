@@ -1,14 +1,29 @@
 import {
-  Building2Icon,
+  ArrowRightLeftIcon,
+  BookOpenCheckIcon,
   BriefcaseIcon,
+  Building2Icon,
+  CalendarCheckIcon,
+  CalendarDaysIcon,
+  CalendarHeartIcon,
+  CalendarOffIcon,
+  CalendarRangeIcon,
+  ClipboardCheckIcon,
+  ClipboardListIcon,
+  ClipboardPenLineIcon,
+  FilePenLineIcon,
   FileTextIcon,
+  GaugeIcon,
   GraduationCapIcon,
   HistoryIcon,
   LayoutDashboardIcon,
+  MegaphoneIcon,
   NetworkIcon,
   SettingsIcon,
   ShieldCheckIcon,
+  TrendingUpIcon,
   UserCogIcon,
+  UserRoundIcon,
   UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -32,14 +47,52 @@ export type NavGroup = {
 export const mainNavigation: NavGroup[] = [
   {
     title: "Menu utama",
-    items: [{ title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon }],
+    items: [
+      { title: "Dashboard", href: routes.dashboard, icon: LayoutDashboardIcon },
+      { title: "Pengumuman", href: routes.announcements, icon: MegaphoneIcon },
+      { title: "Profil Saya", href: routes.profile.me, icon: UserRoundIcon },
+    ],
   },
   {
     title: "Kepegawaian",
     items: [
       { title: "Data Pegawai", href: routes.employees.list, icon: UsersIcon, permission: PERMISSIONS.employeeView },
+      { title: "Perbaikan Data", href: routes.employees.changeRequests, icon: FilePenLineIcon, permission: PERMISSIONS.employeeManage },
       { title: "Riwayat Jabatan", href: routes.histories.positions, icon: HistoryIcon, permission: PERMISSIONS.employeeView },
       { title: "Riwayat Pendidikan", href: routes.histories.education, icon: GraduationCapIcon, permission: PERMISSIONS.employeeView },
+    ],
+  },
+  {
+    title: "Presensi",
+    items: [
+      { title: "Presensi Saya", href: routes.attendance.me, icon: CalendarCheckIcon },
+      { title: "Rekap Presensi", href: routes.attendance.recap, icon: ClipboardListIcon, permission: PERMISSIONS.attendanceView },
+    ],
+  },
+  {
+    title: "Cuti & Izin",
+    items: [
+      { title: "Cuti Saya", href: routes.leave.me, icon: CalendarHeartIcon },
+      { title: "Pengajuan Cuti", href: routes.leave.requests, icon: CalendarDaysIcon, permission: PERMISSIONS.leaveView },
+      { title: "Hari Libur", href: routes.leave.holidays, icon: CalendarOffIcon, permission: PERMISSIONS.leaveManage },
+    ],
+  },
+  {
+    title: "Penilaian Kinerja",
+    items: [
+      { title: "Penilaian Saya", href: routes.performance.me, icon: ClipboardCheckIcon },
+      { title: "Form Penilaian", href: routes.performance.forms, icon: ClipboardPenLineIcon, permission: PERMISSIONS.appraisalManage },
+      { title: "Periode Penilaian", href: routes.performance.periods, icon: CalendarRangeIcon, permission: PERMISSIONS.appraisalManage },
+      { title: "Rekap Nilai", href: routes.performance.recap, icon: GaugeIcon, permission: PERMISSIONS.appraisalManage },
+    ],
+  },
+  {
+    title: "Pengembangan Pegawai",
+    items: [
+      { title: "Diklat", href: routes.training.me, icon: GraduationCapIcon },
+      { title: "Kelola Diklat", href: routes.training.manage, icon: BookOpenCheckIcon, permission: PERMISSIONS.trainingManage },
+      { title: "Mutasi", href: routes.mutations, icon: ArrowRightLeftIcon, permission: PERMISSIONS.mutationManage },
+      { title: "Kenaikan Pangkat", href: routes.promotions, icon: TrendingUpIcon, permission: PERMISSIONS.promotionManage },
     ],
   },
   {
