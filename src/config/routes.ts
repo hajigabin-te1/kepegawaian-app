@@ -12,6 +12,11 @@ export const routes = {
     me: "/attendance",
     recap: "/attendance/recap",
   },
+  leave: {
+    me: "/leave",
+    requests: "/leave/requests",
+    holidays: "/leave/holidays",
+  },
   masterData: {
     workUnits: "/master/work-units",
     positions: "/master/positions",

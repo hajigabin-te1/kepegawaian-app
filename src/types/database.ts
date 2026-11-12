@@ -749,6 +749,24 @@ export type Database = {
           },
         ]
       }
+      public_holidays: {
+        Row: {
+          created_at: string
+          holiday_date: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          holiday_date: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          holiday_date?: string
+          name?: string
+        }
+        Relationships: []
+      }
       leave_requests: {
         Row: {
           created_at: string
@@ -819,10 +837,13 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["leave_category"]
           code: string
+          counts_toward_quota: boolean
           created_at: string
           default_annual_quota: number | null
+          female_only: boolean
           id: string
           is_active: boolean
+          max_months: number | null
           name: string
           requires_document: boolean
           updated_at: string
@@ -830,10 +851,13 @@ export type Database = {
         Insert: {
           category: Database["public"]["Enums"]["leave_category"]
           code: string
+          counts_toward_quota?: boolean
           created_at?: string
           default_annual_quota?: number | null
+          female_only?: boolean
           id?: string
           is_active?: boolean
+          max_months?: number | null
           name: string
           requires_document?: boolean
           updated_at?: string
@@ -841,10 +865,13 @@ export type Database = {
         Update: {
           category?: Database["public"]["Enums"]["leave_category"]
           code?: string
+          counts_toward_quota?: boolean
           created_at?: string
           default_annual_quota?: number | null
+          female_only?: boolean
           id?: string
           is_active?: boolean
+          max_months?: number | null
           name?: string
           requires_document?: boolean
           updated_at?: string
@@ -1814,6 +1841,26 @@ export type Database = {
         Returns: undefined
       }
       current_employee_id: { Args: never; Returns: string }
+      get_leave_balance: {
+        Args: { target_employee_id: string; target_year: number }
+        Returns: {
+          pending: number
+          quota: number
+          remaining: number
+          used: number
+        }[]
+      }
+      submit_leave_request: {
+        Args: {
+          attachment_path?: string
+          request_end: string
+          request_reason: string
+          request_start: string
+          request_type_id: string
+        }
+        Returns: string
+      }
+      cancel_leave_request: { Args: { request_id: string }; Returns: undefined }
       decide_leave_request: {
         Args: { approve: boolean; note?: string; request_id: string }
         Returns: undefined

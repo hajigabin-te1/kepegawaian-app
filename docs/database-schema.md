@@ -14,6 +14,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261104000001_account_management.sql` | `list_user_accounts()` (daftar akun + email untuk superadmin) dan pengaman agar akun tidak bisa menonaktifkan/mengubah peran dirinya sendiri |
 | `migrations/20261112000001_link_account_employee.sql` | `list_linkable_employees()`: superadmin memilih pegawai untuk dihubungkan ke akun tanpa izin `employee.view` (hanya id, nama, NIP pegawai aktif yang belum punya akun) |
 | `migrations/20261112000002_profile_change_requests.sql` | `submit_profile_change_request()` (pegawai mengajukan perbaikan data pribadi, kolom divalidasi) dan `decide_profile_change_request()` (HR setuju/tolak; setuju langsung memperbarui `employees`). Kebijakan insert/update langsung pada `profile_change_requests` dihapus |
+| `migrations/20261112000003_leave_rules.sql` | Aturan cuti: tabel `public_holidays`, kolom `counts_toward_quota` / `female_only` / `max_months` pada `leave_types`, jenis `long_sick`, pengaturan `annual_leave_quota`, fungsi `count_leave_days`, `get_leave_balance`, `submit_leave_request`, `cancel_leave_request`; `decide_leave_request` tidak lagi menulis `leave_balances` |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -151,7 +152,10 @@ Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan 
 | Fungsi | Dipakai untuk |
 |---|---|
 | `decide_profile_change_request(id, approve, note)` | HR setuju/tolak perbaikan data pegawai (alasan wajib jika ditolak); jika disetujui, data pegawai diperbarui. Kolom yang boleh diajukan: nama, NIK, tempat/tanggal lahir, jenis kelamin, agama, status pernikahan, alamat, kota, provinsi, kode pos, no. HP, email |
-| `decide_leave_request(id, approve, note)` | HR setuju/tolak cuti (alasan wajib jika ditolak); kuota otomatis terpakai; notifikasi ke pegawai |
+| `submit_leave_request(type, start, end, reason, attachment)` | Pegawai mengajukan cuti/izin. Server menghitung hari (tanpa Minggu dan tanggal merah), menolak jika bertabrakan, melebihi sisa kuota, jenis khusus perempuan untuk non-perempuan, atau melebihi 3 bulan (cuti melahirkan) |
+| `cancel_leave_request(id)` | Pegawai membatalkan pengajuannya yang masih menunggu |
+| `get_leave_balance(employee, year)` | Kuota, terpakai, menunggu, dan sisa. Dihitung dari pengajuan; baris `leave_balances` jenis `annual` hanya menimpa kuota pegawai tertentu |
+| `decide_leave_request(id, approve, note)` | HR setuju/tolak cuti (alasan wajib jika ditolak); notifikasi ke pegawai |
 | `generate_appraisals(period_id)` | HR membuat form penilaian untuk semua pegawai aktif |
 | `review_appraisal(id, accept, note)` | HR memverifikasi atau mengembalikan penilaian untuk diperbaiki |
 | `decide_training_registration(id, approve, note)` | HR setuju/tolak pendaftaran diklat |

@@ -2,6 +2,9 @@ import {
   Building2Icon,
   BriefcaseIcon,
   CalendarCheckIcon,
+  CalendarDaysIcon,
+  CalendarHeartIcon,
+  CalendarOffIcon,
   ClipboardListIcon,
   LayoutDashboardIcon,
   FilePenLineIcon,
@@ -49,6 +52,14 @@ export const mainNavigation: NavGroup[] = [
     items: [
       { title: "Presensi Saya", href: routes.attendance.me, icon: CalendarCheckIcon },
       { title: "Rekap Presensi", href: routes.attendance.recap, icon: ClipboardListIcon, permission: PERMISSIONS.attendanceView },
+    ],
+  },
+  {
+    title: "Cuti & Izin",
+    items: [
+      { title: "Cuti Saya", href: routes.leave.me, icon: CalendarHeartIcon },
+      { title: "Pengajuan Cuti", href: routes.leave.requests, icon: CalendarDaysIcon, permission: PERMISSIONS.leaveView },
+      { title: "Hari Libur", href: routes.leave.holidays, icon: CalendarOffIcon, permission: PERMISSIONS.leaveManage },
     ],
   },
   {
