@@ -1,7 +1,7 @@
-//export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
-export const instant = false;
 import { Suspense } from "react";
+
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageContainer } from "@/components/layout/page-container";
 import { PERMISSIONS } from "@/config/permissions";
 import { requirePermission } from "@/features/auth/services/auth-service";
@@ -17,7 +17,7 @@ export default async function AppSettingsPage() {
   await requirePermission(PERMISSIONS.settingsManage);
   return (
     <PageContainer>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<Skeleton className="h-72 w-full" />}>
         <AppSettingsPanel />
       </Suspense>
     </PageContainer>

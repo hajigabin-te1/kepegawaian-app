@@ -26,7 +26,7 @@ export function AppHeader({ user }: AppHeaderProps) {
           <HeaderSearch />
         </div>
         <div className="ml-auto flex items-center gap-1 md:ml-2">
-          <NotificationMenu />
+          <NotificationMenu userId={user.id} />
           <Separator orientation="vertical" className="mx-2 hidden h-8 sm:block" />
           <UserMenu user={user} />
         </div>
