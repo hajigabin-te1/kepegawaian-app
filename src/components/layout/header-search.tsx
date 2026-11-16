@@ -7,8 +7,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 
 /**
- * Global search entry point. There is no search endpoint in the API contract
- * yet (docs/api-contract.md §5.3), so submitting only informs the user.
+ * Global search entry point. Search is not implemented yet, so submitting only informs the user.
  */
 export function HeaderSearch() {
   const [query, setQuery] = useState("");
@@ -17,7 +16,7 @@ export function HeaderSearch() {
     event.preventDefault();
     if (!query.trim()) return;
     toast.info("Pencarian belum tersedia", {
-      description: "Fitur pencarian pegawai akan aktif setelah API pencarian dikonfirmasi.",
+      description: "Fitur pencarian pegawai belum tersedia di versi ini.",
     });
   };
 

@@ -16,7 +16,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
   if (token) {
-    // Bearer scheme is an assumption until confirmed (see docs/api-contract.md).
+    // Bearer scheme is an assumption until a third-party API is actually integrated.
     config.headers.set("Authorization", `Bearer ${token}`);
   }
   return config;

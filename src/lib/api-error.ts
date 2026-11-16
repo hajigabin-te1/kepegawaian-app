@@ -1,9 +1,8 @@
 import { isAxiosError } from "axios";
 
 /**
- * Normalized error shape for every failed API call.
- * The backend error body format is not confirmed yet (see docs/api-contract.md),
- * so `message` falls back to a generic Indonesian message.
+ * Normalized error shape for every failed call (Supabase or a third-party API).
+ * `message` is always a user-facing Indonesian message; the original error is kept in `data`.
  */
 export class ApiError extends Error {
   readonly status: number | null;

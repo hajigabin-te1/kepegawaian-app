@@ -46,10 +46,12 @@ src/app/layout.tsx            ← kerangka HTML + AppProviders (TanStack Query, 
    │
    └── (dashboard)/layout.tsx ← shell setelah login: ambil user → sidebar + header
           ├── dashboard/page.tsx
-          ├── employees/...          (placeholder)
-          ├── master/work-units, positions
-          ├── accounts/
-          └── profile/password/
+          ├── loading.tsx, error.tsx ← skeleton dan tampilan gagal untuk semua halaman di bawahnya
+          ├── employees/, histories/, documents/
+          ├── attendance/, leave/, performance/
+          ├── training/, mutations/, promotions/, announcements/
+          ├── master/, accounts/, settings/
+          └── profile/
 ```
 
 Folder dengan tanda kurung seperti `(auth)` dan `(dashboard)` adalah **route group**: hanya untuk
@@ -69,7 +71,7 @@ src/
     (auth)/login/                Halaman login
     (dashboard)/layout.tsx       Shell setelah login: ambil user → sidebar + header
     (dashboard)/dashboard/       Dashboard (statistik atau beranda, sesuai izin) + loading.tsx
-    (dashboard)/employees/       Data pegawai (placeholder)
+    (dashboard)/employees/       Data pegawai (daftar, tambah, detail, ubah, perbaikan data)
     (dashboard)/master/          Unit kerja dan jabatan (memakai requirePermission)
     (dashboard)/accounts/        Kelola akun pengguna (requirePermission)
     (dashboard)/profile/password/ Ganti password sendiri
@@ -419,9 +421,12 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 - **Menjalankan lokal:** salin `.env.example` menjadi `.env.local` dan isi `NEXT_PUBLIC_SUPABASE_URL` serta `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Next.js tidak membaca `.env.example`.
 - **Database harus aktif:** project Supabase harus berstatus aktif, dan migrasi serta seed sudah terpasang (langkah di `docs/database-schema.md`).
 - **Semua fase kode (1–7) selesai.** Berikutnya: uji alur per peran di Supabase, lalu fitur tambahan (lihat `docs/requirements.md` bagian 7).
-- **Pencarian dan notifikasi** baru tampilan saja.
+- **Pencarian** di header baru tampilan saja.
+- **Notifikasi** (lonceng di header, `features/notifications`): membaca tabel `notifications` milik pengguna, diperbarui tiap 60 detik, bisa ditandai dibaca. Notifikasinya dibuat oleh fungsi database (`notify_employee`, `notify_permission_holders`) saat ada pengajuan atau keputusan. Pengiriman lewat email belum ada.
 - **`lib/axios.ts` dan `stores/auth-store.ts`** disiapkan untuk API pihak ketiga (Keuangan, SIAKAD). Belum dipakai. Jangan dipakai untuk Supabase.
-- **Dokumen lama:** `docs/architecture.md` dan `docs/api-contract.md` masih menjelaskan arsitektur API eksternal. Perlu diperbarui.
+- **Dokumen lama:** `docs/api-contract.md` adalah arsip pertanyaan untuk API eksternal lama dan tidak lagi berlaku. `docs/architecture.md` sudah mengikuti arsitektur Supabase.
+- **Route baru:** setiap route tingkat atas yang baru harus ditambahkan ke `matcher` dan `PROTECTED_PREFIXES` di `src/proxy.ts`, agar sesi tetap disegarkan di halaman itu.
+- **Loading & error:** `(dashboard)/loading.tsx` (skeleton saat pindah halaman), `(dashboard)/error.tsx` (halaman gagal dimuat), dan `app/not-found.tsx` (alamat tidak dikenal).
 
 ---
 

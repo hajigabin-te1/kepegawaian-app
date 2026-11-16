@@ -4,7 +4,24 @@ import { requiredPermissionFor } from "@/config/permissions";
 import { routes } from "@/config/routes";
 import { redirectWithCookies, updateSession } from "@/lib/supabase/proxy";
 
-const PROTECTED_PREFIXES = [routes.dashboard, routes.employees.list, "/histories", routes.documents, "/master", routes.accounts, "/settings", "/profile"];
+// Keep in sync with `config.matcher` below (the matcher must be a static literal).
+const PROTECTED_PREFIXES = [
+  routes.dashboard,
+  routes.employees.list,
+  "/histories",
+  routes.documents,
+  "/master",
+  routes.accounts,
+  "/settings",
+  "/profile",
+  routes.attendance.me,
+  routes.leave.me,
+  routes.performance.me,
+  routes.training.me,
+  routes.mutations,
+  routes.promotions,
+  routes.announcements,
+];
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -45,5 +62,23 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard/:path*", "/employees/:path*", "/histories/:path*", "/documents/:path*", "/master/:path*", "/accounts/:path*", "/settings/:path*", "/profile/:path*"],
+  matcher: [
+    "/",
+    "/login",
+    "/dashboard/:path*",
+    "/employees/:path*",
+    "/histories/:path*",
+    "/documents/:path*",
+    "/master/:path*",
+    "/accounts/:path*",
+    "/settings/:path*",
+    "/profile/:path*",
+    "/attendance/:path*",
+    "/leave/:path*",
+    "/performance/:path*",
+    "/training/:path*",
+    "/mutations/:path*",
+    "/promotions/:path*",
+    "/announcements/:path*",
+  ],
 };
