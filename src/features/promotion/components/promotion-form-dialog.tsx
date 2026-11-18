@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEmployeeOptions } from "@/features/attendance/hooks/use-attendance";
+import { EmployeeSelect } from "@/features/employees/components/employee-select";
 import { usePositions } from "@/features/master-data/hooks/use-master-data";
 import { useProposePromotion } from "@/features/promotion/hooks/use-promotions";
 import { promotionSchema, type PromotionFormValues } from "@/features/promotion/schemas/promotion-schemas";
@@ -22,7 +22,6 @@ const EMPTY: PromotionFormValues = { employeeId: "", type: "rank", proposedRank:
 
 export function PromotionFormDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const propose = useProposePromotion();
-  const employees = useEmployeeOptions();
   const positions = usePositions();
   const {
     register,
@@ -37,7 +36,6 @@ export function PromotionFormDialog({ open, onOpenChange }: { open: boolean; onO
     if (open) reset(EMPTY);
   }, [open, reset]);
 
-  const employeeItems = Object.fromEntries((employees.data ?? []).map((e) => [e.id, e.employeeNumber ? `${e.name} (${e.employeeNumber})` : e.name]));
   const positionItems = Object.fromEntries((positions.data ?? []).filter((p) => p.isActive).map((p) => [p.id, p.name]));
 
   const onSubmit = (values: PromotionFormValues) =>
@@ -63,18 +61,7 @@ export function PromotionFormDialog({ open, onOpenChange }: { open: boolean; onO
               control={control}
               name="employeeId"
               render={({ field }) => (
-                <Select items={employeeItems} value={field.value || null} onValueChange={(v) => field.onChange(v ?? "")}>
-                  <SelectTrigger className="w-full" aria-label="Pegawai" aria-invalid={errors.employeeId ? true : undefined}>
-                    <SelectValue placeholder={employees.isPending ? "Memuat pegawai…" : "Pilih pegawai"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(employeeItems).map(([value, text]) => (
-                      <SelectItem key={value} value={value}>
-                        {text}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <EmployeeSelect value={field.value} onChange={field.onChange} invalid={Boolean(errors.employeeId)} activeOnly />
               )}
             />
             {errors.employeeId ? <p className="text-sm text-destructive">{errors.employeeId.message}</p> : null}

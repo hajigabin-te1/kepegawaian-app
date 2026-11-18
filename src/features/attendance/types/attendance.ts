@@ -38,6 +38,5 @@ export type MonthlySummaryRow = {
   daysOnPermit: number;
 };
 
-export type EmployeeOption = { id: string; name: string; employeeNumber: string | null };
 
 export type Coordinates = { latitude: number; longitude: number; accuracy: number | null };
