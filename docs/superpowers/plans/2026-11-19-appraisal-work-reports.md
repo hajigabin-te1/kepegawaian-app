@@ -32,7 +32,7 @@
 ### Task 1: Migrasi database + tipe
 
 **Files:**
-- Create: `supabase/migrations/20261119000001_appraisal_work_reports.sql`
+- Create: `supabase/migrations/20261118184714_appraisal_work_reports.sql`
 - Modify: `src/types/database.ts` (tabel `appraisal_work_reports`, fungsi `save_work_report`, `delete_work_report`, `work_reports_locked`)
 
 **Interfaces — Produces:**
