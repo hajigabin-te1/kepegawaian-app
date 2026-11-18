@@ -147,6 +147,54 @@ export type Database = {
         }
         Relationships: []
       }
+      appraisal_work_reports: {
+        Row: {
+          created_at: string
+          description: string
+          employee_id: string
+          evidence_name: string
+          evidence_path: string
+          id: string
+          period_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          employee_id: string
+          evidence_name: string
+          evidence_path: string
+          id?: string
+          period_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          employee_id?: string
+          evidence_name?: string
+          evidence_path?: string
+          id?: string
+          period_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appraisal_work_reports_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appraisal_work_reports_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "appraisal_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appraisals: {
         Row: {
           appraised_by: string | null
@@ -1900,6 +1948,21 @@ export type Database = {
         Returns: undefined
       }
       submit_appraisal: { Args: { target_appraisal_id: string }; Returns: undefined }
+      save_work_report: {
+        Args: {
+          new_description: string
+          new_evidence_name: string
+          new_evidence_path: string
+          target_period_id: string
+          target_report_id: string | null
+        }
+        Returns: string
+      }
+      delete_work_report: { Args: { target_report_id: string }; Returns: string }
+      work_reports_locked: {
+        Args: { target_employee_id: string; target_period_id: string }
+        Returns: boolean
+      }
       generate_appraisals: {
         Args: { target_period_id: string }
         Returns: number
