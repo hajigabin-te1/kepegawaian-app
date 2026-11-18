@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { QueryErrorState } from "@/components/common/query-error-state";
 import { TableSkeleton } from "@/components/common/table-skeleton";
 import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,7 +23,13 @@ import { routes } from "@/config/routes";
 import { AppraisalStatusBadge, PeriodSelect, formatScore } from "@/features/performance/components/appraisal-parts";
 import { useAppraisalList, usePeriods, useReviewAppraisal } from "@/features/performance/hooks/use-performance";
 import { reviewSchema, type ReviewFormValues } from "@/features/performance/schemas/performance-schemas";
-import { APPRAISAL_STATUS_LABELS, type AppraisalListItem, type AppraisalStatus } from "@/features/performance/types/performance";
+import { useWorkReportCounts } from "@/features/performance/hooks/use-work-reports";
+import {
+  APPRAISAL_STATUS_LABELS,
+  MIN_WORK_REPORTS,
+  type AppraisalListItem,
+  type AppraisalStatus,
+} from "@/features/performance/types/performance";
 import { ApiError } from "@/lib/api-error";
 
 const FILTERS: { value: AppraisalStatus | "all"; label: string }[] = [
@@ -31,6 +38,15 @@ const FILTERS: { value: AppraisalStatus | "all"; label: string }[] = [
 ];
 
 type Review = { item: AppraisalListItem; accept: boolean };
+
+/** Work report count; below the minimum it is highlighted so HR can follow up. */
+function ReportCount({ count = 0 }: { count: number | undefined }) {
+  return (
+    <Badge variant={count >= MIN_WORK_REPORTS ? "secondary" : "warning"} className="tabular-nums">
+      {count}
+    </Badge>
+  );
+}
 
 function ReviewDialog({ review, onClose }: { review: Review | null; onClose: () => void }) {
   const reviewMutation = useReviewAppraisal();
@@ -114,6 +130,7 @@ export function FormsPanel() {
   // Default to the newest active period (or the newest one) until the user picks another.
   const periodId = chosenPeriod || periods.data?.find((p) => p.isActive)?.id || periods.data?.[0]?.id || "";
   const forms = useAppraisalList(periodId, status);
+  const reportCounts = useWorkReportCounts(periodId);
 
   return (
     <>
@@ -168,6 +185,7 @@ export function FormsPanel() {
                   <TableRow className="bg-secondary hover:bg-secondary">
                     <TableHead className="pl-6">Pegawai</TableHead>
                     <TableHead className="hidden md:table-cell">Unit kerja</TableHead>
+                    <TableHead className="text-right">Laporan</TableHead>
                     <TableHead className="text-right">Nilai</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="pr-6">
@@ -183,6 +201,9 @@ export function FormsPanel() {
                         <p className="text-xs text-muted-foreground tabular-nums">{item.employeeNumber ?? "—"}</p>
                       </TableCell>
                       <TableCell className="hidden text-muted-foreground md:table-cell">{item.workUnitName ?? "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <ReportCount count={reportCounts.data?.[item.employeeId]} />
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">{formatScore(item.score)}</TableCell>
                       <TableCell>
                         <AppraisalStatusBadge status={item.status} />

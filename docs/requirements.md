@@ -41,7 +41,7 @@ tetapi terhubung ke data pegawainya, jadi tetap bisa presensi, mengajukan cuti, 
 | 1 | Data Pegawai | Data pokok, kepegawaian, riwayat (pendidikan, diklat, jabatan, pangkat, mutasi, sanksi, penghargaan), unggah dokumen, tambah/edit/nonaktifkan, pegawai ajukan perbaikan data | Prasyarat |
 | 2 | Presensi | Aplikasi **web**: tombol presensi membaca lokasi GPS browser. Di dalam **radius 100 m** dari titik kampus → presensi tercatat. Di luar radius → muncul pesan **"Tidak bisa melakukan presensi"**. Dosen & tendik sama-sama presensi **jam datang dan pulang**. Status terlambat/pulang awal dihitung otomatis. Rekap harian–bulanan, riwayat sendiri, koreksi oleh HR | ✅ |
 | 3 | Cuti & Izin | Ajukan cuti (tahunan, sakit, alasan penting, besar, melahirkan) dan izin (setengah hari, penting), **HR setuju/tolak**, kuota berkurang, rekap | ✅ |
-| 4 | Penilaian Kinerja (DP3/SKP) | HR buka periode, sistem buat daftar yang dinilai, **HR isi** indikator/target/realisasi/nilai, HR verifikasi/perbaikan, rekap per unit, pegawai lihat hasil | ✅ |
+| 4 | Penilaian Kinerja (DP3/SKP) | HR buka periode, sistem buat daftar yang dinilai, **pegawai kirim laporan kerja** (deskripsi + bukti) sebagai bahan, **HR isi** indikator/target/realisasi/nilai, HR verifikasi/perbaikan, rekap per unit, pegawai lihat hasil | ✅ |
 | 5 | Diklat | HR buka pendaftaran + kuota, pegawai daftar, **HR setuju/tolak**, HR tetapkan peserta & hasil, masuk riwayat | |
 | 6 | Mutasi | **HR** usulkan, setujui, dan jalankan; update unit/jabatan + riwayat | |
 | 7 | Kenaikan Pangkat & Jabatan | Usulan, persetujuan, SK (hanya di use case) | |
@@ -118,6 +118,7 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 12 Nov 2026 | Alur diklat | Pendaftar menunggu → HR setuju/tolak → HR tetapkan peserta (maksimal sebesar kuota, jika ada) atau tidak terpilih → HR catat selesai, yang otomatis masuk riwayat pelatihan pegawai. Lampiran sertifikat belum ada antarmukanya |
 | 12 Nov 2026 | Mutasi & kenaikan pangkat | HR mengusulkan → HR setuju/tolak → HR menjalankan. Menjalankan memperbarui data pegawai dan riwayat jabatan/pangkat. Nomor SK diisi saat persetujuan (opsional) |
 | 12 Nov 2026 | Kuota terlampaui | Pengajuan yang melebihi sisa kuota **ditolak sistem** saat diajukan (asumsi, belum dikonfirmasi) |
+| 19 Nov 2026 | Laporan kerja pegawai (permintaan Kabag Kepegawaian) | Pegawai mengirim laporan kerja per periode penilaian (tahunan/semester; tidak ada periode 3 bulanan): **deskripsi pekerjaan** + **bukti dokumen** (wajib, PDF/JPG/PNG, maks. 5 MB, bucket privat). Laporan adalah **bahan** HR saat mengisi form penilaian, tanpa setuju/tolak per laporan. **Minimal 3 laporan** disampaikan lisan oleh Kabag; sistem hanya mengingatkan, tidak memblokir. Laporan bisa ditambah/diubah/dihapus selama periode aktif dan **terkunci begitu form penilaian pegawai dikirim** (`submitted`/`verified`). Desain: `docs/superpowers/specs/2026-11-19-appraisal-work-reports-design.md` |
 
 ## 7. Pertanyaan yang masih terbuka
 

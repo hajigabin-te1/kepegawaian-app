@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { routes } from "@/config/routes";
 import { formatScore } from "@/features/performance/components/appraisal-parts";
+import { WorkReportsPanel } from "@/features/performance/components/work-reports-panel";
 import { useMyAppraisals } from "@/features/performance/hooks/use-performance";
 
 function MyAppraisals({ employeeId }: { employeeId: string }) {
@@ -73,11 +74,17 @@ export function MyAppraisalsPanel({ employeeId }: { employeeId: string | null })
     <>
       <PageHeader
         title="Penilaian Saya"
-        description="Hasil penilaian kinerja Anda yang sudah diverifikasi."
+        description="Laporan kerja Anda per periode dan hasil penilaian kinerja yang sudah diverifikasi."
         breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Penilaian Kinerja" }, { label: "Penilaian Saya" }]}
       />
       {employeeId ? (
-        <MyAppraisals employeeId={employeeId} />
+        <>
+          <WorkReportsPanel employeeId={employeeId} />
+          <section className="space-y-4">
+            <h2 className="text-lg font-semibold">Hasil Penilaian</h2>
+            <MyAppraisals employeeId={employeeId} />
+          </section>
+        </>
       ) : (
         <Card>
           <EmptyState

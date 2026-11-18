@@ -381,6 +381,11 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
   pantau formulir (`FormsPanel`), verifikasi (`review_appraisal`), dan rekap per unit (`report_appraisal_by_unit`).
 - Pengisian formulir (`AppraisalForm`): simpan draf `save_appraisal`, kirim `submit_appraisal`. Skala nilai maksimum dibaca dari `app_settings` (`getMaxScore`).
 - Pegawai melihat penilaiannya di `MyAppraisalsPanel`.
+- **Laporan kerja** (bahan penilaian): di `/performance` pegawai mengisi deskripsi + bukti per periode (`WorkReportsPanel`,
+  `WorkReportDialog`), dengan pengingat minimal 3 laporan (`MIN_WORK_REPORTS`). Simpan/hapus lewat RPC `save_work_report` /
+  `delete_work_report`; bukti di bucket privat `appraisal-evidence` (`work-report-service.ts`). Laporan terkunci jika periode
+  nonaktif atau form pegawai sudah dikirim (`work_reports_locked`). HR melihatnya di halaman form (`EmployeeWorkReportsCard`)
+  dan jumlahnya di kolom "Laporan" pada daftar form.
 
 ### 9.12 Diklat (`/training`, `/training/manage`)
 
