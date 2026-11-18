@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { routes } from "@/config/routes";
 import { AppraisalStatusBadge, formatScore } from "@/features/performance/components/appraisal-parts";
+import { EmployeeWorkReportsCard } from "@/features/performance/components/employee-work-reports-card";
 import { useAppraisal, useMaxScore, useSaveAppraisal, useSubmitAppraisal } from "@/features/performance/hooks/use-performance";
 import { appraisalSchema, type AppraisalFormValues } from "@/features/performance/schemas/performance-schemas";
 import type { AppraisalDetail } from "@/features/performance/types/performance";
@@ -188,6 +189,7 @@ export function AppraisalFormPage({ id }: { id: string }) {
           </>
         }
       />
+      <EmployeeWorkReportsCard periodId={data.periodId} employeeId={data.employeeId} />
       <AppraisalEditor key={`${data.id}-${data.status}`} appraisal={data} maxScore={maxScore.data ?? 100} />
     </>
   );

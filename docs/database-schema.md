@@ -20,6 +20,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261112202905_leave_rules.sql` | Aturan cuti: tabel `public_holidays`, kolom `counts_toward_quota` / `female_only` / `max_months` pada `leave_types`, jenis `long_sick`, pengaturan `annual_leave_quota`, fungsi `count_leave_days`, `get_leave_balance`, `submit_leave_request`, `cancel_leave_request`; `decide_leave_request` tidak lagi menulis `leave_balances` |
 | `migrations/20261112202941_appraisal_rules.sql` | Alur penilaian lewat RPC: `save_appraisal`, `submit_appraisal`, `review_appraisal` (diganti), `generate_appraisals` (hanya periode aktif), `compute_appraisal_score` (rumus sementara = rata-rata), pengaturan `appraisal_max_score`. HR hanya bisa membaca langsung; kebijakan tulis pada `appraisals` dan `appraisal_items` dihapus |
 | `migrations/20261112202953_training_mutation_promotion_rules.sql` | Alur Fase 7 lewat RPC: `set_training_outcome`, `decide_mutation`, `decide_promotion`, `execute_promotion`; trigger pengisi data "saat ini" pada usulan dan waktu terbit pengumuman. Kebijakan tulis langsung HR pada `mutations`, `promotion_proposals`, `training_registrations` dihapus (usulan tetap bisa dibuat) |
+| `migrations/20261119000001_appraisal_work_reports.sql` | Laporan kerja pegawai: tabel `appraisal_work_reports`, fungsi `work_reports_locked`, RPC `save_work_report` dan `delete_work_report`, bucket privat `appraisal-evidence` (5 MB, PDF/JPG/PNG) beserta kebijakan Storage |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -108,6 +109,7 @@ Karena akun dibuat oleh superadmin, pendaftaran publik sebaiknya dimatikan:
 | Pengajuan Cuti | `leave_requests` | `leave_type_id`, `start_date`, `end_date`, `reason` (alasan), `status`, `decided_by` (disetujui_oleh, akun HR), `decided_at` (tanggal_disetujui), `decision_note` (catatan) |
 | Penilaian Kinerja (periode) | `appraisal_periods` | `name`, `start_date`, `end_date`, `is_active` |
 | Form Penilaian | `appraisals` + `appraisal_items` | `period_id`, `employee_id`, `appraised_by` (HR yang mengisi; menggantikan atasan_id), `performance_score` (nilai_kinerja), `note`, `status`; item: indikator, target, realisasi, nilai |
+| Laporan Kerja (bahan penilaian) | `appraisal_work_reports` | `period_id`, `employee_id`, `description` (10–2000 karakter), `evidence_path` (bucket `appraisal-evidence`), `evidence_name`. Pegawai membaca miliknya, HR (`appraisal.manage`) membaca semua; tulis hanya lewat RPC |
 | Mutasi | `mutations` | `from_work_unit_id` (unit lama), `to_work_unit_id` (unit baru), `effective_date` |
 | Users | `user_accounts` | `id` (= `auth.users.id`), `employee_id`, `role_id`, `is_active` (status_akun). Email ada di `auth.users.email` (login memakai email, tanpa username) |
 | Role / Permission / Role Permission | `roles`, `permissions`, `role_permissions` | `code` mis. `leave.manage` |
@@ -169,6 +171,9 @@ Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan 
 | `save_appraisal(id, note, items)` | HR menyimpan indikator dan catatan selama form berstatus draf/perlu revisi; nilai divalidasi terhadap skala |
 | `submit_appraisal(id)` | HR mengirim form untuk verifikasi (semua indikator harus bernilai); nilai akhir dihitung ulang |
 | `review_appraisal(id, accept, note)` | HR memverifikasi atau mengembalikan penilaian untuk diperbaiki |
+| `save_work_report(report_id, period_id, description, evidence_path, evidence_name)` | Pegawai menambah (`report_id` null) atau mengubah laporan kerjanya sendiri; ditolak jika terkunci |
+| `delete_work_report(report_id)` | Pegawai menghapus laporan kerjanya sendiri; mengembalikan path bukti agar file dihapus |
+| `work_reports_locked(period_id, employee_id)` | `true` jika periode nonaktif atau form pegawai pada periode itu sudah `submitted`/`verified` |
 | `decide_training_registration(id, approve, note)` | HR setuju/tolak pendaftaran diklat |
 | `execute_mutation(id)` | HR menjalankan mutasi yang disetujui (unit/jabatan + riwayat) |
 | `log_audit_event(action, entity, …)` | Mencatat kejadian non-tabel, mis. login |
