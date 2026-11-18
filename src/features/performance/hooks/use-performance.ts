@@ -26,6 +26,10 @@ export const performanceKeys = {
   mine: (employeeId: string) => [...performanceKeys.all, "mine", employeeId] as const,
   recap: (periodId: string) => [...performanceKeys.all, "recap", periodId] as const,
   maxScore: () => [...performanceKeys.all, "max-score"] as const,
+  workReports: (periodId: string, employeeId: string) => [...performanceKeys.all, "work-reports", periodId, employeeId] as const,
+  workReportPeriods: (employeeId: string) => [...performanceKeys.all, "work-report-periods", employeeId] as const,
+  workReportCounts: (periodId: string) => [...performanceKeys.all, "work-report-counts", periodId] as const,
+  workReportsLocked: (periodId: string, employeeId: string) => [...performanceKeys.all, "work-reports-locked", periodId, employeeId] as const,
 };
 
 export function usePeriods() {

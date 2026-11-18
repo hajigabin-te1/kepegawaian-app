@@ -52,6 +52,31 @@ export type AppraisalDetail = {
   items: AppraisalItem[];
 };
 
+/** Reminder only (set verbally by the head of HR); fewer reports never blocks anything. */
+export const MIN_WORK_REPORTS = 3;
+
+/** One work report an employee submits as input for their appraisal in a period. */
+export type WorkReport = {
+  id: string;
+  periodId: string;
+  employeeId: string;
+  description: string;
+  evidencePath: string;
+  evidenceName: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WorkReportInput = {
+  /** Null when adding a new report. */
+  id: string | null;
+  periodId: string;
+  employeeId: string;
+  description: string;
+  /** Required when adding; null when editing keeps the current file. */
+  file: File | null;
+};
+
 export type AppraisalRecapRow = {
   workUnitName: string;
   category: "lecturer" | "staff";
