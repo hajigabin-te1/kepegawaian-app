@@ -12,10 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toTimeInput } from "@/features/attendance/components/attendance-format";
-import { useCorrectAttendance, useEmployeeOptions } from "@/features/attendance/hooks/use-attendance";
+import { useCorrectAttendance } from "@/features/attendance/hooks/use-attendance";
 import { correctionSchema, type CorrectionFormValues } from "@/features/attendance/schemas/attendance-schemas";
 import { todayInCampus } from "@/features/attendance/services/attendance-service";
 import { ATTENDANCE_STATUS_LABELS, type AttendanceRecord } from "@/features/attendance/types/attendance";
+import { EmployeeSelect } from "@/features/employees/components/employee-select";
 import { ApiError } from "@/lib/api-error";
 
 /** Prefill for the form: an existing record, or just an employee/date. */
@@ -43,7 +44,6 @@ function toFormValues(target: CorrectionTarget | null): CorrectionFormValues {
 }
 
 export function CorrectionDialog({ open, onOpenChange, target }: CorrectionDialogProps) {
-  const employees = useEmployeeOptions();
   const correct = useCorrectAttendance();
   const {
     register,
@@ -56,10 +56,6 @@ export function CorrectionDialog({ open, onOpenChange, target }: CorrectionDialo
   useEffect(() => {
     if (open) reset(toFormValues(target));
   }, [open, target, reset]);
-
-  const employeeItems = Object.fromEntries(
-    (employees.data ?? []).map((e) => [e.id, e.employeeNumber ? `${e.name} (${e.employeeNumber})` : e.name]),
-  );
 
   const onSubmit = (values: CorrectionFormValues) => {
     correct.mutate(values, {
@@ -86,18 +82,7 @@ export function CorrectionDialog({ open, onOpenChange, target }: CorrectionDialo
               control={control}
               name="employeeId"
               render={({ field }) => (
-                <Select items={employeeItems} value={field.value || null} onValueChange={(value) => field.onChange(value ?? "")}>
-                  <SelectTrigger className="w-full" aria-label="Pegawai" aria-invalid={errors.employeeId ? true : undefined}>
-                    <SelectValue placeholder={employees.isPending ? "Memuat pegawai…" : "Pilih pegawai"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(employeeItems).map(([id, label]) => (
-                      <SelectItem key={id} value={id}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <EmployeeSelect value={field.value} onChange={field.onChange} invalid={Boolean(errors.employeeId)} activeOnly />
               )}
             />
             {errors.employeeId ? <p className="text-sm text-destructive">{errors.employeeId.message}</p> : null}

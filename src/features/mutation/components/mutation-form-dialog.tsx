@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEmployeeOptions } from "@/features/attendance/hooks/use-attendance";
+import { EmployeeSelect } from "@/features/employees/components/employee-select";
 import { useProposeMutation } from "@/features/mutation/hooks/use-mutations";
 import { mutationSchema, type MutationFormValues } from "@/features/mutation/schemas/mutation-schemas";
 import { usePositions, useWorkUnits } from "@/features/master-data/hooks/use-master-data";
@@ -22,7 +22,6 @@ const EMPTY: MutationFormValues = { employeeId: "", toWorkUnitId: "", toPosition
 
 export function MutationFormDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const propose = useProposeMutation();
-  const employees = useEmployeeOptions();
   const workUnits = useWorkUnits();
   const positions = usePositions();
   const {
@@ -37,7 +36,6 @@ export function MutationFormDialog({ open, onOpenChange }: { open: boolean; onOp
     if (open) reset(EMPTY);
   }, [open, reset]);
 
-  const employeeItems = Object.fromEntries((employees.data ?? []).map((e) => [e.id, e.employeeNumber ? `${e.name} (${e.employeeNumber})` : e.name]));
   const unitItems = { [NONE]: "Tidak berubah", ...Object.fromEntries((workUnits.data ?? []).filter((u) => u.isActive).map((u) => [u.id, u.name])) };
   const positionItems = { [NONE]: "Tidak berubah", ...Object.fromEntries((positions.data ?? []).filter((p) => p.isActive).map((p) => [p.id, p.name])) };
 
@@ -89,18 +87,7 @@ export function MutationFormDialog({ open, onOpenChange }: { open: boolean; onOp
               control={control}
               name="employeeId"
               render={({ field }) => (
-                <Select items={employeeItems} value={field.value || null} onValueChange={(v) => field.onChange(v ?? "")}>
-                  <SelectTrigger className="w-full" aria-label="Pegawai" aria-invalid={errors.employeeId ? true : undefined}>
-                    <SelectValue placeholder={employees.isPending ? "Memuat pegawai…" : "Pilih pegawai"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(employeeItems).map(([value, text]) => (
-                      <SelectItem key={value} value={value}>
-                        {text}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <EmployeeSelect value={field.value} onChange={field.onChange} invalid={Boolean(errors.employeeId)} activeOnly />
               )}
             />
             {errors.employeeId ? <p className="text-sm text-destructive">{errors.employeeId.message}</p> : null}

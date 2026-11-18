@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 
+import { SearchableSelect } from "@/components/common/searchable-select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -47,10 +48,10 @@ function AccountForm({ account, roles, onDone }: AccountFormProps) {
   const [employeeId, setEmployeeId] = useState(account.employeeId ?? NO_EMPLOYEE);
   const [status, setStatus] = useState<"active" | "inactive">(account.isActive ? "active" : "inactive");
 
-  const employeeItems = {
-    [NO_EMPLOYEE]: "Tidak terhubung",
-    ...Object.fromEntries((linkable.data ?? []).map((e) => [e.id, e.employeeNumber ? `${e.name} (${e.employeeNumber})` : e.name])),
-  };
+  const employeeOptions = [
+    { value: NO_EMPLOYEE, label: "Tidak terhubung" },
+    ...(linkable.data ?? []).map((e) => ({ value: e.id, label: e.employeeNumber ? `${e.name} · ${e.employeeNumber}` : e.name })),
+  ];
   const roleItems = Object.fromEntries(roles.map((role) => [String(role.id), role.name]));
 
   const save = () => {
@@ -93,18 +94,15 @@ function AccountForm({ account, roles, onDone }: AccountFormProps) {
 
         <div className="space-y-2">
           <Label>Pegawai</Label>
-          <Select items={employeeItems} value={employeeId} onValueChange={(value) => value && setEmployeeId(value)}>
-            <SelectTrigger className="w-full" aria-label="Pegawai">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(employeeItems).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            options={employeeOptions}
+            value={employeeId}
+            onChange={(value) => setEmployeeId(value || NO_EMPLOYEE)}
+            loading={linkable.isPending}
+            ariaLabel="Pegawai"
+            placeholder="Cari nama atau NIP pegawai…"
+            emptyMessage="Pegawai tidak ditemukan."
+          />
           <p className="text-xs text-muted-foreground">
             {linkable.isError ? "Daftar pegawai gagal dimuat." : "Akun harus terhubung ke pegawai agar bisa presensi dan mengajukan cuti."}
           </p>

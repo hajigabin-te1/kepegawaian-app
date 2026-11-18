@@ -6,7 +6,6 @@ import type {
   AttendanceRecord,
   Coordinates,
   DailyAttendanceRow,
-  EmployeeOption,
   MonthlySummaryRow,
 } from "@/features/attendance/types/attendance";
 
@@ -105,16 +104,6 @@ export async function checkOut(coords: Coordinates): Promise<AttendanceRecord> {
   });
   if (error) throw rpcError(error);
   return toRecord(data);
-}
-
-export async function listEmployeeOptions(): Promise<EmployeeOption[]> {
-  const { data, error } = await createSupabaseBrowserClient()
-    .from("employees")
-    .select("id, full_name, employee_number")
-    .eq("active_status", "active")
-    .order("full_name");
-  if (error) throw fromSupabaseError(error);
-  return data.map((row) => ({ id: row.id, name: row.full_name, employeeNumber: row.employee_number }));
 }
 
 export async function listDailyRecords(date: string): Promise<DailyAttendanceRow[]> {

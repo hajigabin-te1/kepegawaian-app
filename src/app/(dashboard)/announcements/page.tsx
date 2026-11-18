@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { PageContainer } from "@/components/layout/page-container";
+import { PERMISSIONS } from "@/config/permissions";
 import { getCurrentUser } from "@/features/auth/services/auth-service";
 import { AnnouncementsPanel } from "@/features/announcements/components/announcements-panel";
 
@@ -12,7 +13,7 @@ export default async function AnnouncementsPage() {
   const user = await getCurrentUser();
   return (
     <PageContainer>
-      <AnnouncementsPanel canManage={user?.permissions.includes("announcement.manage") ?? false} />
+      <AnnouncementsPanel canManage={user?.permissions.includes(PERMISSIONS.announcementManage) ?? false} />
     </PageContainer>
   );
 }

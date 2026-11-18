@@ -9,7 +9,6 @@ import {
   correctAttendance,
   getMyRecordForDate,
   listDailyRecords,
-  listEmployeeOptions,
   listMonthlySummary,
   listMyRecords,
 } from "@/features/attendance/services/attendance-service";
@@ -21,7 +20,6 @@ export const attendanceKeys = {
   mine: (employeeId: string, month: string) => [...attendanceKeys.all, "mine", employeeId, month] as const,
   daily: (date: string) => [...attendanceKeys.all, "daily", date] as const,
   monthly: (month: string) => [...attendanceKeys.all, "monthly", month] as const,
-  employees: () => [...attendanceKeys.all, "employees"] as const,
 };
 
 export function useTodayRecord(employeeId: string, date: string) {
@@ -47,10 +45,6 @@ export function useDailyRecords(date: string) {
 
 export function useMonthlySummary(month: string) {
   return useQuery({ queryKey: attendanceKeys.monthly(month), queryFn: () => listMonthlySummary(month) });
-}
-
-export function useEmployeeOptions() {
-  return useQuery({ queryKey: attendanceKeys.employees(), queryFn: listEmployeeOptions, staleTime: 5 * 60_000 });
 }
 
 export function useCorrectAttendance() {
