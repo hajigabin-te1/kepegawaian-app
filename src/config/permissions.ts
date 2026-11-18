@@ -16,6 +16,7 @@ export const PERMISSIONS = {
   trainingManage: "training.manage",
   mutationManage: "mutation.manage",
   promotionManage: "promotion.manage",
+  announcementManage: "announcement.manage",
   reportView: "report.view",
 } as const;
 

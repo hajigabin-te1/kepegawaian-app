@@ -4,7 +4,7 @@ Dokumen ini menjelaskan apa yang sudah dibangun, bagaimana bagian-bagiannya sali
 dan arti nama-nama variabel, fungsi, dan tipe di kode. Kode tetap memakai bahasa Inggris
 (aturan di `CLAUDE.md`); dokumen ini adalah "kamus" dalam bahasa Indonesia.
 
-Status per **11 November 2026** (setelah PR #8 di-merge).
+Status per **19 November 2026** (setelah PR #11 dan fitur notifikasi).
 
 ---
 
@@ -18,11 +18,14 @@ Tidak ada API route atau backend lain yang dibuat di repo ini.
 | Login & sesi | **Sudah jalan.** Supabase Auth dengan email + password. Sesi disimpan di cookie oleh `@supabase/ssr` |
 | Proteksi halaman | **Sudah jalan** lewat `src/proxy.ts` dan pengecekan permission di halaman |
 | Hak akses (RBAC) | **Sudah jalan.** Menu, route, dan RPC dibatasi berdasarkan permission peran |
-| Kelola akun pengguna | **Sudah jalan** (buat, ubah peran, aktif/nonaktif) |
-| Master data (unit kerja, jabatan) | **Sudah jalan** (daftar, tambah, ubah) |
+| Kelola akun pengguna | **Sudah jalan** (buat, ubah peran/pegawai/status, hapus, cakupan laporan pimpinan) |
+| Peran & hak akses, pengaturan aplikasi | **Sudah jalan** (`/settings/roles`, `/settings/app`) |
+| Master data (unit kerja, jabatan, struktur organisasi) | **Sudah jalan** |
 | Ganti password | **Sudah jalan** |
 | Dashboard | Statistik agregat untuk HR dan pimpinan (tab Pegawai, Presensi, Cuti, Kinerja); akun lain melihat beranda |
 | Data pegawai (daftar, tambah, detail, ubah, nonaktifkan, buat akun) | **Sudah jalan** (HR, `employee.view` / `employee.manage`) |
+| Riwayat jabatan & pendidikan, dokumen pegawai | **Sudah jalan** (unggah ke Storage privat) |
+| Notifikasi (lonceng di header) | **Sudah jalan** (polling 60 detik) |
 | Presensi, cuti, kinerja, diklat, mutasi, kenaikan pangkat, pengumuman, perbaikan data | **Kode selesai** (belum diuji end-to-end di Supabase) |
 
 Skema database ada di `supabase/migrations` dan dijelaskan di `docs/database-schema.md`.
@@ -70,28 +73,47 @@ src/
     globals.css                  Token warna 60-30-10 (#F8F8FF, #191970, #87CEFA)
     (auth)/login/                Halaman login
     (dashboard)/layout.tsx       Shell setelah login: ambil user → sidebar + header
+    not-found.tsx                Halaman "alamat tidak dikenal"
+    (dashboard)/loading.tsx      Skeleton saat pindah halaman
+    (dashboard)/error.tsx        Tampilan saat halaman gagal dimuat
     (dashboard)/dashboard/       Dashboard (statistik atau beranda, sesuai izin) + loading.tsx
-    (dashboard)/employees/       Data pegawai (daftar, tambah, detail, ubah, perbaikan data)
-    (dashboard)/master/          Unit kerja dan jabatan (memakai requirePermission)
-    (dashboard)/accounts/        Kelola akun pengguna (requirePermission)
-    (dashboard)/profile/password/ Ganti password sendiri
+    (dashboard)/employees/       Data pegawai (daftar, tambah, [id] detail, [id]/edit, change-requests)
+    (dashboard)/histories/       Riwayat jabatan (positions) dan pendidikan (education)
+    (dashboard)/documents/       Dokumen pegawai
+    (dashboard)/attendance/      Presensi saya + recap (rekap harian/bulanan, koreksi)
+    (dashboard)/leave/           Cuti saya + requests (antrean HR) + holidays (hari libur)
+    (dashboard)/performance/     Penilaian saya + periods, forms, forms/[id], recap
+    (dashboard)/training/        Diklat (daftar & pendaftaran) + manage (kelola HR)
+    (dashboard)/mutations/       Usulan mutasi
+    (dashboard)/promotions/      Usulan kenaikan pangkat/jabatan
+    (dashboard)/announcements/   Pengumuman
+    (dashboard)/master/          Unit kerja, jabatan, struktur organisasi
+    (dashboard)/accounts/        Kelola akun pengguna
+    (dashboard)/settings/        roles (peran & hak akses), app (lokasi presensi, jam kerja)
+    (dashboard)/profile/         Profil & pengajuan perbaikan data + password/ (ganti password)
   components/
     ui/                          Komponen dasar shadcn/ui. Jarang diubah
-    layout/                      Sidebar, header, breadcrumb, menu user, pencarian, notifikasi
-    common/                      AppProviders, EmptyState, PlaceholderNotice, QueryErrorState,
-                                 TableSkeleton, ActiveStatusBadge
-  features/                      Satu folder per modul bisnis
+    layout/                      Sidebar, header, breadcrumb, menu user, pencarian, notifikasi,
+                                 PageContainer, PageHeader, AppBrand
+    common/                      AppProviders, EmptyState, QueryErrorState, TableSkeleton,
+                                 ActiveStatusBadge, ProposalStatusBadge, PaginationBar,
+                                 ConfirmDeleteDialog, DecisionDialog, SearchableSelect
+  features/                      Satu folder per modul bisnis (pola: components, hooks, schemas, services, types)
     auth/                        Login, logout, ganti password, baca user yang login
       actions.ts                 Server Action: loginAction, logoutAction, changePasswordAction
       services/auth-service.ts   Logika Supabase Auth + getCurrentUser + requirePermission
       components/                LoginForm, ChangePasswordForm
       schemas/                   Validasi form login dan ganti password
       types/auth.ts              SessionUser, RoleCode, LoginInput
-    accounts/                    Kelola akun pengguna (daftar, buat, ubah peran/status)
-      services/account-service.ts  listAccounts, listRoles, updateAccount, createAccount
-      hooks/use-accounts.ts      useAccounts, useRoles, useUpdateAccount, useCreateAccount
-      components/                AccountsPanel, CreateAccountDialog, AccountFormDialog
+    accounts/                    Kelola akun pengguna (daftar, buat, ubah, hapus, cakupan laporan)
+      services/account-service.ts  listAccounts, updateAccount, createAccount, deleteAccount,
+                                 listLinkableEmployees, listReportScopes, addReportScope, deleteReportScope
+      hooks/use-accounts.ts      useAccounts, useUpdateAccount, useCreateAccount, useDeleteAccount, useReportScopes, ...
+      components/                AccountsPanel, CreateAccountDialog, AccountFormDialog,
+                                 DeleteAccountDialog, ReportScopeDialog
       schemas/, types/           Validasi dan bentuk data akun
+    roles/                       Peran & hak akses (RolesPanel, getRbacData, updateRolePermissions)
+    settings/                    Lokasi presensi dan jam kerja (AppSettingsPanel + dialog masing-masing)
     master-data/                 Unit kerja dan jabatan
       services/master-data-service.ts  listWorkUnits, createWorkUnit, updateWorkUnit, listPositions, ...
       hooks/use-master-data.ts   useWorkUnits, useSaveWorkUnit, usePositions, useSavePosition
@@ -101,7 +123,19 @@ src/
       services/dashboard-service.ts  Memanggil fungsi report_* (agregat) dan menghitung antrean HR
       hooks/use-dashboard.ts     TanStack Query untuk statistik, cakupan, dan antrean
       components/                StatisticsDashboard (tab Pegawai/Presensi/Cuti/Kinerja), WelcomePanel, PendingActionsCard
-    employees/                   Disiapkan untuk CRUD pegawai (saat ini hanya query key)
+    employees/                   CRUD pegawai: EmployeesPanel, EmployeeForm, EmployeeDetailView,
+                                 DeactivateEmployeeDialog, EmployeeAccountCard, EmployeeSelect
+    employee-history/            Riwayat jabatan dan pendidikan (panel + dialog)
+    documents/                   Dokumen pegawai + file-storage.ts (unggah/hapus/signed URL)
+    profile-requests/            Pengajuan perbaikan data oleh pegawai dan keputusan HR
+    attendance/                  Presensi GPS (CheckInCard), riwayat saya, rekap, koreksi HR
+    leave/                       Cuti/izin, saldo kuota, antrean HR, hari libur
+    performance/                 Periode, formulir, pengisian, verifikasi, rekap penilaian kinerja
+    training/                    Diklat: daftar, pendaftaran, keputusan HR, hasil
+    mutation/                    Usulan, keputusan, dan eksekusi mutasi
+    promotion/                   Usulan, keputusan, dan eksekusi kenaikan pangkat/jabatan
+    announcements/               Pengumuman (draf, terbit, hapus)
+    notifications/               Feed notifikasi untuk lonceng di header (tanpa komponen sendiri)
   lib/
     supabase/client.ts           Supabase untuk browser (createSupabaseBrowserClient)
     supabase/server.ts           Supabase untuk server, memakai cookie (createSupabaseServerClient)
@@ -109,6 +143,8 @@ src/
     api-error.ts                 ApiError, toApiError, fromSupabaseError
     query-client.ts              Pengaturan TanStack Query
     axios.ts                     Klien HTTP untuk API pihak ketiga (belum dipakai)
+    csv.ts                       downloadCsv() untuk unduhan tabel rekap
+    use-debounced-value.ts       useDebouncedValue() untuk input pencarian (default 300 ms)
     utils.ts                     cn() dan getInitials()
   stores/
     ui-store.ts                  State tampilan (Zustand): sidebar diciutkan, drawer mobile
@@ -125,6 +161,7 @@ src/
 supabase/
   migrations/                    Skema SQL berurutan. Jangan mengedit file yang sudah dijalankan
   functions/admin-create-user/   Edge Function: buat akun Auth dan user_accounts
+  functions/admin-delete-user/   Edge Function: hapus akun Auth (khusus superadmin)
   seed.sql                       Data awal: role, permission, status kepegawaian, jenis cuti, jam kerja
 ```
 
@@ -194,10 +231,25 @@ Permission yang dipakai frontend ada di `PERMISSIONS`:
 
 | Kode | Arti |
 |---|---|
-| `user.manage` | Kelola akun pengguna |
-| `master.manage` | Kelola unit kerja dan jabatan |
-| `employee.view` | Lihat daftar dan detail pegawai |
-| `employee.manage` | Tambah dan ubah data pegawai |
+| `user.manage` | Kelola akun pengguna (`/accounts`) |
+| `role.manage` | Atur hak akses per peran (`/settings/roles`) |
+| `settings.manage` | Lokasi presensi dan jam kerja (`/settings/app`) |
+| `master.manage` | Unit kerja, jabatan, struktur organisasi (`/master/*`) |
+| `employee.view` | Lihat pegawai, riwayat, dokumen (`/employees`, `/histories/*`, `/documents`) |
+| `employee.manage` | Tambah/ubah pegawai, riwayat, dokumen; putuskan perbaikan data (`/employees/change-requests`) |
+| `attendance.view` | Rekap presensi (`/attendance/recap`) |
+| `attendance.manage` | Koreksi presensi di halaman rekap |
+| `leave.view` | Daftar pengajuan cuti (`/leave/requests`) |
+| `leave.manage` | Putuskan cuti; kelola hari libur (`/leave/holidays`) |
+| `appraisal.manage` | Periode, formulir, dan rekap penilaian kinerja (`/performance/periods`, `forms`, `recap`) |
+| `training.manage` | Kelola diklat dan pendaftar (`/training/manage`) |
+| `mutation.manage` | Usulan dan keputusan mutasi (`/mutations`) |
+| `promotion.manage` | Usulan dan keputusan kenaikan (`/promotions`) |
+| `report.view` | Dashboard statistik agregat |
+| `announcement.manage` | Buat, terbitkan, dan hapus pengumuman (dicek di `announcements/page.tsx`) |
+
+Halaman milik pegawai sendiri (`/attendance`, `/leave`, `/performance`, `/training`, `/profile`, `/announcements`)
+cukup login; isinya bergantung pada `employeeId` akun dan RLS.
 
 Peran (`ROLE_CODES`): `superadmin`, `hr_admin`, `chair`, `vice_chair`, `quality_assurance`, `employee`.
 
@@ -238,7 +290,7 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
 - **`MobileSidebar`**: versi drawer untuk layar kecil, dibuka dari tombol ☰ di header.
 - **`AppHeader`**: breadcrumb dan judul, pencarian, notifikasi, menu avatar.
   - Pencarian **belum mencari apa pun**. Submit hanya menampilkan toast "Pencarian belum tersedia".
-  - Notifikasi selalu kosong karena belum ada sumber datanya.
+  - Notifikasi (`NotificationMenu`) membaca feed dari `features/notifications` (lihat 9.15).
 
 ---
 
@@ -252,6 +304,9 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
 - Buat akun baru memanggil Edge Function `admin-create-user` dengan `createAccount`.
   Pembuatan lewat function ini wajib karena membuat user Auth butuh secret key yang tidak boleh ada di browser.
   Password sementara dibuat otomatis (`generateTemporaryPassword`).
+- Hubungkan akun ke pegawai di dialog Ubah Akun (pilihan pegawai bisa dicari, sumbernya RPC `list_linkable_employees`).
+- Hapus akun (`DeleteAccountDialog`) memanggil Edge Function `admin-delete-user`.
+- Akun pimpinan diberi cakupan laporan (`ReportScopeDialog`, tabel `report_scopes`) yang membatasi hasil fungsi `report_*`.
 
 ### 9.2 Master data (`/master/*`, permission `master.manage`)
 
@@ -268,6 +323,17 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
 - Detail (`EmployeeDetailView`): tab Biodata, Kepegawaian, Akun Login. Status akun dibaca lewat RPC `get_employee_account`.
 - Nonaktifkan (`DeactivateEmployeeDialog`): konfirmasi + alasan wajib; status Nonaktif atau Pensiun. Bisa diaktifkan kembali.
   Pegawai tidak pernah dihapus.
+
+### 9.4 Riwayat & dokumen (`/histories/*`, `/documents`, permission `employee.view` / `employee.manage`)
+
+- Modul `features/employee-history` (riwayat jabatan & pendidikan) dan `features/documents` (dokumen pegawai).
+- Setiap panel (`PositionHistoryPanel`, `EducationHistoryPanel`, `DocumentsPanel`) dipakai dua kali:
+  tanpa `employeeId` = halaman menu (semua pegawai, cari nama, paginasi 20); dengan `employeeId` = tab di Detail Pegawai.
+- Tombol tambah/ubah/hapus hanya muncul jika punya `employee.manage` (`canManage`). Hapus selalu lewat `ConfirmDeleteDialog`.
+- File (SK, ijazah, dokumen) diunggah lewat `file-storage.ts` ke bucket privat `employee-documents`
+  dengan path `<employee_id>/<documents|education|positions>/...`; dibuka dengan signed URL 60 detik (`FileLinkButton`).
+  Batas 5 MB dan PDF/JPG/PNG dicek di form (`validateEmployeeFile`) dan di Storage (migrasi `..._employee_document_limits`).
+- Mengganti file menghapus file lama; menghapus data menghapus file-nya. Jika simpan data gagal, file yang baru diunggah dihapus lagi.
 
 ### 9.5 Struktur Organisasi (`/master/organization`, permission `master.manage`)
 
@@ -288,16 +354,66 @@ Lapis kedua ada di `(dashboard)/layout.tsx`: jika `getCurrentUser()` mengembalik
   dan **Jam Kerja** (`work_schedules`: satu per kategori; jam masuk/pulang, toleransi, catat pulang awal).
 - Zona waktu (`app_settings.timezone`) hanya ditampilkan, tidak bisa diubah: frontend memakai `APP_TIME_ZONE` yang sama.
 
-### 9.4 Riwayat & dokumen (`/histories/*`, `/documents`, permission `employee.view` / `employee.manage`)
+### 9.8 Perbaikan data (`/profile`, `/employees/change-requests`)
 
-- Modul `features/employee-history` (riwayat jabatan & pendidikan) dan `features/documents` (dokumen pegawai).
-- Setiap panel (`PositionHistoryPanel`, `EducationHistoryPanel`, `DocumentsPanel`) dipakai dua kali:
-  tanpa `employeeId` = halaman menu (semua pegawai, cari nama, paginasi 20); dengan `employeeId` = tab di Detail Pegawai.
-- Tombol tambah/ubah/hapus hanya muncul jika punya `employee.manage` (`canManage`). Hapus selalu lewat `ConfirmDeleteDialog`.
-- File (SK, ijazah, dokumen) diunggah lewat `file-storage.ts` ke bucket privat `employee-documents`
-  dengan path `<employee_id>/<documents|education|positions>/...`; dibuka dengan signed URL 60 detik (`FileLinkButton`).
-  Batas 5 MB dan PDF/JPG/PNG dicek di form (`validateEmployeeFile`) dan di Storage (migrasi `..._employee_document_limits`).
-- Mengganti file menghapus file lama; menghapus data menghapus file-nya. Jika simpan data gagal, file yang baru diunggah dihapus lagi.
+- Modul `features/profile-requests`. Pegawai melihat profilnya (`ProfilePanel`) dan mengajukan perubahan field tertentu
+  (`CHANGE_FIELDS`) lewat RPC `submit_profile_change_request`.
+- HR (`employee.manage`) memutuskan di `ChangeRequestsPanel` lewat RPC `decide_profile_change_request`. Data pegawai tidak diubah langsung dari UI pegawai.
+
+### 9.9 Presensi (`/attendance`, `/attendance/recap`)
+
+- Pegawai: `CheckInCard` membaca GPS browser lalu memanggil RPC `check_in` / `check_out`. Radius dicek di database
+  terhadap `attendance_locations`; di luar radius tampil "Tidak bisa melakukan presensi". Riwayat sendiri di `MyAttendancePanel`.
+- Rekap (`attendance.view`): harian dari `attendance_records`, bulanan dari view `attendance_monthly_summary`, bisa diunduh CSV.
+- Koreksi (`attendance.manage`): `CorrectionDialog` → RPC `correct_attendance`; pegawai menerima notifikasi.
+
+### 9.10 Cuti & izin (`/leave`, `/leave/requests`, `/leave/holidays`)
+
+- Pegawai: saldo kuota tahunan (RPC `get_leave_balance`), ajukan (`LeaveRequestDialog` → `submit_leave_request`, lampiran opsional),
+  batalkan (`cancel_leave_request`). Jumlah hari tidak menghitung hari Minggu dan hari libur (`public_holidays`); Sabtu dihitung
+  (`countLeaveDays` hanya pratinjau, database menghitung ulang lewat `count_leave_days()`).
+- HR: antrean di `LeaveRequestsPanel` (`leave.view`), keputusan lewat `decide_leave_request` (`leave.manage`), rekap dari `leave_summary`.
+- Hari libur (`leave.manage`): tambah/hapus di `HolidaysPanel`.
+
+### 9.11 Penilaian kinerja (`/performance/*`)
+
+- HR (`appraisal.manage`): kelola periode (`PeriodsPanel`), buat formulir untuk pegawai (RPC `generate_appraisals`),
+  pantau formulir (`FormsPanel`), verifikasi (`review_appraisal`), dan rekap per unit (`report_appraisal_by_unit`).
+- Pengisian formulir (`AppraisalForm`): simpan draf `save_appraisal`, kirim `submit_appraisal`. Skala nilai maksimum dibaca dari `app_settings` (`getMaxScore`).
+- Pegawai melihat penilaiannya di `MyAppraisalsPanel`.
+
+### 9.12 Diklat (`/training`, `/training/manage`)
+
+- Pegawai: lihat diklat yang dibuka dan mendaftar (`applyTraining`, insert ke `training_registrations`; RLS menolak jika pendaftaran ditutup).
+- HR (`training.manage`): kelola diklat (`TrainingFormDialog`), putuskan pendaftar (`decide_training_registration`),
+  dan catat hasil (`set_training_outcome`; peserta yang selesai otomatis masuk riwayat pelatihan).
+
+### 9.13 Mutasi & kenaikan pangkat (`/mutations`, `/promotions`)
+
+- Alur sama untuk keduanya: **usulan** (insert ke `mutations` / `promotion_proposals`, status `proposed`)
+  → **keputusan** HR lewat `DecisionDialog` (RPC `decide_mutation` / `decide_promotion`, `approved` atau `rejected`)
+  → **dijalankan** (RPC `execute_mutation` / `execute_promotion`, status `executed`, data pegawai diperbarui).
+- Status ditampilkan dengan `ProposalStatusBadge`. Unit/jabatan/pangkat saat ini diambil otomatis dari data pegawai.
+- Pilihan pegawai di form usulan memakai `EmployeeSelect` (bisa dicari, hanya pegawai aktif).
+
+### 9.14 Pengumuman (`/announcements`)
+
+- Semua akun membaca pengumuman yang sudah terbit (RLS). Pemegang `announcement.manage` juga melihat draf,
+  dan bisa membuat, mengubah, menerbitkan/menarik (`setAnnouncementPublished`), dan menghapus.
+
+### 9.15 Notifikasi (lonceng di header)
+
+- `features/notifications`: `getNotificationFeed` membaca tabel `notifications` milik pengguna (jumlah dibatasi `FEED_LIMIT`),
+  diperbarui tiap 60 detik (`POLL_INTERVAL_MS`), bukan realtime. Bisa ditandai dibaca satu per satu atau semua.
+- Notifikasi dibuat oleh fungsi database (`notify_employee`, `notify_permission_holders`) saat ada pengajuan atau keputusan.
+
+### 9.16 Pilihan pegawai yang bisa dicari
+
+- Semua dialog yang memilih pegawai memakai `SearchableSelect` (`components/common`, berbasis Combobox shadcn/Base UI):
+  pengguna mengetik nama atau NIP, dan hanya 50 hasil teratas yang dirender.
+- `EmployeeSelect` (`features/employees`) membungkusnya dengan data `useEmployeeOptions`. Prop `activeOnly` membatasi ke pegawai aktif.
+  Dipakai di koreksi presensi, usulan mutasi, usulan kenaikan, unggah dokumen, dan riwayat jabatan/pendidikan.
+- Dialog Ubah Akun memakai `SearchableSelect` langsung dengan data `list_linkable_employees` dan opsi "Tidak terhubung".
 
 ---
 
@@ -383,8 +499,43 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 ### Pegawai
 | Nama | Arti |
 |---|---|
-| `employeeQueryKeys` | Query key pegawai: `all`, `lists()`, `list(filters)`, `detail(id)` |
-| `EmployeeListFilters` | Bentuk filter daftar pegawai (belum final) |
+| `employeeKeys` | Query key pegawai: `all`, `lists()`, `list(filters)`, `detail(id)`, `options()`, `account(id)` |
+| `EmployeeListFilters` | Filter daftar pegawai: pencarian, kategori, unit kerja, status, halaman |
+| `EMPLOYEE_PAGE_SIZE` | Jumlah baris per halaman daftar pegawai (20) |
+| `EmployeeOption` | Satu pilihan pegawai: `id`, `fullName`, `employeeNumber`, `activeStatus` |
+| `useEmployeeOptions` | Daftar semua pegawai untuk pilihan (dipakai `EmployeeSelect`) |
+| `EmployeeSelect` | Pilihan pegawai yang bisa dicari. `activeOnly` = hanya pegawai aktif |
+
+### Komponen bersama
+| Nama | Arti |
+|---|---|
+| `SearchableSelect` | Dropdown satu pilihan dengan kotak pencarian; `options` berisi `{ value, label }` |
+| `ConfirmDeleteDialog` | Konfirmasi sebelum menghapus |
+| `DecisionDialog` | Dialog setujui/tolak dengan catatan (dan nomor SK bila perlu) |
+| `ProposalStatusBadge` | Label status usulan: Diusulkan, Disetujui, Ditolak, Dijalankan |
+| `ActiveStatusBadge` | Label Aktif/Nonaktif |
+| `PaginationBar` | Navigasi halaman tabel |
+| `PageContainer` / `PageHeader` | Padding halaman / judul, deskripsi, breadcrumb, dan tombol aksi |
+| `downloadCsv` | Unduh tabel sebagai CSV (`lib/csv.ts`) |
+| `useDebouncedValue` | Menunda nilai input pencarian (default 300 ms) |
+
+### Modul transaksi
+| Nama | Arti |
+|---|---|
+| `attendanceKeys`, `leaveKeys`, `performanceKeys`, `trainingKeys`, `profileRequestKeys`, `notificationKeys` | Query key per modul |
+| `todayInCampus()` | Tanggal hari ini menurut zona waktu kampus |
+| `Coordinates` | Posisi GPS: `latitude`, `longitude`, `accuracy` |
+| `ATTENDANCE_STATUS_LABELS` | Label status presensi |
+| `LeaveBalance` | Cuti tahunan: `quota`, `used`, `pending` (menunggu keputusan), `remaining` |
+| `countLeaveDays` | Pratinjau jumlah hari cuti di form |
+| `AppraisalPeriod` / `AppraisalDetail` | Periode penilaian / satu formulir beserta indikatornya |
+| `APPRAISAL_STATUS_LABELS` | Label status penilaian |
+| `Training` / `Registration` | Diklat / pendaftaran pegawai pada diklat |
+| `Mutation` / `Promotion` | Usulan mutasi / usulan kenaikan |
+| `ProposalStatus` | Status usulan: `proposed`, `approved`, `rejected`, `executed` |
+| `PROMOTION_TYPE_LABELS` | Jenis kenaikan: pangkat (`rank`) atau jabatan |
+| `ChangeRequest` / `CHANGE_FIELDS` | Pengajuan perbaikan data / daftar field yang boleh diajukan |
+| `AppNotification` / `NotificationFeed` | Satu notifikasi / daftar notifikasi dan jumlah belum dibaca |
 
 ### Tampilan (UI state)
 | Nama | Arti |
@@ -403,16 +554,8 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 | `ScopeInfo` | Cakupan pimpinan dari `report_scopes` (label unit/kategori) |
 | `EmployeeStatRow` | Jumlah pegawai per unit dan kategori (aktif, nonaktif, pensiun) |
 | `PendingCounts` | Jumlah antrean untuk HR (cuti, perbaikan data, nilai) |
-
----|---|
-| `mockDashboardStats` / `stats` | Angka ringkasan contoh |
-| `mockRecentEmployees` | Daftar pegawai terbaru (contoh) |
-| `mockPendingDocuments` | Dokumen menunggu verifikasi (contoh) |
+| `CATEGORY_LABELS` | Label kategori pegawai: Dosen / Tendik |
 | `employeeNumber` | NIP |
-| `status`: `active` / `onLeave` / `inactive` | Aktif / Cuti / Nonaktif |
-| `category`: `lecturer` / `staff` | Dosen / Tendik |
-| `waitingDays` | Lama dokumen menunggu (hari) |
-| `OVERDUE_AFTER_DAYS` | Batas hari sebelum dokumen dianggap terlambat (7) |
 
 ---
 
@@ -422,8 +565,7 @@ Arti nama yang paling sering muncul. Kalau menemukan nama yang belum ada di sini
 - **Database harus aktif:** project Supabase harus berstatus aktif, dan migrasi serta seed sudah terpasang (langkah di `docs/database-schema.md`).
 - **Semua fase kode (1–7) selesai.** Berikutnya: uji alur per peran di Supabase, lalu fitur tambahan (lihat `docs/requirements.md` bagian 7).
 - **Pencarian** di header baru tampilan saja.
-- **Notifikasi** (lonceng di header, `features/notifications`): membaca tabel `notifications` milik pengguna, diperbarui tiap 60 detik, bisa ditandai dibaca. Notifikasinya dibuat oleh fungsi database (`notify_employee`, `notify_permission_holders`) saat ada pengajuan atau keputusan. Pengiriman lewat email belum ada.
-- **`lib/axios.ts` dan `stores/auth-store.ts`** disiapkan untuk API pihak ketiga (Keuangan, SIAKAD). Belum dipakai. Jangan dipakai untuk Supabase.
+- **Notifikasi** (lihat 9.15) memakai polling 60 detik, bukan realtime. Pengiriman lewat email belum ada.- **`lib/axios.ts` dan `stores/auth-store.ts`** disiapkan untuk API pihak ketiga (Keuangan, SIAKAD). Belum dipakai. Jangan dipakai untuk Supabase.
 - **Dokumen lama:** `docs/api-contract.md` adalah arsip pertanyaan untuk API eksternal lama dan tidak lagi berlaku. `docs/architecture.md` sudah mengikuti arsitektur Supabase.
 - **Route baru:** setiap route tingkat atas yang baru harus ditambahkan ke `matcher` dan `PROTECTED_PREFIXES` di `src/proxy.ts`, agar sesi tetap disegarkan di halaman itu.
 - **Loading & error:** `(dashboard)/loading.tsx` (skeleton saat pindah halaman), `(dashboard)/error.tsx` (halaman gagal dimuat), dan `app/not-found.tsx` (alamat tidak dikenal).
