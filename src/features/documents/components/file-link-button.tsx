@@ -8,8 +8,15 @@ import { Button } from "@/components/ui/button";
 import { getEmployeeFileUrl } from "@/features/documents/services/file-storage";
 import { ApiError } from "@/lib/api-error";
 
+type FileLinkButtonProps = {
+  path: string;
+  label?: string;
+  /** Signed URL resolver; defaults to the employee documents bucket. */
+  resolveUrl?: (path: string) => Promise<string>;
+};
+
 /** Opens a private file through a short-lived signed URL. */
-export function FileLinkButton({ path, label = "Lihat file" }: { path: string; label?: string }) {
+export function FileLinkButton({ path, label = "Lihat file", resolveUrl = getEmployeeFileUrl }: FileLinkButtonProps) {
   const [opening, setOpening] = useState(false);
 
   const open = async () => {
@@ -17,7 +24,7 @@ export function FileLinkButton({ path, label = "Lihat file" }: { path: string; l
     const tab = window.open("", "_blank");
     setOpening(true);
     try {
-      const url = await getEmployeeFileUrl(path);
+      const url = await resolveUrl(path);
       if (tab) tab.location.href = url;
       else window.location.assign(url);
     } catch (error) {
