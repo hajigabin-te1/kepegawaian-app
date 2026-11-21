@@ -6,10 +6,11 @@ import { performanceKeys } from "@/features/performance/hooks/use-performance";
 import {
   countWorkReports,
   deleteWorkReport,
-  getWorkReportsLocked,
+  getWorkReportLock,
   listReportedPeriodIds,
   listWorkReports,
   saveWorkReport,
+  setWorkReportsLock,
 } from "@/features/performance/services/work-report-service";
 import type { WorkReport, WorkReportInput } from "@/features/performance/types/performance";
 
@@ -29,10 +30,10 @@ export function useWorkReportCounts(periodId: string) {
   return useQuery({ queryKey: performanceKeys.workReportCounts(periodId), queryFn: () => countWorkReports(periodId), enabled: periodId !== "" });
 }
 
-export function useWorkReportsLocked(periodId: string, employeeId: string) {
+export function useWorkReportLock(periodId: string, employeeId: string) {
   return useQuery({
     queryKey: performanceKeys.workReportsLocked(periodId, employeeId),
-    queryFn: () => getWorkReportsLocked(periodId, employeeId),
+    queryFn: () => getWorkReportLock(periodId, employeeId),
     enabled: periodId !== "" && employeeId !== "",
   });
 }
@@ -58,4 +59,13 @@ export function useSaveWorkReport() {
 export function useDeleteWorkReport() {
   const invalidate = useInvalidateWorkReports();
   return useMutation({ mutationFn: (id: string) => deleteWorkReport(id), onSuccess: invalidate });
+}
+
+export function useSetWorkReportsLock() {
+  const invalidate = useInvalidateWorkReports();
+  return useMutation({
+    mutationFn: ({ periodId, employeeId, locked }: { periodId: string; employeeId: string; locked: boolean | null }) =>
+      setWorkReportsLock(periodId, employeeId, locked),
+    onSuccess: invalidate,
+  });
 }

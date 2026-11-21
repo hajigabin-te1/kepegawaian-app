@@ -67,6 +67,13 @@ export type WorkReport = {
   updatedAt: string;
 };
 
+/** Whether an employee's reports in a period can still change, and HR's manual setting if any. */
+export type WorkReportLock = {
+  locked: boolean;
+  /** HR's manual lock (true) or unlock (false); null when the automatic rule applies. */
+  override: boolean | null;
+};
+
 export type WorkReportInput = {
   /** Null when adding a new report. */
   id: string | null;

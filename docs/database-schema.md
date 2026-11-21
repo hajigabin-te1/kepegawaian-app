@@ -21,6 +21,8 @@ File SQL ada di `supabase/`:
 | `migrations/20261112202941_appraisal_rules.sql` | Alur penilaian lewat RPC: `save_appraisal`, `submit_appraisal`, `review_appraisal` (diganti), `generate_appraisals` (hanya periode aktif), `compute_appraisal_score` (rumus sementara = rata-rata), pengaturan `appraisal_max_score`. HR hanya bisa membaca langsung; kebijakan tulis pada `appraisals` dan `appraisal_items` dihapus |
 | `migrations/20261112202953_training_mutation_promotion_rules.sql` | Alur Fase 7 lewat RPC: `set_training_outcome`, `decide_mutation`, `decide_promotion`, `execute_promotion`; trigger pengisi data "saat ini" pada usulan dan waktu terbit pengumuman. Kebijakan tulis langsung HR pada `mutations`, `promotion_proposals`, `training_registrations` dihapus (usulan tetap bisa dibuat) |
 | `migrations/20261118184714_appraisal_work_reports.sql` | Laporan kerja pegawai: tabel `appraisal_work_reports`, fungsi `work_reports_locked`, RPC `save_work_report` dan `delete_work_report`, bucket privat `appraisal-evidence` (5 MB, PDF/JPG/PNG) beserta kebijakan Storage |
+| `migrations/20261121045619_fix_review_appraisal_note.sql` | Perbaikan `review_appraisal`: parameter `note` ambigu dengan kolom `appraisals.note` sehingga "kembalikan untuk revisi" gagal |
+| `migrations/20261121050214_work_report_hr_controls.sql` | Kendali HR atas laporan kerja: tabel `appraisal_work_report_locks`, RPC `set_work_reports_lock`, `work_reports_locked` memperhitungkan kunci manual, `delete_work_report` mengizinkan HR, kebijakan Storage hapus bukti untuk HR |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -110,6 +112,7 @@ Karena akun dibuat oleh superadmin, pendaftaran publik sebaiknya dimatikan:
 | Penilaian Kinerja (periode) | `appraisal_periods` | `name`, `start_date`, `end_date`, `is_active` |
 | Form Penilaian | `appraisals` + `appraisal_items` | `period_id`, `employee_id`, `appraised_by` (HR yang mengisi; menggantikan atasan_id), `performance_score` (nilai_kinerja), `note`, `status`; item: indikator, target, realisasi, nilai |
 | Laporan Kerja (bahan penilaian) | `appraisal_work_reports` | `period_id`, `employee_id`, `description` (10–2000 karakter), `evidence_path` (bucket `appraisal-evidence`), `evidence_name`. Pegawai membaca miliknya, HR (`appraisal.manage`) membaca semua; tulis hanya lewat RPC |
+| Kunci Laporan Kerja (manual HR) | `appraisal_work_report_locks` | PK (`period_id`, `employee_id`), `is_locked`, `set_by`, `set_at`. Tanpa baris = aturan otomatis. Pegawai membaca miliknya, HR membaca semua; tulis hanya lewat RPC |
 | Mutasi | `mutations` | `from_work_unit_id` (unit lama), `to_work_unit_id` (unit baru), `effective_date` |
 | Users | `user_accounts` | `id` (= `auth.users.id`), `employee_id`, `role_id`, `is_active` (status_akun). Email ada di `auth.users.email` (login memakai email, tanpa username) |
 | Role / Permission / Role Permission | `roles`, `permissions`, `role_permissions` | `code` mis. `leave.manage` |
@@ -172,8 +175,9 @@ Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan 
 | `submit_appraisal(id)` | HR mengirim form untuk verifikasi (semua indikator harus bernilai); nilai akhir dihitung ulang |
 | `review_appraisal(id, accept, note)` | HR memverifikasi atau mengembalikan penilaian untuk diperbaiki |
 | `save_work_report(report_id, period_id, description, evidence_path, evidence_name)` | Pegawai menambah (`report_id` null) atau mengubah laporan kerjanya sendiri; ditolak jika terkunci |
-| `delete_work_report(report_id)` | Pegawai menghapus laporan kerjanya sendiri; mengembalikan path bukti agar file dihapus |
-| `work_reports_locked(period_id, employee_id)` | `true` jika periode nonaktif atau form pegawai pada periode itu sudah `submitted`/`verified` |
+| `delete_work_report(report_id)` | Pegawai menghapus laporan kerjanya sendiri (jika tidak terkunci), HR menghapus laporan siapa pun; mengembalikan path bukti agar file dihapus |
+| `set_work_reports_lock(period_id, employee_id, locked)` | HR mengunci (`true`), membuka kunci (`false`), atau kembali ke aturan otomatis (`null`); hanya periode aktif |
+| `work_reports_locked(period_id, employee_id)` | `true` jika periode nonaktif; selain itu kunci manual HR bila ada, jika tidak ada maka `true` saat form pegawai `submitted`/`verified` |
 | `decide_training_registration(id, approve, note)` | HR setuju/tolak pendaftaran diklat |
 | `execute_mutation(id)` | HR menjalankan mutasi yang disetujui (unit/jabatan + riwayat) |
 | `log_audit_event(action, entity, …)` | Mencatat kejadian non-tabel, mis. login |

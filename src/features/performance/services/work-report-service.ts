@@ -1,5 +1,5 @@
 import { validateEmployeeFile } from "@/features/documents/services/file-storage";
-import type { WorkReport, WorkReportInput } from "@/features/performance/types/performance";
+import type { WorkReport, WorkReportInput, WorkReportLock } from "@/features/performance/types/performance";
 import { ApiError, fromSupabaseError } from "@/lib/api-error";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -15,6 +15,9 @@ const RPC_MESSAGES: Record<string, string> = {
   "Description must be 10 to 2000 characters": "Deskripsi harus 10–2000 karakter.",
   "Evidence file is required": "Bukti dokumen wajib diunggah.",
   "Evidence must be stored in your own folder": "File bukti tidak valid. Silakan unggah ulang.",
+  "Not allowed to lock work reports": "Anda tidak berhak mengunci laporan kerja.",
+  "The appraisal period is not active": "Periode penilaian sudah ditutup.",
+  "Employee not found": "Pegawai tidak ditemukan.",
 };
 
 function rpcError(error: { code?: string; message: string }): ApiError {
@@ -79,13 +82,30 @@ export async function countWorkReports(periodId: string): Promise<Record<string,
   return counts;
 }
 
-export async function getWorkReportsLocked(periodId: string, employeeId: string): Promise<boolean> {
-  const { data, error } = await createSupabaseBrowserClient().rpc("work_reports_locked", {
+export async function getWorkReportLock(periodId: string, employeeId: string): Promise<WorkReportLock> {
+  const supabase = createSupabaseBrowserClient();
+  const [locked, override] = await Promise.all([
+    supabase.rpc("work_reports_locked", { target_period_id: periodId, target_employee_id: employeeId }),
+    supabase
+      .from("appraisal_work_report_locks")
+      .select("is_locked")
+      .eq("period_id", periodId)
+      .eq("employee_id", employeeId)
+      .maybeSingle(),
+  ]);
+  if (locked.error) throw rpcError(locked.error);
+  if (override.error) throw fromSupabaseError(override.error);
+  return { locked: locked.data, override: override.data?.is_locked ?? null };
+}
+
+/** HR: lock (true), unlock (false), or return to the automatic rule (null). */
+export async function setWorkReportsLock(periodId: string, employeeId: string, locked: boolean | null): Promise<void> {
+  const { error } = await createSupabaseBrowserClient().rpc("set_work_reports_lock", {
     target_period_id: periodId,
     target_employee_id: employeeId,
+    locked,
   });
   if (error) throw rpcError(error);
-  return data;
 }
 
 function fileExtension(file: File): string {

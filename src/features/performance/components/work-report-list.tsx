@@ -11,7 +11,7 @@ const dateFormatter = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: 
 
 type WorkReportListProps = {
   reports: WorkReport[];
-  /** Per-report actions (edit/delete) for the owner; omitted for read-only views. */
+  /** Per-report actions (owner: edit/delete, HR: delete); omitted for read-only views. */
   renderActions?: (report: WorkReport) => ReactNode;
 };
 

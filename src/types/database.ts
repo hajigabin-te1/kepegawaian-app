@@ -147,6 +147,45 @@ export type Database = {
         }
         Relationships: []
       }
+      appraisal_work_report_locks: {
+        Row: {
+          employee_id: string
+          is_locked: boolean
+          period_id: string
+          set_at: string
+          set_by: string | null
+        }
+        Insert: {
+          employee_id: string
+          is_locked: boolean
+          period_id: string
+          set_at?: string
+          set_by?: string | null
+        }
+        Update: {
+          employee_id?: string
+          is_locked?: boolean
+          period_id?: string
+          set_at?: string
+          set_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appraisal_work_report_locks_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appraisal_work_report_locks_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "appraisal_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appraisal_work_reports: {
         Row: {
           created_at: string
@@ -1959,6 +1998,10 @@ export type Database = {
         Returns: string
       }
       delete_work_report: { Args: { target_report_id: string }; Returns: string }
+      set_work_reports_lock: {
+        Args: { locked: boolean | null; target_employee_id: string; target_period_id: string }
+        Returns: undefined
+      }
       work_reports_locked: {
         Args: { target_employee_id: string; target_period_id: string }
         Returns: boolean
