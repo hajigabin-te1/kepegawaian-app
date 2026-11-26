@@ -14,6 +14,8 @@ export type EmployeeListItem = {
   employeeNumber: string | null;
   lecturerNumber: string | null;
   category: EmployeeCategory;
+  /** Set for a tendik who also teaches (always "lecturer"). */
+  additionalCategory: EmployeeCategory | null;
   workUnitName: string | null;
   positionName: string | null;
   activeStatus: EmployeeActiveStatus;
@@ -38,6 +40,7 @@ export type EmployeeDetail = {
   phone: string | null;
   email: string | null;
   category: EmployeeCategory;
+  additionalCategory: EmployeeCategory | null;
   employmentStatusCode: string | null;
   employmentStatusName: string | null;
   appointmentDate: string | null;
@@ -83,6 +86,11 @@ export const CATEGORY_LABELS: Record<EmployeeCategory, string> = {
   lecturer: "Dosen",
   staff: "Tenaga Kependidikan",
 };
+
+/** "Tenaga Kependidikan · Dosen" for a dual-category employee, otherwise the single label. */
+export function formatEmployeeCategories(category: EmployeeCategory, additionalCategory: EmployeeCategory | null): string {
+  return additionalCategory ? `${CATEGORY_LABELS[category]} · ${CATEGORY_LABELS[additionalCategory]}` : CATEGORY_LABELS[category];
+}
 
 export const ACTIVE_STATUS_LABELS: Record<EmployeeActiveStatus, string> = {
   active: "Aktif",

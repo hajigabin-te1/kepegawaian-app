@@ -46,6 +46,7 @@ function toFormValues(employee: EmployeeDetail | null): CreateEmployeeFormValues
   return {
     fullName: text(employee?.fullName ?? null),
     category: employee?.category ?? "lecturer",
+    alsoLecturer: employee?.additionalCategory === "lecturer",
     workUnitId: text(employee?.workUnitId ?? null),
     employeeNumber: text(employee?.employeeNumber ?? null),
     lecturerNumber: text(employee?.lecturerNumber ?? null),
@@ -160,6 +161,7 @@ export function EmployeeForm(props: EmployeeFormProps) {
     defaultValues: toFormValues(employee),
   });
   const wantsAccount = useWatch({ control, name: "createAccount" });
+  const category = useWatch({ control, name: "category" });
 
   // Inactive units and positions stay selectable only when already assigned.
   const unitItems = Object.fromEntries(
@@ -213,6 +215,15 @@ export function EmployeeForm(props: EmployeeFormProps) {
           </Field>
         </div>
         <SelectField control={control} name="category" label="Kategori" items={CATEGORY_LABELS} placeholder="Pilih kategori" required error={errors.category?.message} />
+        {category === "staff" ? (
+          <label className="flex items-start gap-3 self-end pb-2 text-sm">
+            <input type="checkbox" className="mt-0.5 size-4 accent-primary" {...register("alsoLecturer")} />
+            <span>
+              <span className="font-medium">Juga bertugas sebagai dosen</span>
+              <span className="block text-xs text-muted-foreground">Mendapat form penilaian dosen dan tendik. Jam kerja tetap tendik.</span>
+            </span>
+          </label>
+        ) : null}
         <Field id="national-id" label="NIK" error={errors.nationalIdNumber?.message} hint="16 digit sesuai KTP.">
           <Input id="national-id" inputMode="numeric" className="tabular-nums" {...register("nationalIdNumber")} />
         </Field>

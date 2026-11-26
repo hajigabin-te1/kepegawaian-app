@@ -17,11 +17,11 @@ type EmployeeInsert = Database["public"]["Tables"]["employees"]["Insert"];
 const DUPLICATE_NUMBER_MESSAGE = "NIP, NIDN, atau NIK sudah dipakai pegawai lain.";
 
 const LIST_COLUMNS =
-  "id, full_name, employee_number, lecturer_number, category, active_status, work_unit:work_units(name), position:positions(name)";
+  "id, full_name, employee_number, lecturer_number, category, additional_category, active_status, work_unit:work_units(name), position:positions(name)";
 
 const DETAIL_COLUMNS = `
   id, employee_number, lecturer_number, national_id_number, full_name, birth_place, birth_date, gender, religion,
-  marital_status, address, city, province, postal_code, phone, email, category, employment_status_code,
+  marital_status, address, city, province, postal_code, phone, email, category, additional_category, employment_status_code,
   appointment_date, work_unit_id, position_id, rank_grade, service_years, service_months, active_status,
   deactivation_reason,
   work_unit:work_units(name), position:positions(name), employment_status:employment_statuses(name)
@@ -37,6 +37,7 @@ function toPayload(values: EmployeeFormValues): EmployeeInsert {
   return {
     full_name: values.fullName,
     category: values.category,
+    additional_category: values.category === "staff" && values.alsoLecturer ? "lecturer" : null,
     work_unit_id: values.workUnitId,
     employee_number: nullable(values.employeeNumber),
     lecturer_number: nullable(values.lecturerNumber),
@@ -73,7 +74,10 @@ export async function listEmployees(filters: EmployeeListFilters): Promise<Emplo
   if (search) {
     query = query.or(`full_name.ilike.*${search}*,employee_number.ilike.*${search}*,lecturer_number.ilike.*${search}*`);
   }
-  if (filters.category !== "all") query = query.eq("category", filters.category);
+  if (filters.category !== "all") {
+    // Dual-category employees match both of their categories.
+    query = query.or(`category.eq.${filters.category},additional_category.eq.${filters.category}`);
+  }
   if (filters.workUnitId !== "all") query = query.eq("work_unit_id", filters.workUnitId);
   if (filters.activeStatus !== "all") query = query.eq("active_status", filters.activeStatus);
 
@@ -88,6 +92,7 @@ export async function listEmployees(filters: EmployeeListFilters): Promise<Emplo
       employeeNumber: row.employee_number,
       lecturerNumber: row.lecturer_number,
       category: row.category,
+      additionalCategory: row.additional_category,
       workUnitName: row.work_unit?.name ?? null,
       positionName: row.position?.name ?? null,
       activeStatus: row.active_status,
@@ -117,6 +122,7 @@ export async function getEmployee(id: string): Promise<EmployeeDetail> {
     phone: data.phone,
     email: data.email,
     category: data.category,
+    additionalCategory: data.additional_category,
     employmentStatusCode: data.employment_status_code,
     employmentStatusName: data.employment_status?.name ?? null,
     appointmentDate: data.appointment_date,
