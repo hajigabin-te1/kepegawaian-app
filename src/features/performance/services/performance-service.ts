@@ -2,6 +2,7 @@ import { ApiError, fromSupabaseError } from "@/lib/api-error";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AppraisalFormValues, PeriodFormValues } from "@/features/performance/schemas/performance-schemas";
 import type {
+  AppraisalCategory,
   AppraisalDetail,
   AppraisalListItem,
   AppraisalPeriod,
@@ -10,7 +11,7 @@ import type {
 } from "@/features/performance/types/performance";
 
 const DETAIL_COLUMNS =
-  "id, period_id, employee_id, status, performance_score, note, revision_note, period:appraisal_periods(name), employee:employees(full_name), items:appraisal_items(indicator, target, realization, score, sort_order)";
+  "id, period_id, employee_id, category, status, performance_score, note, revision_note, period:appraisal_periods(name), employee:employees(full_name), items:appraisal_items(indicator, target, realization, score, sort_order)";
 
 function rpcError(error: { code?: string; message: string }): ApiError {
   const messages: Record<string, string> = {
@@ -85,7 +86,7 @@ export async function generateAppraisals(periodId: string): Promise<number> {
 export async function listAppraisals(periodId: string, status: AppraisalStatus | "all"): Promise<AppraisalListItem[]> {
   let query = createSupabaseBrowserClient()
     .from("appraisals")
-    .select("id, employee_id, status, performance_score, employee:employees(full_name, employee_number, work_unit:work_units(name))")
+    .select("id, employee_id, category, status, performance_score, employee:employees(full_name, employee_number, work_unit:work_units(name))")
     .eq("period_id", periodId);
   if (status !== "all") query = query.eq("status", status);
   const { data, error } = await query;
@@ -97,16 +98,18 @@ export async function listAppraisals(periodId: string, status: AppraisalStatus |
       employeeName: row.employee?.full_name ?? "—",
       employeeNumber: row.employee?.employee_number ?? null,
       workUnitName: row.employee?.work_unit?.name ?? null,
+      category: row.category,
       status: row.status,
       score: row.performance_score === null ? null : Number(row.performance_score),
     }))
-    .sort((a, b) => a.employeeName.localeCompare(b.employeeName, "id"));
+    .sort((a, b) => a.employeeName.localeCompare(b.employeeName, "id") || a.category.localeCompare(b.category));
 }
 
 type DetailRow = {
   id: string;
   period_id: string;
   employee_id: string;
+  category: AppraisalCategory;
   status: AppraisalStatus;
   performance_score: number | null;
   note: string | null;
@@ -122,6 +125,7 @@ const toDetail = (row: DetailRow): AppraisalDetail => ({
   periodName: row.period?.name ?? "—",
   employeeId: row.employee_id,
   employeeName: row.employee?.full_name ?? "—",
+  category: row.category,
   status: row.status,
   score: row.performance_score === null ? null : Number(row.performance_score),
   note: row.note ?? "",

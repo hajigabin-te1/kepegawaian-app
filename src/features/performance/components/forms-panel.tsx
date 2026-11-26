@@ -25,6 +25,7 @@ import { useAppraisalList, usePeriods, useReviewAppraisal } from "@/features/per
 import { reviewSchema, type ReviewFormValues } from "@/features/performance/schemas/performance-schemas";
 import { useWorkReportCounts } from "@/features/performance/hooks/use-work-reports";
 import {
+  APPRAISAL_CATEGORY_LABELS,
   APPRAISAL_STATUS_LABELS,
   MIN_WORK_REPORTS,
   type AppraisalListItem,
@@ -198,7 +199,10 @@ export function FormsPanel() {
                     <TableRow key={item.id} className="hover:bg-accent/15">
                       <TableCell className="pl-6">
                         <p className="font-medium">{item.employeeName}</p>
-                        <p className="text-xs text-muted-foreground tabular-nums">{item.employeeNumber ?? "—"}</p>
+                        <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground tabular-nums">
+                          {item.employeeNumber ?? "—"}
+                          <Badge variant="accent">{APPRAISAL_CATEGORY_LABELS[item.category]}</Badge>
+                        </p>
                       </TableCell>
                       <TableCell className="hidden text-muted-foreground md:table-cell">{item.workUnitName ?? "—"}</TableCell>
                       <TableCell className="text-right">
