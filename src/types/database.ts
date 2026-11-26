@@ -1993,6 +1993,7 @@ export type Database = {
         Returns: undefined
       }
       submit_appraisal: { Args: { target_appraisal_id: string }; Returns: undefined }
+      delete_draft_appraisal: { Args: { target_appraisal_id: string }; Returns: undefined }
       save_work_report: {
         Args: {
           new_description: string

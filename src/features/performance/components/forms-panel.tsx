@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckIcon, ClipboardListIcon, Loader2Icon, PencilLineIcon, UndoIcon } from "lucide-react";
+import { CheckIcon, ClipboardListIcon, Loader2Icon, PencilLineIcon, Trash2Icon, UndoIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
+import { ConfirmDeleteDialog } from "@/components/common/confirm-delete-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryErrorState } from "@/components/common/query-error-state";
 import { TableSkeleton } from "@/components/common/table-skeleton";
@@ -21,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { routes } from "@/config/routes";
 import { AppraisalStatusBadge, PeriodSelect, formatScore } from "@/features/performance/components/appraisal-parts";
-import { useAppraisalList, usePeriods, useReviewAppraisal } from "@/features/performance/hooks/use-performance";
+import { useAppraisalList, useDeleteDraftAppraisal, usePeriods, useReviewAppraisal } from "@/features/performance/hooks/use-performance";
 import { reviewSchema, type ReviewFormValues } from "@/features/performance/schemas/performance-schemas";
 import { useWorkReportCounts } from "@/features/performance/hooks/use-work-reports";
 import {
@@ -127,6 +128,19 @@ export function FormsPanel() {
   const [chosenPeriod, setChosenPeriod] = useState("");
   const [status, setStatus] = useState<AppraisalStatus | "all">("all");
   const [review, setReview] = useState<Review | null>(null);
+  const [toDelete, setToDelete] = useState<AppraisalListItem | null>(null);
+  const deleteMutation = useDeleteDraftAppraisal();
+
+  const confirmDelete = () => {
+    if (!toDelete) return;
+    deleteMutation.mutate(toDelete.id, {
+      onSuccess: () => {
+        toast.success("Draf form penilaian dihapus.");
+        setToDelete(null);
+      },
+      onError: (error) => toast.error(error instanceof ApiError ? error.message : "Draf form gagal dihapus."),
+    });
+  };
 
   // Default to the newest active period (or the newest one) until the user picks another.
   const periodId = chosenPeriod || periods.data?.find((p) => p.isActive)?.id || periods.data?.[0]?.id || "";
@@ -226,6 +240,17 @@ export function FormsPanel() {
                               </Button>
                             </>
                           ) : null}
+                          {item.status === "draft" ? (
+                            <Button
+                              variant="outline"
+                              size="icon-sm"
+                              onClick={() => setToDelete(item)}
+                              aria-label={`Hapus draf ${APPRAISAL_CATEGORY_LABELS[item.category]} ${item.employeeName}`}
+                              title="Hapus draf"
+                            >
+                              <Trash2Icon />
+                            </Button>
+                          ) : null}
                           <Button variant="outline" size="sm" nativeButton={false} render={<Link href={routes.performance.form(item.id)} />}>
                             <PencilLineIcon />
                             {item.status === "draft" || item.status === "revision_requested" ? "Isi" : "Lihat"}
@@ -242,6 +267,20 @@ export function FormsPanel() {
       )}
 
       <ReviewDialog review={review} onClose={() => setReview(null)} />
+      <ConfirmDeleteDialog
+        open={toDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteMutation.isPending) setToDelete(null);
+        }}
+        title="Hapus draf form penilaian?"
+        description={
+          toDelete
+            ? `Draf ${APPRAISAL_CATEGORY_LABELS[toDelete.category]} untuk ${toDelete.employeeName} beserta indikatornya akan dihapus. Form bisa dibuat lagi lewat Generate form selama pegawai masih memiliki kategori ini.`
+            : ""
+        }
+        onConfirm={confirmDelete}
+        isPending={deleteMutation.isPending}
+      />
     </>
   );
 }

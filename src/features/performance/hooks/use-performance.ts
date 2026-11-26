@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { AppraisalFormValues, PeriodFormValues } from "@/features/performance/schemas/performance-schemas";
 import {
+  deleteDraftAppraisal,
   generateAppraisals,
   getAppraisal,
   getMaxScore,
@@ -97,4 +98,9 @@ export function useReviewAppraisal() {
     mutationFn: ({ id, accept, note }: { id: string; accept: boolean; note: string }) => reviewAppraisal(id, accept, note),
     onSuccess: invalidate,
   });
+}
+
+export function useDeleteDraftAppraisal() {
+  const invalidate = useInvalidate();
+  return useMutation({ mutationFn: (id: string) => deleteDraftAppraisal(id), onSuccess: invalidate });
 }

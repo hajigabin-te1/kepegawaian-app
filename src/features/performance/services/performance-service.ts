@@ -28,6 +28,8 @@ function rpcError(error: { code?: string; message: string }): ApiError {
     "Add at least one indicator before submitting": "Tambahkan minimal satu indikator sebelum mengirim.",
     "Every indicator must have a score before submitting": "Semua indikator harus diberi nilai sebelum dikirim.",
     "Only submitted appraisals can be reviewed": "Hanya penilaian yang menunggu verifikasi yang bisa diperiksa.",
+    "Not allowed to delete appraisals": "Anda tidak memiliki akses untuk menghapus form penilaian.",
+    "Only draft appraisals can be deleted": "Hanya form berstatus draf yang bisa dihapus.",
     "A reason is required when sending back": "Alasan pengembalian wajib diisi.",
     "Not allowed to view appraisal reports": "Anda tidak memiliki akses ke rekap penilaian.",
   };
@@ -177,6 +179,12 @@ export async function saveAppraisal(id: string, values: AppraisalFormValues): Pr
 
 export async function submitAppraisal(id: string): Promise<void> {
   const { error } = await createSupabaseBrowserClient().rpc("submit_appraisal", { target_appraisal_id: id });
+  if (error) throw rpcError(error);
+}
+
+/** HR: deletes a form that is still a draft (with its indicators). */
+export async function deleteDraftAppraisal(id: string): Promise<void> {
+  const { error } = await createSupabaseBrowserClient().rpc("delete_draft_appraisal", { target_appraisal_id: id });
   if (error) throw rpcError(error);
 }
 

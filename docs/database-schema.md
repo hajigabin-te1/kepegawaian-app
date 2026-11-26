@@ -25,6 +25,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261121050214_work_report_hr_controls.sql` | Kendali HR atas laporan kerja: tabel `appraisal_work_report_locks`, RPC `set_work_reports_lock`, `work_reports_locked` memperhitungkan kunci manual, `delete_work_report` mengizinkan HR, kebijakan Storage hapus bukti untuk HR |
 | `migrations/20261126110914_dual_category_employees.sql` | Pegawai rangkap: kolom `employees.additional_category` (hanya tendik + dosen), `appraisals.category` dengan unik `(period_id, employee_id, category)`; `generate_appraisals` membuat satu form per kategori, `report_appraisal_by_unit` dikelompokkan per kategori form, `work_reports_locked` mengunci otomatis setelah **semua** form dikirim |
 | `migrations/20261126111603_work_report_lock_current_categories.sql` | `work_reports_locked` hanya menghitung form dari kategori pegawai saat ini, supaya draf sisa kategori lama tidak membuat laporan kerja terus terbuka |
+| `migrations/20261126111936_delete_draft_appraisal.sql` | RPC `delete_draft_appraisal`: HR menghapus form penilaian yang masih **draf** (beserta indikatornya) |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---
@@ -180,6 +181,7 @@ Pegawai tidak bisa menulis ke `attendance_records` secara langsung. Tanggal dan 
 | `delete_work_report(report_id)` | Pegawai menghapus laporan kerjanya sendiri (jika tidak terkunci), HR menghapus laporan siapa pun; mengembalikan path bukti agar file dihapus |
 | `set_work_reports_lock(period_id, employee_id, locked)` | HR mengunci (`true`), membuka kunci (`false`), atau kembali ke aturan otomatis (`null`); hanya periode aktif |
 | `work_reports_locked(period_id, employee_id)` | `true` jika periode nonaktif; selain itu kunci manual HR bila ada, jika tidak ada maka `true` saat semua form pegawai di periode itu (kategori saat ini) `submitted`/`verified` |
+| `delete_draft_appraisal(appraisal_id)` | HR menghapus form penilaian berstatus draf (mis. form dosen sisa setelah status rangkap dicabut) |
 | `decide_training_registration(id, approve, note)` | HR setuju/tolak pendaftaran diklat |
 | `execute_mutation(id)` | HR menjalankan mutasi yang disetujui (unit/jabatan + riwayat) |
 | `log_audit_event(action, entity, …)` | Mencatat kejadian non-tabel, mis. login |
