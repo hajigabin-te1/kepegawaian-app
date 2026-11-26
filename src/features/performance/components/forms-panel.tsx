@@ -88,6 +88,7 @@ function ReviewDialog({ review, onClose }: { review: Review | null; onClose: () 
   };
 
   const accept = review?.accept ?? true;
+  const formLabel = review ? `${APPRAISAL_CATEGORY_LABELS[review.item.category]} ${review.item.employeeName}` : "Penilaian pegawai";
   return (
     <Dialog open={review !== null} onOpenChange={(open) => !open && !reviewMutation.isPending && close()}>
       <DialogContent>
@@ -95,8 +96,8 @@ function ReviewDialog({ review, onClose }: { review: Review | null; onClose: () 
           <DialogTitle>{accept ? "Verifikasi penilaian?" : "Kembalikan untuk revisi?"}</DialogTitle>
           <DialogDescription>
             {accept
-              ? `Nilai ${review?.item.employeeName ?? "pegawai"} dikunci dan pegawai dapat melihat hasilnya.`
-              : "Form kembali ke status perlu revisi dan bisa diisi ulang."}
+              ? `${formLabel} dikunci dan pegawai dapat melihat hasilnya.`
+              : `${formLabel} kembali ke status perlu revisi dan bisa diisi ulang.`}
           </DialogDescription>
         </DialogHeader>
         {accept ? null : (
