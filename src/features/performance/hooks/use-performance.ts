@@ -17,12 +17,13 @@ import {
   saveAppraisal,
   submitAppraisal,
 } from "@/features/performance/services/performance-service";
-import type { AppraisalStatus } from "@/features/performance/types/performance";
+import type { AppraisalCategory, AppraisalStatus } from "@/features/performance/types/performance";
 
 export const performanceKeys = {
   all: ["performance"] as const,
   periods: () => [...performanceKeys.all, "periods"] as const,
-  list: (periodId: string, status: AppraisalStatus | "all") => [...performanceKeys.all, "list", periodId, status] as const,
+  list: (periodId: string, status: AppraisalStatus | "all", category: AppraisalCategory | "all") =>
+    [...performanceKeys.all, "list", periodId, status, category] as const,
   detail: (id: string) => [...performanceKeys.all, "detail", id] as const,
   mine: (employeeId: string) => [...performanceKeys.all, "mine", employeeId] as const,
   recap: (periodId: string) => [...performanceKeys.all, "recap", periodId] as const,
@@ -37,8 +38,12 @@ export function usePeriods() {
   return useQuery({ queryKey: performanceKeys.periods(), queryFn: listPeriods });
 }
 
-export function useAppraisalList(periodId: string, status: AppraisalStatus | "all") {
-  return useQuery({ queryKey: performanceKeys.list(periodId, status), queryFn: () => listAppraisals(periodId, status), enabled: periodId !== "" });
+export function useAppraisalList(periodId: string, status: AppraisalStatus | "all", category: AppraisalCategory | "all") {
+  return useQuery({
+    queryKey: performanceKeys.list(periodId, status, category),
+    queryFn: () => listAppraisals(periodId, status, category),
+    enabled: periodId !== "",
+  });
 }
 
 export function useAppraisal(id: string) {

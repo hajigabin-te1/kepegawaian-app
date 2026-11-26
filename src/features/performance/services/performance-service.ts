@@ -85,12 +85,17 @@ export async function generateAppraisals(periodId: string): Promise<number> {
   return data;
 }
 
-export async function listAppraisals(periodId: string, status: AppraisalStatus | "all"): Promise<AppraisalListItem[]> {
+export async function listAppraisals(
+  periodId: string,
+  status: AppraisalStatus | "all",
+  category: AppraisalCategory | "all",
+): Promise<AppraisalListItem[]> {
   let query = createSupabaseBrowserClient()
     .from("appraisals")
     .select("id, employee_id, category, status, performance_score, employee:employees(full_name, employee_number, work_unit:work_units(name))")
     .eq("period_id", periodId);
   if (status !== "all") query = query.eq("status", status);
+  if (category !== "all") query = query.eq("category", category);
   const { data, error } = await query;
   if (error) throw fromSupabaseError(error);
   return data

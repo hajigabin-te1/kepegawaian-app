@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { routes } from "@/config/routes";
@@ -29,10 +30,13 @@ import {
   APPRAISAL_CATEGORY_LABELS,
   APPRAISAL_STATUS_LABELS,
   MIN_WORK_REPORTS,
+  type AppraisalCategory,
   type AppraisalListItem,
   type AppraisalStatus,
 } from "@/features/performance/types/performance";
 import { ApiError } from "@/lib/api-error";
+
+const CATEGORY_FILTER_ITEMS: Record<AppraisalCategory | "all", string> = { all: "Semua kategori", ...APPRAISAL_CATEGORY_LABELS };
 
 const FILTERS: { value: AppraisalStatus | "all"; label: string }[] = [
   { value: "all", label: "Semua" },
@@ -127,6 +131,7 @@ export function FormsPanel() {
   const periods = usePeriods();
   const [chosenPeriod, setChosenPeriod] = useState("");
   const [status, setStatus] = useState<AppraisalStatus | "all">("all");
+  const [category, setCategory] = useState<AppraisalCategory | "all">("all");
   const [review, setReview] = useState<Review | null>(null);
   const [toDelete, setToDelete] = useState<AppraisalListItem | null>(null);
   const deleteMutation = useDeleteDraftAppraisal();
@@ -144,7 +149,7 @@ export function FormsPanel() {
 
   // Default to the newest active period (or the newest one) until the user picks another.
   const periodId = chosenPeriod || periods.data?.find((p) => p.isActive)?.id || periods.data?.[0]?.id || "";
-  const forms = useAppraisalList(periodId, status);
+  const forms = useAppraisalList(periodId, status, category);
   const reportCounts = useWorkReportCounts(periodId);
 
   return (
@@ -176,6 +181,18 @@ export function FormsPanel() {
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <PeriodSelect periods={periods.data ?? []} value={periodId} onChange={setChosenPeriod} />
+            <Select items={CATEGORY_FILTER_ITEMS} value={category} onValueChange={(value) => value && setCategory(value as AppraisalCategory | "all")}>
+              <SelectTrigger className="w-full sm:w-48" aria-label="Kategori form">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(CATEGORY_FILTER_ITEMS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Tabs value={status} onValueChange={(value) => setStatus(value as AppraisalStatus | "all")}>
               <TabsList className="h-auto flex-wrap justify-start">
                 {FILTERS.map((filter) => (
@@ -193,7 +210,7 @@ export function FormsPanel() {
             ) : forms.isError ? (
               <QueryErrorState error={forms.error} onRetry={() => void forms.refetch()} />
             ) : forms.data.length === 0 ? (
-              <EmptyState icon={ClipboardListIcon} title="Belum ada form" description="Buat form dari menu Periode Penilaian, atau ubah filter status." />
+              <EmptyState icon={ClipboardListIcon} title="Belum ada form" description="Buat form dari menu Periode Penilaian, atau ubah filter status dan kategori." />
             ) : (
               <Table>
                 <TableHeader>
