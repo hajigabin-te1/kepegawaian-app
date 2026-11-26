@@ -24,7 +24,7 @@ import { EmployeeAccountCard } from "@/features/employees/components/employee-ac
 import { EmployeeStatusBadge } from "@/features/employees/components/employee-status-badge";
 import { useChangeEmployeeStatus, useEmployee } from "@/features/employees/hooks/use-employees";
 import {
-  CATEGORY_LABELS,
+  formatEmployeeCategories,
   GENDER_LABELS,
   MARITAL_STATUS_LABELS,
   type EmployeeDetail,
@@ -150,7 +150,7 @@ export function EmployeeDetailView({ employeeId, canManage }: EmployeeDetailView
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <EmployeeStatusBadge status={data.activeStatus} />
-              <Badge variant="accent">{CATEGORY_LABELS[data.category]}</Badge>
+              <Badge variant="accent">{formatEmployeeCategories(data.category, data.additionalCategory)}</Badge>
               {data.workUnitName ? <Badge variant="outline">{data.workUnitName}</Badge> : null}
             </div>
           </div>
@@ -194,7 +194,7 @@ export function EmployeeDetailView({ employeeId, canManage }: EmployeeDetailView
 
         <TabsContent value="employment">
           <InfoGrid>
-            <InfoItem label="Kategori" value={CATEGORY_LABELS[data.category]} />
+            <InfoItem label="Kategori" value={formatEmployeeCategories(data.category, data.additionalCategory)} />
             <InfoItem label="NIP" value={data.employeeNumber} />
             <InfoItem label="NIDN" value={data.lecturerNumber} />
             <InfoItem label="Unit kerja" value={data.workUnitName} />

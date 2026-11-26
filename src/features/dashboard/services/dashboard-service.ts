@@ -23,6 +23,7 @@ export type RecentEmployee = {
   id: string;
   fullName: string;
   category: EmployeeCategory;
+  additionalCategory: EmployeeCategory | null;
   workUnitName: string | null;
   createdAt: string;
 };
@@ -48,7 +49,7 @@ export async function getEmployeeStatistics(): Promise<UnitStatistic[]> {
 export async function listRecentEmployees(): Promise<RecentEmployee[]> {
   const { data, error } = await createSupabaseBrowserClient()
     .from("employees")
-    .select("id, full_name, category, created_at, work_unit:work_units(name)")
+    .select("id, full_name, category, additional_category, created_at, work_unit:work_units(name)")
     .order("created_at", { ascending: false })
     .limit(RECENT_EMPLOYEE_LIMIT);
   if (error) throw fromSupabaseError(error);
@@ -56,6 +57,7 @@ export async function listRecentEmployees(): Promise<RecentEmployee[]> {
     id: row.id,
     fullName: row.full_name,
     category: row.category,
+    additionalCategory: row.additional_category,
     workUnitName: row.work_unit?.name ?? null,
     createdAt: row.created_at,
   }));

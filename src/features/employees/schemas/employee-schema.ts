@@ -20,6 +20,8 @@ const optionalNumberInRange = (label: string, max: number) =>
 export const employeeFormSchema = z.object({
   fullName: z.string().trim().min(1, "Nama lengkap wajib diisi.").max(150, "Maksimal 150 karakter."),
   category: z.enum(["lecturer", "staff"], "Pilih kategori pegawai."),
+  /** Only meaningful when category is "staff" (decision 2026-11-26). */
+  alsoLecturer: z.boolean(),
   workUnitId: z.string().min(1, "Pilih unit kerja."),
   employeeNumber: optionalDigits("NIP"),
   lecturerNumber: optionalDigits("NIDN"),

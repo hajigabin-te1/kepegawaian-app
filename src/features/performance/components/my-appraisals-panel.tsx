@@ -12,6 +12,7 @@ import { routes } from "@/config/routes";
 import { formatScore } from "@/features/performance/components/appraisal-parts";
 import { WorkReportsPanel } from "@/features/performance/components/work-reports-panel";
 import { useMyAppraisals } from "@/features/performance/hooks/use-performance";
+import { APPRAISAL_CATEGORY_LABELS } from "@/features/performance/types/performance";
 
 function MyAppraisals({ employeeId }: { employeeId: string }) {
   const appraisals = useMyAppraisals(employeeId);
@@ -35,7 +36,10 @@ function MyAppraisals({ employeeId }: { employeeId: string }) {
       {appraisals.data.map((appraisal) => (
         <Card key={appraisal.id} className="gap-0 py-0">
           <CardHeader className="flex flex-row items-center justify-between gap-4 border-b py-4">
-            <CardTitle className="text-lg font-semibold">{appraisal.periodName}</CardTitle>
+            <div className="space-y-0.5">
+              <CardTitle className="text-lg font-semibold">{appraisal.periodName}</CardTitle>
+              <p className="text-sm text-muted-foreground">{APPRAISAL_CATEGORY_LABELS[appraisal.category]}</p>
+            </div>
             <p className="text-sm text-muted-foreground">
               Nilai akhir: <span className="text-lg font-semibold tabular-nums text-foreground">{formatScore(appraisal.score)}</span>
             </p>

@@ -18,6 +18,8 @@ import { CATEGORY_LABELS } from "@/features/employees/types/employee";
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
 const dateFormatter = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: APP_TIME_ZONE });
+const SHORT_CATEGORY_LABELS = { lecturer: "Dosen", staff: "Tendik" } as const;
+
 const NO_UNIT = "Tanpa unit kerja";
 
 type UnitRow = { key: string; name: string; lecturers: number; staff: number; inactive: number };
@@ -166,7 +168,9 @@ export function EmployeeStatistics({ canViewEmployees }: EmployeeStatisticsProps
                         <span className="block truncate text-xs text-muted-foreground">{employee.workUnitName ?? NO_UNIT}</span>
                       </span>
                       <span className="flex shrink-0 flex-col items-end gap-1">
-                        <Badge variant="accent">{employee.category === "lecturer" ? "Dosen" : "Tendik"}</Badge>
+                        <Badge variant="accent">
+                          {[employee.category, employee.additionalCategory].flatMap((c) => (c ? [SHORT_CATEGORY_LABELS[c]] : [])).join(" · ")}
+                        </Badge>
                         <span className="text-xs text-muted-foreground tabular-nums">{dateFormatter.format(new Date(employee.createdAt))}</span>
                       </span>
                     </Link>

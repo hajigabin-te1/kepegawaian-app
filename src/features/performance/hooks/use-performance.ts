@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { AppraisalFormValues, PeriodFormValues } from "@/features/performance/schemas/performance-schemas";
 import {
+  deleteDraftAppraisal,
   generateAppraisals,
   getAppraisal,
   getMaxScore,
@@ -16,12 +17,13 @@ import {
   saveAppraisal,
   submitAppraisal,
 } from "@/features/performance/services/performance-service";
-import type { AppraisalStatus } from "@/features/performance/types/performance";
+import type { AppraisalCategory, AppraisalStatus } from "@/features/performance/types/performance";
 
 export const performanceKeys = {
   all: ["performance"] as const,
   periods: () => [...performanceKeys.all, "periods"] as const,
-  list: (periodId: string, status: AppraisalStatus | "all") => [...performanceKeys.all, "list", periodId, status] as const,
+  list: (periodId: string, status: AppraisalStatus | "all", category: AppraisalCategory | "all") =>
+    [...performanceKeys.all, "list", periodId, status, category] as const,
   detail: (id: string) => [...performanceKeys.all, "detail", id] as const,
   mine: (employeeId: string) => [...performanceKeys.all, "mine", employeeId] as const,
   recap: (periodId: string) => [...performanceKeys.all, "recap", periodId] as const,
@@ -36,8 +38,12 @@ export function usePeriods() {
   return useQuery({ queryKey: performanceKeys.periods(), queryFn: listPeriods });
 }
 
-export function useAppraisalList(periodId: string, status: AppraisalStatus | "all") {
-  return useQuery({ queryKey: performanceKeys.list(periodId, status), queryFn: () => listAppraisals(periodId, status), enabled: periodId !== "" });
+export function useAppraisalList(periodId: string, status: AppraisalStatus | "all", category: AppraisalCategory | "all") {
+  return useQuery({
+    queryKey: performanceKeys.list(periodId, status, category),
+    queryFn: () => listAppraisals(periodId, status, category),
+    enabled: periodId !== "",
+  });
 }
 
 export function useAppraisal(id: string) {
@@ -97,4 +103,9 @@ export function useReviewAppraisal() {
     mutationFn: ({ id, accept, note }: { id: string; accept: boolean; note: string }) => reviewAppraisal(id, accept, note),
     onSuccess: invalidate,
   });
+}
+
+export function useDeleteDraftAppraisal() {
+  const invalidate = useInvalidate();
+  return useMutation({ mutationFn: (id: string) => deleteDraftAppraisal(id), onSuccess: invalidate });
 }

@@ -20,6 +20,7 @@ import { useEmployees } from "@/features/employees/hooks/use-employees";
 import {
   ACTIVE_STATUS_LABELS,
   CATEGORY_LABELS,
+  formatEmployeeCategories,
   EMPLOYEE_PAGE_SIZE,
   type EmployeeListFilters,
 } from "@/features/employees/types/employee";
@@ -209,7 +210,7 @@ export function EmployeesPanel() {
                         </span>
                       </Link>
                     </TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">{CATEGORY_LABELS[employee.category]}</TableCell>
+                    <TableCell className="hidden text-muted-foreground md:table-cell">{formatEmployeeCategories(employee.category, employee.additionalCategory)}</TableCell>
                     <TableCell className="hidden text-muted-foreground lg:table-cell">{employee.workUnitName ?? "—"}</TableCell>
                     <TableCell className="hidden text-muted-foreground xl:table-cell">{employee.positionName ?? "—"}</TableCell>
                     <TableCell className="pr-6">

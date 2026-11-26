@@ -2,6 +2,10 @@ import type { Database } from "@/types/database";
 
 export type AppraisalStatus = Database["public"]["Enums"]["appraisal_status"];
 export type PeriodType = Database["public"]["Enums"]["appraisal_period_type"];
+export type AppraisalCategory = Database["public"]["Enums"]["employee_category"];
+
+/** A dual-category employee has one form per category (decision 2026-11-26). */
+export const APPRAISAL_CATEGORY_LABELS: Record<AppraisalCategory, string> = { lecturer: "Penilaian Dosen", staff: "Penilaian Tendik" };
 
 export const APPRAISAL_STATUS_LABELS: Record<AppraisalStatus, string> = {
   draft: "Draf",
@@ -35,6 +39,7 @@ export type AppraisalListItem = {
   employeeName: string;
   employeeNumber: string | null;
   workUnitName: string | null;
+  category: AppraisalCategory;
   status: AppraisalStatus;
   score: number | null;
 };
@@ -45,6 +50,7 @@ export type AppraisalDetail = {
   periodName: string;
   employeeId: string;
   employeeName: string;
+  category: AppraisalCategory;
   status: AppraisalStatus;
   score: number | null;
   note: string;
@@ -65,6 +71,13 @@ export type WorkReport = {
   evidenceName: string;
   createdAt: string;
   updatedAt: string;
+};
+
+/** Whether an employee's reports in a period can still change, and HR's manual setting if any. */
+export type WorkReportLock = {
+  locked: boolean;
+  /** HR's manual lock (true) or unlock (false); null when the automatic rule applies. */
+  override: boolean | null;
 };
 
 export type WorkReportInput = {

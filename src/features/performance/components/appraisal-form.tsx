@@ -20,7 +20,7 @@ import { AppraisalStatusBadge, formatScore } from "@/features/performance/compon
 import { EmployeeWorkReportsCard } from "@/features/performance/components/employee-work-reports-card";
 import { useAppraisal, useMaxScore, useSaveAppraisal, useSubmitAppraisal } from "@/features/performance/hooks/use-performance";
 import { appraisalSchema, type AppraisalFormValues } from "@/features/performance/schemas/performance-schemas";
-import type { AppraisalDetail } from "@/features/performance/types/performance";
+import { APPRAISAL_CATEGORY_LABELS, type AppraisalDetail } from "@/features/performance/types/performance";
 import { ApiError } from "@/lib/api-error";
 
 const EMPTY_ITEM = { indicator: "", target: "", realization: "", score: "" };
@@ -173,7 +173,7 @@ export function AppraisalFormPage({ id }: { id: string }) {
     <>
       <PageHeader
         title={data.employeeName}
-        description={data.periodName}
+        description={`${data.periodName} · ${APPRAISAL_CATEGORY_LABELS[data.category]}`}
         breadcrumbs={[
           { label: "Beranda", href: routes.dashboard },
           { label: "Form Penilaian", href: routes.performance.forms },

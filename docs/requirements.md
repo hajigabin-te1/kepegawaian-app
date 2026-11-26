@@ -119,6 +119,9 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 12 Nov 2026 | Mutasi & kenaikan pangkat | HR mengusulkan → HR setuju/tolak → HR menjalankan. Menjalankan memperbarui data pegawai dan riwayat jabatan/pangkat. Nomor SK diisi saat persetujuan (opsional) |
 | 12 Nov 2026 | Kuota terlampaui | Pengajuan yang melebihi sisa kuota **ditolak sistem** saat diajukan (asumsi, belum dikonfirmasi) |
 | 19 Nov 2026 | Laporan kerja pegawai (permintaan Kabag Kepegawaian) | Pegawai mengirim laporan kerja per periode penilaian (tahunan/semester; tidak ada periode 3 bulanan): **deskripsi pekerjaan** + **bukti dokumen** (wajib, PDF/JPG/PNG, maks. 5 MB, bucket privat). Laporan adalah **bahan** HR saat mengisi form penilaian, tanpa setuju/tolak per laporan. **Minimal 3 laporan** disampaikan lisan oleh Kabag; sistem hanya mengingatkan, tidak memblokir. Laporan bisa ditambah/diubah/dihapus selama periode aktif dan **terkunci begitu form penilaian pegawai dikirim** (`submitted`/`verified`). Desain: `docs/superpowers/specs/2026-11-19-appraisal-work-reports-design.md` |
+| 21 Nov 2026 | Kendali HR atas laporan kerja | HR dapat **menghapus** laporan kerja pegawai (beserta buktinya) kapan saja, serta **mengunci/membuka kunci** laporan kerja per pegawai per periode. Kunci manual HR menimpa aturan otomatis (terkunci saat form `submitted`/`verified`); HR bisa mengembalikannya ke aturan otomatis. Periode yang ditutup tetap terkunci |
+| 26 Nov 2026 | Dosen & tendik, pegawai rangkap | Login **tetap satu halaman** untuk semua peran. Dosen/tendik dibedakan lewat kategori pegawai; tendik yang juga dosen dicatat dengan **kategori tambahan** (kategori utama tetap tendik). Pegawai rangkap memakai **jam kerja tendik** dan mendapat **dua form penilaian** per periode (dosen dan tendik). Perbedaan menu dosen hanya **BKD** (menyusul). Desain: `docs/superpowers/specs/2026-11-26-dual-category-employees-design.md` |
+| 26 Nov 2026 | Hapus draf form penilaian | HR dapat **menghapus form penilaian yang masih draf** (beserta indikatornya), mis. form dosen yang tersisa setelah status rangkap dicabut. Form yang sudah dikirim, dikembalikan, atau diverifikasi tidak bisa dihapus |
 
 ## 7. Pertanyaan yang masih terbuka
 
@@ -133,3 +136,7 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 4. Rumus nilai kinerja dan skala nilai. *(Sementara: rata-rata indikator, skala 0–100; lihat bagian 6.)*
 5. Kepanjangan **TTU** dan **TTK**, serta daftar lengkap status kepegawaian ("dll.").
 6. "Neraca kebutuhan pegawai": data apa yang dibandingkan (formasi vs. jumlah pegawai)?
+
+**BKD dosen (pengajaran, penelitian, pengabdian)**
+
+7. Arah sementara (26 Nov 2026): data diinput di aplikasi sumbernya (pengajaran di **LMS**, penelitian & pengabdian di **aplikasi PPPM**); Kepegawaian hanya menarik dan merekap, tidak menggantikan SISTER. Menunggu: apakah LMS/PPPM memakai proyek Supabase yang sama atau API sendiri, dan format data yang ditarik. Menu BKD belum dibuat sampai sumber data siap.

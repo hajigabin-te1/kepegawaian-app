@@ -147,6 +147,45 @@ export type Database = {
         }
         Relationships: []
       }
+      appraisal_work_report_locks: {
+        Row: {
+          employee_id: string
+          is_locked: boolean
+          period_id: string
+          set_at: string
+          set_by: string | null
+        }
+        Insert: {
+          employee_id: string
+          is_locked: boolean
+          period_id: string
+          set_at?: string
+          set_by?: string | null
+        }
+        Update: {
+          employee_id?: string
+          is_locked?: boolean
+          period_id?: string
+          set_at?: string
+          set_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appraisal_work_report_locks_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appraisal_work_report_locks_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "appraisal_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appraisal_work_reports: {
         Row: {
           created_at: string
@@ -197,6 +236,7 @@ export type Database = {
       }
       appraisals: {
         Row: {
+          category: Database["public"]["Enums"]["employee_category"]
           appraised_by: string | null
           created_at: string
           employee_id: string
@@ -212,6 +252,7 @@ export type Database = {
           verified_by: string | null
         }
         Insert: {
+          category: Database["public"]["Enums"]["employee_category"]
           appraised_by?: string | null
           created_at?: string
           employee_id: string
@@ -227,6 +268,7 @@ export type Database = {
           verified_by?: string | null
         }
         Update: {
+          category?: Database["public"]["Enums"]["employee_category"]
           appraised_by?: string | null
           created_at?: string
           employee_id?: string
@@ -618,6 +660,7 @@ export type Database = {
       }
       employees: {
         Row: {
+          additional_category: Database["public"]["Enums"]["employee_category"] | null
           active_status: Database["public"]["Enums"]["employee_active_status"]
           address: string | null
           appointment_date: string | null
@@ -649,6 +692,7 @@ export type Database = {
           work_unit_id: string | null
         }
         Insert: {
+          additional_category?: Database["public"]["Enums"]["employee_category"] | null
           active_status?: Database["public"]["Enums"]["employee_active_status"]
           address?: string | null
           appointment_date?: string | null
@@ -680,6 +724,7 @@ export type Database = {
           work_unit_id?: string | null
         }
         Update: {
+          additional_category?: Database["public"]["Enums"]["employee_category"] | null
           active_status?: Database["public"]["Enums"]["employee_active_status"]
           address?: string | null
           appointment_date?: string | null
@@ -1948,6 +1993,7 @@ export type Database = {
         Returns: undefined
       }
       submit_appraisal: { Args: { target_appraisal_id: string }; Returns: undefined }
+      delete_draft_appraisal: { Args: { target_appraisal_id: string }; Returns: undefined }
       save_work_report: {
         Args: {
           new_description: string
@@ -1959,6 +2005,10 @@ export type Database = {
         Returns: string
       }
       delete_work_report: { Args: { target_report_id: string }; Returns: string }
+      set_work_reports_lock: {
+        Args: { locked: boolean | null; target_employee_id: string; target_period_id: string }
+        Returns: undefined
+      }
       work_reports_locked: {
         Args: { target_employee_id: string; target_period_id: string }
         Returns: boolean

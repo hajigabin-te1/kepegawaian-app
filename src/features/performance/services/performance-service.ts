@@ -2,6 +2,7 @@ import { ApiError, fromSupabaseError } from "@/lib/api-error";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AppraisalFormValues, PeriodFormValues } from "@/features/performance/schemas/performance-schemas";
 import type {
+  AppraisalCategory,
   AppraisalDetail,
   AppraisalListItem,
   AppraisalPeriod,
@@ -10,7 +11,7 @@ import type {
 } from "@/features/performance/types/performance";
 
 const DETAIL_COLUMNS =
-  "id, period_id, employee_id, status, performance_score, note, revision_note, period:appraisal_periods(name), employee:employees(full_name), items:appraisal_items(indicator, target, realization, score, sort_order)";
+  "id, period_id, employee_id, category, status, performance_score, note, revision_note, period:appraisal_periods(name), employee:employees(full_name), items:appraisal_items(indicator, target, realization, score, sort_order)";
 
 function rpcError(error: { code?: string; message: string }): ApiError {
   const messages: Record<string, string> = {
@@ -27,6 +28,8 @@ function rpcError(error: { code?: string; message: string }): ApiError {
     "Add at least one indicator before submitting": "Tambahkan minimal satu indikator sebelum mengirim.",
     "Every indicator must have a score before submitting": "Semua indikator harus diberi nilai sebelum dikirim.",
     "Only submitted appraisals can be reviewed": "Hanya penilaian yang menunggu verifikasi yang bisa diperiksa.",
+    "Not allowed to delete appraisals": "Anda tidak memiliki akses untuk menghapus form penilaian.",
+    "Only draft appraisals can be deleted": "Hanya form berstatus draf yang bisa dihapus.",
     "A reason is required when sending back": "Alasan pengembalian wajib diisi.",
     "Not allowed to view appraisal reports": "Anda tidak memiliki akses ke rekap penilaian.",
   };
@@ -82,12 +85,17 @@ export async function generateAppraisals(periodId: string): Promise<number> {
   return data;
 }
 
-export async function listAppraisals(periodId: string, status: AppraisalStatus | "all"): Promise<AppraisalListItem[]> {
+export async function listAppraisals(
+  periodId: string,
+  status: AppraisalStatus | "all",
+  category: AppraisalCategory | "all",
+): Promise<AppraisalListItem[]> {
   let query = createSupabaseBrowserClient()
     .from("appraisals")
-    .select("id, employee_id, status, performance_score, employee:employees(full_name, employee_number, work_unit:work_units(name))")
+    .select("id, employee_id, category, status, performance_score, employee:employees(full_name, employee_number, work_unit:work_units(name))")
     .eq("period_id", periodId);
   if (status !== "all") query = query.eq("status", status);
+  if (category !== "all") query = query.eq("category", category);
   const { data, error } = await query;
   if (error) throw fromSupabaseError(error);
   return data
@@ -97,16 +105,18 @@ export async function listAppraisals(periodId: string, status: AppraisalStatus |
       employeeName: row.employee?.full_name ?? "—",
       employeeNumber: row.employee?.employee_number ?? null,
       workUnitName: row.employee?.work_unit?.name ?? null,
+      category: row.category,
       status: row.status,
       score: row.performance_score === null ? null : Number(row.performance_score),
     }))
-    .sort((a, b) => a.employeeName.localeCompare(b.employeeName, "id"));
+    .sort((a, b) => a.employeeName.localeCompare(b.employeeName, "id") || a.category.localeCompare(b.category));
 }
 
 type DetailRow = {
   id: string;
   period_id: string;
   employee_id: string;
+  category: AppraisalCategory;
   status: AppraisalStatus;
   performance_score: number | null;
   note: string | null;
@@ -122,6 +132,7 @@ const toDetail = (row: DetailRow): AppraisalDetail => ({
   periodName: row.period?.name ?? "—",
   employeeId: row.employee_id,
   employeeName: row.employee?.full_name ?? "—",
+  category: row.category,
   status: row.status,
   score: row.performance_score === null ? null : Number(row.performance_score),
   note: row.note ?? "",
@@ -173,6 +184,12 @@ export async function saveAppraisal(id: string, values: AppraisalFormValues): Pr
 
 export async function submitAppraisal(id: string): Promise<void> {
   const { error } = await createSupabaseBrowserClient().rpc("submit_appraisal", { target_appraisal_id: id });
+  if (error) throw rpcError(error);
+}
+
+/** HR: deletes a form that is still a draft (with its indicators). */
+export async function deleteDraftAppraisal(id: string): Promise<void> {
+  const { error } = await createSupabaseBrowserClient().rpc("delete_draft_appraisal", { target_appraisal_id: id });
   if (error) throw rpcError(error);
 }
 

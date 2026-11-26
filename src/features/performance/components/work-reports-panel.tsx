@@ -19,7 +19,7 @@ import {
   useDeleteWorkReport,
   useReportedPeriodIds,
   useWorkReports,
-  useWorkReportsLocked,
+  useWorkReportLock,
 } from "@/features/performance/hooks/use-work-reports";
 import { MIN_WORK_REPORTS, type AppraisalPeriod, type WorkReport } from "@/features/performance/types/performance";
 import { ApiError } from "@/lib/api-error";
@@ -45,13 +45,13 @@ function ReportCounter({ count, locked }: { count: number; locked: boolean }) {
 
 function PeriodReports({ period, employeeId }: { period: AppraisalPeriod; employeeId: string }) {
   const reports = useWorkReports(period.id, employeeId);
-  const locked = useWorkReportsLocked(period.id, employeeId);
+  const lock = useWorkReportLock(period.id, employeeId);
   const remove = useDeleteWorkReport();
   const [editing, setEditing] = useState<Editing>(null);
   const [deleting, setDeleting] = useState<WorkReport | null>(null);
 
   // Treat "unknown" as locked so actions never show before the lock state is loaded.
-  const isLocked = locked.data ?? true;
+  const isLocked = lock.data?.locked ?? true;
 
   const confirmDelete = () => {
     if (!deleting) return;
@@ -73,7 +73,11 @@ function PeriodReports({ period, employeeId }: { period: AppraisalPeriod; employ
         <ReportCounter count={reports.data.length} locked={isLocked} />
         {isLocked ? (
           <p className="text-xs text-muted-foreground">
-            {period.isActive ? "Penilaian Anda untuk periode ini sudah dikirim, laporan tidak bisa diubah." : "Periode ini sudah ditutup."}
+            {!period.isActive
+              ? "Periode ini sudah ditutup."
+              : lock.data?.override === true
+                ? "Laporan dikunci oleh Bagian Kepegawaian."
+                : "Penilaian Anda untuk periode ini sudah dikirim, laporan tidak bisa diubah."}
           </p>
         ) : (
           <Button size="sm" onClick={() => setEditing({ report: null })}>
