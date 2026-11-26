@@ -236,6 +236,7 @@ export type Database = {
       }
       appraisals: {
         Row: {
+          category: Database["public"]["Enums"]["employee_category"]
           appraised_by: string | null
           created_at: string
           employee_id: string
@@ -251,6 +252,7 @@ export type Database = {
           verified_by: string | null
         }
         Insert: {
+          category: Database["public"]["Enums"]["employee_category"]
           appraised_by?: string | null
           created_at?: string
           employee_id: string
@@ -266,6 +268,7 @@ export type Database = {
           verified_by?: string | null
         }
         Update: {
+          category?: Database["public"]["Enums"]["employee_category"]
           appraised_by?: string | null
           created_at?: string
           employee_id?: string
@@ -657,6 +660,7 @@ export type Database = {
       }
       employees: {
         Row: {
+          additional_category: Database["public"]["Enums"]["employee_category"] | null
           active_status: Database["public"]["Enums"]["employee_active_status"]
           address: string | null
           appointment_date: string | null
@@ -688,6 +692,7 @@ export type Database = {
           work_unit_id: string | null
         }
         Insert: {
+          additional_category?: Database["public"]["Enums"]["employee_category"] | null
           active_status?: Database["public"]["Enums"]["employee_active_status"]
           address?: string | null
           appointment_date?: string | null
@@ -719,6 +724,7 @@ export type Database = {
           work_unit_id?: string | null
         }
         Update: {
+          additional_category?: Database["public"]["Enums"]["employee_category"] | null
           active_status?: Database["public"]["Enums"]["employee_active_status"]
           address?: string | null
           appointment_date?: string | null
