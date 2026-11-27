@@ -26,6 +26,7 @@ File SQL ada di `supabase/`:
 | `migrations/20261126110914_dual_category_employees.sql` | Pegawai rangkap: kolom `employees.additional_category` (hanya tendik + dosen), `appraisals.category` dengan unik `(period_id, employee_id, category)`; `generate_appraisals` membuat satu form per kategori, `report_appraisal_by_unit` dikelompokkan per kategori form, `work_reports_locked` mengunci otomatis setelah **semua** form dikirim |
 | `migrations/20261126111603_work_report_lock_current_categories.sql` | `work_reports_locked` hanya menghitung form dari kategori pegawai saat ini, supaya draf sisa kategori lama tidak membuat laporan kerja terus terbuka |
 | `migrations/20261126111936_delete_draft_appraisal.sql` | RPC `delete_draft_appraisal`: HR menghapus form penilaian yang masih **draf** (beserta indikatornya) |
+| `migrations/20261127154053_announcement_period_attachment.sql` | Pengumuman: kolom `starts_on`, `ends_on`, `attachment_path`, `attachment_name`; RLS baca membatasi pegawai ke periode tayang (`campus_today()`); bucket privat `announcement-attachments` (5 MB, PDF/Word/JPG/PNG). `report_employee_statistics` menghitung pegawai rangkap sebagai dosen |
 | `seed.sql` | Role, permission, pemetaan role→permission, status kepegawaian, jenis cuti/izin |
 
 ---

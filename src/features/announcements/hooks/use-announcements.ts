@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { AnnouncementFormValues } from "@/features/announcements/schemas/announcement-schemas";
+import type { AnnouncementAttachmentChange, AnnouncementFormValues } from "@/features/announcements/schemas/announcement-schemas";
+import type { Announcement } from "@/features/announcements/types/announcements";
 import {
   deleteAnnouncement,
   listAnnouncements,
@@ -19,7 +20,15 @@ export function useAnnouncements() {
 export function useSaveAnnouncement() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, values }: { id: string | null; values: AnnouncementFormValues }) => saveAnnouncement(id, values),
+    mutationFn: ({
+      current,
+      values,
+      attachment,
+    }: {
+      current: Pick<Announcement, "id" | "attachmentPath"> | null;
+      values: AnnouncementFormValues;
+      attachment: AnnouncementAttachmentChange;
+    }) => saveAnnouncement(current, values, attachment),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
   });
 }

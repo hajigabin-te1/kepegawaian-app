@@ -1,116 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { EyeIcon, EyeOffIcon, Loader2Icon, MegaphoneIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { useState } from "react";
+import { Loader2Icon, MegaphoneIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { QueryErrorState } from "@/components/common/query-error-state";
 import { TableSkeleton } from "@/components/common/table-skeleton";
 import { PageHeader } from "@/components/layout/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { routes } from "@/config/routes";
-import { useAnnouncements, useDeleteAnnouncement, useSaveAnnouncement, useSetPublished } from "@/features/announcements/hooks/use-announcements";
-import { announcementSchema, type AnnouncementFormValues } from "@/features/announcements/schemas/announcement-schemas";
+import { AnnouncementDialog } from "@/features/announcements/components/announcement-dialog";
+import { AnnouncementList } from "@/features/announcements/components/announcement-list";
+import { AnnouncementsTable } from "@/features/announcements/components/announcements-table";
+import { useAnnouncements, useDeleteAnnouncement, useSetPublished } from "@/features/announcements/hooks/use-announcements";
 import type { Announcement } from "@/features/announcements/types/announcements";
 import { ApiError } from "@/lib/api-error";
-
-const dateFormatter = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" });
-const STATUS_ITEMS = { published: "Terbit sekarang", draft: "Simpan sebagai draf" };
-
-const toValues = (announcement: Announcement | null): AnnouncementFormValues =>
-  announcement
-    ? { title: announcement.title, content: announcement.content, isPublished: announcement.isPublished }
-    : { title: "", content: "", isPublished: true };
-
-function AnnouncementDialog({ open, onOpenChange, announcement }: { open: boolean; onOpenChange: (open: boolean) => void; announcement: Announcement | null }) {
-  const save = useSaveAnnouncement();
-  const {
-    register,
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<AnnouncementFormValues>({ resolver: zodResolver(announcementSchema), defaultValues: toValues(announcement) });
-
-  useEffect(() => {
-    if (open) reset(toValues(announcement));
-  }, [open, announcement, reset]);
-
-  const onSubmit = (values: AnnouncementFormValues) =>
-    save.mutate(
-      { id: announcement?.id ?? null, values },
-      {
-        onSuccess: () => {
-          toast.success(announcement ? "Pengumuman diperbarui." : "Pengumuman dibuat.");
-          onOpenChange(false);
-        },
-        onError: (error) => toast.error(error instanceof ApiError ? error.message : "Pengumuman gagal disimpan."),
-      },
-    );
-
-  return (
-    <Dialog open={open} onOpenChange={(next) => !save.isPending && onOpenChange(next)}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{announcement ? "Ubah Pengumuman" : "Buat Pengumuman"}</DialogTitle>
-          <DialogDescription>Pengumuman yang terbit dapat dilihat semua pegawai.</DialogDescription>
-        </DialogHeader>
-        <form id="announcement-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="announcement-title">Judul</Label>
-            <Input id="announcement-title" aria-invalid={errors.title ? true : undefined} {...register("title")} />
-            {errors.title ? <p className="text-sm text-destructive">{errors.title.message}</p> : null}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="announcement-content">Isi</Label>
-            <Textarea id="announcement-content" rows={6} aria-invalid={errors.content ? true : undefined} {...register("content")} />
-            {errors.content ? <p className="text-sm text-destructive">{errors.content.message}</p> : null}
-          </div>
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Controller
-              control={control}
-              name="isPublished"
-              render={({ field }) => (
-                <Select items={STATUS_ITEMS} value={field.value ? "published" : "draft"} onValueChange={(v) => field.onChange(v === "published")}>
-                  <SelectTrigger className="w-full" aria-label="Status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STATUS_ITEMS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-        </form>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={save.isPending}>
-            Batal
-          </Button>
-          <Button type="submit" form="announcement-form" disabled={save.isPending}>
-            {save.isPending ? <Loader2Icon className="animate-spin" /> : null}
-            Simpan
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export function AnnouncementsPanel({ canManage }: { canManage: boolean }) {
   const announcements = useAnnouncements();
@@ -119,18 +26,20 @@ export function AnnouncementsPanel({ canManage }: { canManage: boolean }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
   const [deleting, setDeleting] = useState<Announcement | null>(null);
+  const [dialogKey, setDialogKey] = useState(0);
 
   const openDialog = (announcement: Announcement | null) => {
     setEditing(announcement);
+    setDialogKey((key) => key + 1);
     setDialogOpen(true);
   };
 
-  const togglePublished = (announcement: Announcement) =>
+  const toggleVisibility = (announcement: Announcement) =>
     setPublished.mutate(
       { id: announcement.id, isPublished: !announcement.isPublished },
       {
-        onSuccess: () => toast.success(announcement.isPublished ? "Pengumuman disembunyikan." : "Pengumuman diterbitkan."),
-        onError: (error) => toast.error(error instanceof ApiError ? error.message : "Status gagal diubah."),
+        onSuccess: () => toast.success(announcement.isPublished ? "Pengumuman disembunyikan." : "Pengumuman ditampilkan."),
+        onError: (error) => toast.error(error instanceof ApiError ? error.message : "Tampilan pengumuman gagal diubah."),
       },
     );
 
@@ -149,7 +58,7 @@ export function AnnouncementsPanel({ canManage }: { canManage: boolean }) {
     <>
       <PageHeader
         title="Pengumuman"
-        description="Informasi resmi dari Bagian Kepegawaian."
+        description={canManage ? "Kelola pengumuman resmi dan periode tayangnya untuk pegawai." : "Informasi resmi dari Bagian Kepegawaian."}
         breadcrumbs={[{ label: "Beranda", href: routes.dashboard }, { label: "Pengumuman" }]}
         actions={
           canManage ? (
@@ -171,49 +80,43 @@ export function AnnouncementsPanel({ canManage }: { canManage: boolean }) {
         </Card>
       ) : announcements.data.length === 0 ? (
         <Card>
-          <EmptyState icon={MegaphoneIcon} title="Belum ada pengumuman" description="Pengumuman dari Bagian Kepegawaian akan tampil di sini." />
+          <EmptyState
+            icon={MegaphoneIcon}
+            title="Belum ada pengumuman"
+            description={canManage ? "Buat pengumuman pertama untuk pegawai." : "Pengumuman dari Bagian Kepegawaian akan tampil di sini."}
+            action={
+              canManage ? (
+                <Button variant="outline" onClick={() => openDialog(null)}>
+                  <PlusIcon />
+                  Buat Pengumuman
+                </Button>
+              ) : null
+            }
+          />
+        </Card>
+      ) : canManage ? (
+        <Card className="gap-0 py-0">
+          <AnnouncementsTable
+            announcements={announcements.data}
+            togglingId={setPublished.isPending ? (setPublished.variables?.id ?? null) : null}
+            onToggleVisibility={toggleVisibility}
+            onEdit={openDialog}
+            onDelete={setDeleting}
+          />
         </Card>
       ) : (
-        <div className="space-y-4">
-          {announcements.data.map((announcement) => (
-            <Card key={announcement.id} className="gap-3 p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <h2 className="text-lg font-semibold">{announcement.title}</h2>
-                  <p className="text-xs text-muted-foreground">
-                    {announcement.publishedAt ? `Terbit ${dateFormatter.format(new Date(announcement.publishedAt))}` : `Dibuat ${dateFormatter.format(new Date(announcement.createdAt))}`}
-                  </p>
-                </div>
-                {announcement.isPublished ? null : <Badge variant="secondary">Draf</Badge>}
-              </div>
-              <p className="text-sm whitespace-pre-wrap">{announcement.content}</p>
-              {canManage ? (
-                <div className="flex flex-wrap justify-end gap-2 border-t pt-3">
-                  <Button variant="outline" size="sm" onClick={() => togglePublished(announcement)} disabled={setPublished.isPending}>
-                    {announcement.isPublished ? <EyeOffIcon /> : <EyeIcon />}
-                    {announcement.isPublished ? "Sembunyikan" : "Terbitkan"}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => openDialog(announcement)}>
-                    <PencilIcon />
-                    Ubah
-                  </Button>
-                  <Button variant="ghost" size="icon-sm" aria-label={`Hapus ${announcement.title}`} className="text-destructive hover:text-destructive" onClick={() => setDeleting(announcement)}>
-                    <Trash2Icon />
-                  </Button>
-                </div>
-              ) : null}
-            </Card>
-          ))}
-        </div>
+        <AnnouncementList announcements={announcements.data} />
       )}
 
-      <AnnouncementDialog open={dialogOpen} onOpenChange={setDialogOpen} announcement={editing} />
+      {canManage ? <AnnouncementDialog key={dialogKey} open={dialogOpen} onOpenChange={setDialogOpen} announcement={editing} /> : null}
 
       <Dialog open={deleting !== null} onOpenChange={(next) => !remove.isPending && !next && setDeleting(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Hapus pengumuman?</DialogTitle>
-            <DialogDescription>{deleting?.title} akan dihapus permanen.</DialogDescription>
+            <DialogDescription>
+              {deleting?.title} {deleting?.attachmentPath ? "beserta dokumennya " : ""}akan dihapus permanen.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleting(null)} disabled={remove.isPending}>
