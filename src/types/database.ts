@@ -18,32 +18,44 @@ export type Database = {
     Tables: {
       announcements: {
         Row: {
+          attachment_name: string | null
+          attachment_path: string | null
           content: string
           created_at: string
           created_by: string | null
+          ends_on: string | null
           id: string
           is_published: boolean
           published_at: string | null
+          starts_on: string
           title: string
           updated_at: string
         }
         Insert: {
+          attachment_name?: string | null
+          attachment_path?: string | null
           content: string
           created_at?: string
           created_by?: string | null
+          ends_on?: string | null
           id?: string
           is_published?: boolean
           published_at?: string | null
+          starts_on: string
           title: string
           updated_at?: string
         }
         Update: {
+          attachment_name?: string | null
+          attachment_path?: string | null
           content?: string
           created_at?: string
           created_by?: string | null
+          ends_on?: string | null
           id?: string
           is_published?: boolean
           published_at?: string | null
+          starts_on?: string
           title?: string
           updated_at?: string
         }
@@ -1854,6 +1866,7 @@ export type Database = {
     }
     Functions: {
       app_timezone: { Args: never; Returns: string }
+      campus_today: { Args: never; Returns: string }
       can_report_on: {
         Args: {
           report_name: string

@@ -16,13 +16,27 @@ type FileFieldProps = {
   /** Shown when editing a record that already has a file and no new one is picked. */
   existingFileNote?: string;
   error?: string;
+  /** Defaults to the employee document rules (PDF/JPG/PNG, 5 MB). */
+  accept?: string;
+  validate?: (file: File) => string | null;
+  hint?: string;
 };
 
 const sizeFormatter = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 });
 
-export function FileField({ label, file, onChange, required, existingFileNote, error }: FileFieldProps) {
+export function FileField({
+  label,
+  file,
+  onChange,
+  required,
+  existingFileNote,
+  error,
+  accept = EMPLOYEE_FILE_ACCEPT,
+  validate = validateEmployeeFile,
+  hint = "PDF, JPG, atau PNG. Maksimal 5 MB.",
+}: FileFieldProps) {
   const id = useId();
-  const invalid = file ? validateEmployeeFile(file) : null;
+  const invalid = file ? validate(file) : null;
   const message = error ?? invalid;
 
   return (
@@ -44,7 +58,7 @@ export function FileField({ label, file, onChange, required, existingFileNote, e
         <input
           id={id}
           type="file"
-          accept={EMPLOYEE_FILE_ACCEPT}
+          accept={accept}
           onChange={(event) => onChange(event.target.files?.[0] ?? null)}
           className="block w-full cursor-pointer rounded-lg border border-input bg-background text-sm text-muted-foreground file:mr-3 file:cursor-pointer file:border-0 file:border-r file:border-input file:bg-secondary file:px-3 file:py-2 file:text-sm file:font-medium file:text-secondary-foreground hover:file:bg-muted"
         />
@@ -52,7 +66,7 @@ export function FileField({ label, file, onChange, required, existingFileNote, e
       {message ? (
         <p className="text-sm text-destructive">{message}</p>
       ) : (
-        <p className="text-xs text-muted-foreground">{existingFileNote ?? "PDF, JPG, atau PNG. Maksimal 5 MB."}</p>
+        <p className="text-xs text-muted-foreground">{existingFileNote ?? hint}</p>
       )}
     </div>
   );

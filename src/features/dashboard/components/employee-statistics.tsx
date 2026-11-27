@@ -14,7 +14,6 @@ import { APP_TIME_ZONE } from "@/config/locale";
 import { routes } from "@/config/routes";
 import { useEmployeeStatistics, useRecentEmployees } from "@/features/dashboard/hooks/use-dashboard";
 import type { UnitStatistic } from "@/features/dashboard/services/dashboard-service";
-import { CATEGORY_LABELS } from "@/features/employees/types/employee";
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
 const dateFormatter = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: APP_TIME_ZONE });
@@ -48,6 +47,13 @@ function summarize(statistics: UnitStatistic[]) {
     .sort((a, b) => b.lecturers + b.staff - (a.lecturers + a.staff) || a.name.localeCompare(b.name, "id"));
 
   return { lecturers, staff, inactive, active: lecturers + staff, unitRows };
+}
+
+const percentFormatter = new Intl.NumberFormat("id-ID", { style: "percent", maximumFractionDigits: 0 });
+
+/** "62% dari pegawai aktif", or a neutral note while there is no one to compare against. */
+function shareNote(count: number, total: number) {
+  return total > 0 ? `${percentFormatter.format(count / total)} dari pegawai aktif` : "Belum ada pegawai aktif";
 }
 
 function Kpi({ label, value, icon: Icon, note }: { label: string; value: number; icon: LucideIcon; note: string }) {
@@ -96,8 +102,8 @@ export function EmployeeStatistics({ canViewEmployees }: EmployeeStatisticsProps
         {/* gap-px over a border-colored background draws the dividers at every breakpoint. */}
         <dl className="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
           <Kpi label="Pegawai aktif" value={summary.active} icon={UsersIcon} note="Dosen dan tenaga kependidikan" />
-          <Kpi label="Dosen aktif" value={summary.lecturers} icon={GraduationCapIcon} note={CATEGORY_LABELS.lecturer} />
-          <Kpi label="Tendik aktif" value={summary.staff} icon={Building2Icon} note={CATEGORY_LABELS.staff} />
+          <Kpi label="Dosen aktif" value={summary.lecturers} icon={GraduationCapIcon} note={shareNote(summary.lecturers, summary.active)} />
+          <Kpi label="Tendik aktif" value={summary.staff} icon={Building2Icon} note={shareNote(summary.staff, summary.active)} />
           <Kpi label="Nonaktif & pensiun" value={summary.inactive} icon={UserMinusIcon} note="Tidak dihitung sebagai pegawai aktif" />
         </dl>
       </section>

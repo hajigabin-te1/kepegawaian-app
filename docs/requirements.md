@@ -46,7 +46,7 @@ tetapi terhubung ke data pegawainya, jadi tetap bisa presensi, mengajukan cuti, 
 | 6 | Mutasi | **HR** usulkan, setujui, dan jalankan; update unit/jabatan + riwayat | |
 | 7 | Kenaikan Pangkat & Jabatan | Usulan, persetujuan, SK (hanya di use case) | |
 | 8 | Laporan & Dashboard | Rekap pegawai per unit/fakultas/prodi, rekap cuti/absensi/kinerja, neraca kebutuhan pegawai. **Dashboard statistik untuk pimpinan** (agregat, dosen & tendik dipisah) | |
-| 9 | Pengumuman | HR buat & kelola, pegawai lihat | |
+| 9 | Pengumuman | HR buat & kelola (judul, isi, **periode tayang**, **dokumen lampiran**, sembunyikan/edit/hapus), pegawai lihat yang sedang dalam periode | |
 | 10 | Pengguna & Keamanan | Kelola akun & role, audit log, **login dengan email** (Supabase Auth) agar notifikasi bisa dikirim lewat email | Prasyarat |
 
 \* "Scope sistem" di Analisa Kebutuhan hanya menyebut presensi, cuti/izin, dan penilaian kinerja.
@@ -122,6 +122,8 @@ dari titik yang ditentukan, login wajib dengan email & password terenkripsi.
 | 21 Nov 2026 | Kendali HR atas laporan kerja | HR dapat **menghapus** laporan kerja pegawai (beserta buktinya) kapan saja, serta **mengunci/membuka kunci** laporan kerja per pegawai per periode. Kunci manual HR menimpa aturan otomatis (terkunci saat form `submitted`/`verified`); HR bisa mengembalikannya ke aturan otomatis. Periode yang ditutup tetap terkunci |
 | 26 Nov 2026 | Dosen & tendik, pegawai rangkap | Login **tetap satu halaman** untuk semua peran. Dosen/tendik dibedakan lewat kategori pegawai; tendik yang juga dosen dicatat dengan **kategori tambahan** (kategori utama tetap tendik). Pegawai rangkap memakai **jam kerja tendik** dan mendapat **dua form penilaian** per periode (dosen dan tendik). Perbedaan menu dosen hanya **BKD** (menyusul). Desain: `docs/superpowers/specs/2026-11-26-dual-category-employees-design.md` |
 | 26 Nov 2026 | Hapus draf form penilaian | HR dapat **menghapus form penilaian yang masih draf** (beserta indikatornya), mis. form dosen yang tersisa setelah status rangkap dicabut. Form yang sudah dikirim, dikembalikan, atau diverifikasi tidak bisa dihapus |
+| 27 Nov 2026 | Statistik pegawai rangkap | Pada statistik jumlah pegawai (dashboard), tendik yang juga dosen **dihitung sebagai dosen**. Persentase dosen/tendik ini nanti dipakai bersama data LMS. Jam kerja dan statistik presensi/cuti tidak berubah |
+| 27 Nov 2026 | Pengumuman | Setiap pengumuman punya **tanggal mulai (tanggal rilis)** dan **tanggal berakhir**; pegawai hanya melihatnya di dalam periode itu (tanggal kampus, WITA). HR dapat mengunggah **satu dokumen** opsional (PDF, Word, JPG, PNG, maks. 5 MB, bucket privat). Halaman HR berupa tabel: judul, tanggal rilis, aksi (sembunyikan, ubah, hapus). Format dan batas ukuran file adalah asumsi, belum dikonfirmasi |
 
 ## 7. Pertanyaan yang masih terbuka
 

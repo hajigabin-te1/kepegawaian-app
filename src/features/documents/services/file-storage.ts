@@ -20,7 +20,7 @@ export function validateEmployeeFile(file: File): string | null {
   return null;
 }
 
-function safeFileName(name: string): string {
+export function safeFileName(name: string): string {
   return name.normalize("NFKD").replace(/[^\w.-]+/g, "-").replace(/-+/g, "-").slice(-80) || "file";
 }
 
