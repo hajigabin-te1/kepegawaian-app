@@ -31,12 +31,17 @@ export function WelcomePanel({ user }: { user: SessionUser }) {
           <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {links.map((item) => (
               <li key={item.href}>
-                <Link href={item.href} className="flex items-center justify-between gap-2 rounded-lg border px-4 py-3 text-sm font-medium hover:bg-accent/15">
-                  <span className="flex items-center gap-2">
-                    <item.icon className="size-4 text-muted-foreground" />
-                    {item.title}
+                <Link
+                  href={item.href}
+                  className="group/menu flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2.5 text-sm font-medium transition-colors hover:border-accent hover:bg-accent/10 focus-visible:ring-3 focus-visible:ring-ring/60 focus-visible:outline-none"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary text-primary">
+                      <item.icon className="size-4" />
+                    </span>
+                    <span className="truncate">{item.title}</span>
                   </span>
-                  <ArrowRightIcon className="size-4 text-muted-foreground" />
+                  <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/menu:translate-x-0.5 group-hover/menu:text-primary motion-reduce:transition-none" />
                 </Link>
               </li>
             ))}

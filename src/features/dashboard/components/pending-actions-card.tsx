@@ -21,13 +21,16 @@ export function PendingActionsCard({ permissions }: { permissions: readonly stri
       ].filter((item) => item.count !== null)
     : [];
   const waiting = items.filter((item) => (item.count ?? 0) > 0);
+  const totalWaiting = waiting.reduce((sum, item) => sum + (item.count ?? 0), 0);
 
   if (!counts.isPending && !counts.isError && items.length === 0) return null;
 
   return (
-    <Card>
-      <CardHeader>
+    // The accent edge marks the card only while something is waiting, so it reads as a signal rather than decoration.
+    <Card className={totalWaiting > 0 ? "border-l-4 border-l-accent" : undefined}>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
         <CardTitle className="text-lg font-semibold">Perlu tindakan</CardTitle>
+        {totalWaiting > 0 ? <span className="text-sm text-muted-foreground tabular-nums">{totalWaiting} pengajuan menunggu</span> : null}
       </CardHeader>
       <CardContent>
         {counts.isPending ? (
@@ -43,11 +46,16 @@ export function PendingActionsCard({ permissions }: { permissions: readonly stri
           <ul className="divide-y">
             {waiting.map((item) => (
               <li key={item.href}>
-                <Link href={item.href} className="flex items-center justify-between gap-4 py-2.5 text-sm hover:text-primary">
+                <Link
+                  href={item.href}
+                  className="group/item -mx-2 flex items-center justify-between gap-4 rounded-lg px-2 py-2.5 text-sm transition-colors hover:bg-accent/15 focus-visible:ring-3 focus-visible:ring-ring/60 focus-visible:outline-none"
+                >
                   <span>{item.label}</span>
-                  <span className="flex items-center gap-2 font-semibold tabular-nums">
-                    {item.count}
-                    <ArrowRightIcon className="size-4 text-muted-foreground" />
+                  <span className="flex items-center gap-3">
+                    <span className="min-w-8 rounded-md bg-primary px-2 py-0.5 text-center text-xs font-semibold text-primary-foreground tabular-nums">
+                      {item.count}
+                    </span>
+                    <ArrowRightIcon className="size-4 text-muted-foreground transition-transform group-hover/item:translate-x-0.5 group-hover/item:text-primary motion-reduce:transition-none" />
                   </span>
                 </Link>
               </li>

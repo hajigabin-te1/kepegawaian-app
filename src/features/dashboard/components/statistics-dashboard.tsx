@@ -1,9 +1,13 @@
 "use client";
 
-import { InfoIcon } from "lucide-react";
+import Link from "next/link";
+import { InfoIcon, UserPlusIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { PERMISSIONS } from "@/config/permissions";
+import { routes } from "@/config/routes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AttendanceTab } from "@/features/dashboard/components/attendance-tab";
 import { EmployeeStatistics } from "@/features/dashboard/components/employee-statistics";
@@ -23,6 +27,7 @@ export function StatisticsDashboard({ user }: StatisticsDashboardProps) {
   const scope = useScopeInfo(user.id, !isHr);
   const hasPending = ["leave.manage", "employee.manage", "appraisal.manage"].some((p) => user.permissions.includes(p));
 
+  const canManageEmployees = user.permissions.includes(PERMISSIONS.employeeManage);
   const scopeText = isHr ? "Seluruh kampus" : scope.data?.labels.join(", ");
 
   return (
@@ -30,6 +35,14 @@ export function StatisticsDashboard({ user }: StatisticsDashboardProps) {
       <PageHeader
         title="Dashboard Statistik"
         description={scopeText ? `Cakupan: ${scopeText}. Data agregat dosen dan tenaga kependidikan.` : "Data agregat dosen dan tenaga kependidikan."}
+        actions={
+          canManageEmployees ? (
+            <Button nativeButton={false} render={<Link href={routes.employees.create} />}>
+              <UserPlusIcon />
+              Tambah pegawai
+            </Button>
+          ) : null
+        }
       />
 
       {!isHr && scope.data?.missing ? (
@@ -50,7 +63,7 @@ export function StatisticsDashboard({ user }: StatisticsDashboardProps) {
           <TabsTrigger value="appraisal">Kinerja</TabsTrigger>
         </TabsList>
         <TabsContent value="employees" className="pt-3">
-          <EmployeeStatistics canViewEmployees={user.permissions.includes("employee.view")} />
+          <EmployeeStatistics canViewEmployees={user.permissions.includes(PERMISSIONS.employeeView)} />
         </TabsContent>
         <TabsContent value="attendance" className="pt-3">
           <AttendanceTab />

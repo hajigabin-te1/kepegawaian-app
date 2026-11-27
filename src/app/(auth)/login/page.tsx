@@ -81,7 +81,7 @@ export default function LoginPage() {
       <header className="relative overflow-hidden bg-primary px-4 pt-8 pb-7 text-primary-foreground sm:px-8 lg:hidden">
         <PanelGrid />
         <div className="relative flex items-center gap-3">
-          <BrandMonogram tone="inverse" className="size-11" />
+          <BrandMonogram />
           <div className="min-w-0 leading-tight">
             <p className="text-sm font-semibold">{INSTITUTION_NAME}</p>
             <p className="mt-0.5 text-xs text-primary-foreground/70">Sistem Informasi Kepegawaian</p>
@@ -145,7 +145,7 @@ export default function LoginPage() {
           </div>
           <div className="flex items-center justify-between border-t border-primary-foreground/15 pt-5 text-xs text-primary-foreground/60">
             <span>© 2026 STIA Amuntai</span>
-            <span>Versi pengembangan</span>
+            <span>Versi 1.0</span>
           </div>
         </div>
       </aside>
